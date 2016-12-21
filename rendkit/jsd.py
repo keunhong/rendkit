@@ -4,8 +4,6 @@ import logging
 from typing import Dict, List
 
 import numpy as np
-from OpenGL.GLES2.NV.conservative_raster import \
-    GL_CONSERVATIVE_RASTERIZATION_NV
 from scipy.misc import imread
 from vispy import gloo
 from vispy.gloo import gl
@@ -34,19 +32,6 @@ class _nop():
         return False
 
 
-class _conservative_raster():
-    def __init__(self, enabled):
-        self.enabled = enabled
-
-    def __enter__(self):
-        if self.enabled:
-            gl.glEnable(GL_CONSERVATIVE_RASTERIZATION_NV)
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        if self.enabled:
-            gl.glDisable(GL_CONSERVATIVE_RASTERIZATION_NV)
-
-
 logger = logging.getLogger(__name__)
 
 
@@ -54,7 +39,6 @@ class JSDRenderer(Renderer):
 
     def __init__(self, jsd_dict, camera=None, size=None,
                  conservative_raster=False,
-                 clear_color=(1.0, 1.0, 1.0),
                  use_gamma_correction=False,
                  ssaa=0,
                  *args, **kwargs):
@@ -63,8 +47,11 @@ class JSDRenderer(Renderer):
         scene = import_jsd_scene(jsd_dict)
         super().__init__(scene, size, camera, *args, **kwargs)
         gloo.set_state(depth_test=True)
-        self.conservative_raster = conservative_raster
-        self.clear_color = clear_color
+        if conservative_raster:
+            from . import nvidia
+            self.conservative_raster = nvidia.conservative_raster(True)
+        else:
+            self.conservative_raster = _nop()
         self.use_gamma_correction = use_gamma_correction
         self.ssaa = min(max(1, ssaa), SSAAProgram.MAX_SCALE)
 
@@ -96,12 +83,12 @@ class JSDRenderer(Renderer):
 
     def draw(self):
         with self.rendfb:
-            gloo.clear(color=self.clear_color)
+            gloo.clear(color=self.camera.clear_color)
             gloo.set_state(depth_test=True)
             gloo.set_viewport(0, 0, *self.rendtex_size)
             for renderable in self.scene.renderables:
                 program = renderable.activate(self.scene, self.camera)
-                with _conservative_raster(self.conservative_raster):
+                with self.conservative_raster:
                     program.draw(gl.GL_TRIANGLES)
 
         # Run postprocessing programs.
@@ -131,6 +118,7 @@ def import_jsd_camera(jsd_dict):
     if 'camera' in jsd_dict:
         jsd_cam = jsd_dict['camera']
         type = jsd_cam['type']
+        clear_color = jsd_cam.get('clear_color', (1.0, 1.0, 1.0))
         if type == 'perspective':
             return PerspectiveCamera(
                 size=jsd_cam['size'],
@@ -139,7 +127,8 @@ def import_jsd_camera(jsd_dict):
                 fov=jsd_cam['fov'],
                 position=jsd_cam['position'],
                 lookat=jsd_cam['lookat'],
-                up=jsd_cam['up'])
+                up=jsd_cam['up'],
+                clear_color=clear_color)
         elif type == 'arcball':
             return ArcballCamera(
                 size=jsd_cam['size'],
@@ -148,14 +137,16 @@ def import_jsd_camera(jsd_dict):
                 fov=jsd_cam['fov'],
                 position=jsd_cam['position'],
                 lookat=jsd_cam['lookat'],
-                up=jsd_cam['up'])
+                up=jsd_cam['up'],
+                clear_color=clear_color)
         elif type == 'calibrated':
             return CalibratedCamera(
                 size=jsd_cam['size'],
                 near=jsd_cam['near'],
                 far=jsd_cam['far'],
                 extrinsic=np.array(jsd_cam['extrinsic']),
-                intrinsic=np.array(jsd_cam['intrinsic']))
+                intrinsic=np.array(jsd_cam['intrinsic']),
+                clear_color=clear_color)
         else:
             raise RuntimeError('Unknown camera type {}'.format(type))
 

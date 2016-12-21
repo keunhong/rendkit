@@ -8,10 +8,11 @@ from . import vector_utils
 
 
 class BaseCamera:
-    def __init__(self, size, near, far):
+    def __init__(self, size, near, far, clear_color=(1.0, 1.0, 1.0)):
         self.size = size
         self.near = near
         self.far = far
+        self.clear_color = clear_color
 
     @property
     def left(self):
@@ -53,8 +54,8 @@ class BaseCamera:
 
 class CalibratedCamera(BaseCamera):
     def __init__(self, extrinsic: np.ndarray, intrinsic: np.ndarray,
-                 size, near, far):
-        super().__init__(size, near, far)
+                 size, near, far, *args, **kwargs):
+        super().__init__(size, near, far, *args, **kwargs)
         self.extrinsic = extrinsic
         self.intrinsic = intrinsic
 
@@ -71,10 +72,11 @@ class CalibratedCamera(BaseCamera):
         return {
             'type': 'calibrated',
             'size': self.size,
-            'near': self.near,
-            'far': self.far,
+            'near': float(self.near),
+            'far': float(self.far),
             'extrinsic': self.extrinsic.tolist(),
             'intrinsic': self.intrinsic.tolist(),
+            'clear_color': self.clear_color,
         }
 
 
@@ -82,7 +84,7 @@ class PerspectiveCamera(BaseCamera):
 
     def __init__(self, size, near, far, fov, position, lookat, up,
                  *args, **kwargs):
-        super().__init__(size, near, far)
+        super().__init__(size, near, far, *args, **kwargs)
 
         self.fov = fov
         self.position = np.array(position, dtype=np.float32)
@@ -133,8 +135,9 @@ def _get_arcball_vector(x, y, w, h, r=100.0):
 class ArcballCamera(PerspectiveCamera):
 
     def __init__(self, size, near, far, fov, position, lookat, up,
-                 rotate_speed=100.0):
-        super().__init__(size, near, far, fov, position, lookat, up)
+                 rotate_speed=100.0, *args, **kwargs):
+        super().__init__(size, near, far, fov, position, lookat, up,
+                         *args, **kwargs)
         self.rotate_speed = rotate_speed
         self.max_speed = np.pi / 2
 
