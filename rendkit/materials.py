@@ -127,57 +127,6 @@ class SVBRDFMaterial(GLSLProgram):
         return program
 
 
-class TweakableSVBRDFMaterial(GLSLProgram):
-
-    def __init__(self, svbrdf):
-        super().__init__(GLSLTemplate.fromfile('default.vert.glsl'),
-                         GLSLTemplate.fromfile('svbrdf_tweakable.frag.glsl'),
-                         use_uvs=True,
-                         use_cam_pos=True,
-                         use_lights=True,
-                         use_normals=True)
-        from skimage import color
-        print('Converting diffuse map to Lab')
-        diff_map_lab = np.clip(svbrdf.diffuse_map, 0, 1)
-        diff_map_lab = color.rgb2lab(diff_map_lab).astype(dtype=np.float32)
-        self.diff_map_mean = diff_map_lab.mean(axis=(0, 1))
-        self.diff_map_std = diff_map_lab.std(axis=(0, 1))
-        diff_map_lab = (diff_map_lab - self.diff_map_mean) / self.diff_map_std
-        self.spec_scale = 1
-        self.spec_shape_scale = 1
-        self.uv_scale = 1.0
-
-        self.alpha = svbrdf.alpha
-        self.diff_map = Texture2D(diff_map_lab,
-                                  interpolation='linear',
-                                  wrapping='repeat',
-                                  internalformat='rgb32f')
-        self.spec_map = Texture2D(svbrdf.specular_map,
-                                  interpolation='linear',
-                                  wrapping='repeat',
-                                  internalformat='rgb32f')
-        self.spec_shape_map = Texture2D(svbrdf.spec_shape_map,
-                                        wrapping='repeat',
-                                        internalformat='rgb32f')
-        self.normal_map = Texture2D(svbrdf.normal_map,
-                                    interpolation='linear',
-                                    wrapping='repeat',
-                                    internalformat='rgb32f')
-
-    def update_uniforms(self, program):
-        program['alpha'] = self.alpha
-        program['diff_map'] = self.diff_map
-        program['spec_map'] = self.spec_map
-        program['spec_shape_map'] = self.spec_shape_map
-        program['normal_map'] = self.normal_map
-        program['source_mean'] = np.clip(self.diff_map_mean, 0.0, 128.0)
-        program['source_std'] = self.diff_map_std
-        program['spec_scale'] = self.spec_scale
-        program['spec_shape_scale'] = self.spec_shape_scale
-        program['uv_scale'] = self.uv_scale
-        return program
-
-
 class UnwrapToUVMaterial(GLSLProgram):
     def __init__(self, image, depth_im):
         super().__init__(GLSLTemplate.fromfile('unwrap_to_uv.vert.glsl'),

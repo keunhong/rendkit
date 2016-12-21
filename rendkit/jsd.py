@@ -248,15 +248,6 @@ def import_jsd_material(jsd_material) -> rendkit.materials.GLSLProgram:
             spec_shape_map=jsd_material['spec_shape_map'],
             normal_map=jsd_material['normal_map'],
             alpha=jsd_material['alpha']))
-    elif jsd_material['type'] == 'svbrdf_tweaked':
-        svbrdf_material = TweakableSVBRDFMaterial(
-            SVBRDF(jsd_material['path']))
-        svbrdf_material.diff_map_mean = jsd_material['diff_map_mean']
-        if 'diff_map_std' in jsd_material:
-            svbrdf_material.diff_map_std = jsd_material['diff_map_std']
-        if 'uv_scale' in jsd_material:
-            svbrdf_material.uv_scale = jsd_material['uv_scale']
-        return svbrdf_material
     elif jsd_material['type'] == 'phong':
         return PhongMaterial(
             jsd_material['diffuse'],

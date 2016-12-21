@@ -16,17 +16,6 @@ MAP_PARAMS_FNAME = 'map_params.dat'
 logger = logging.getLogger(__name__)
 
 
-def transfer_color(source, target):
-    source_lab = color.rgb2lab(source)
-    target_lab = color.rgb2lab(target)
-    source_mean = source_lab.mean(axis=(0,1))
-    source_std = source_lab.std(axis=(0,1))
-    target_mean = target_lab.mean(axis=(0,1))
-    target_std = target_lab.std(axis=(0,1))
-    target_new = (target_lab - target_mean) * source_std / target_std + source_mean
-    return np.clip(color.lab2rgb(target_new), 0, 1)
-
-
 class SVBRDF:
     def __init__(self, path=None,
                  diffuse_map=None,
