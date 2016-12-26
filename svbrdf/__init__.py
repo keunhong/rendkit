@@ -1,10 +1,7 @@
 import logging
 import os
 
-import numpy as np
-from skimage import color
-
-from toolbox import io
+from rendkit import io
 
 MAP_DIFF_FNAME = 'map_diff.pfm'
 MAP_SPEC_FNAME = 'map_spec.pfm'

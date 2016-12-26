@@ -1,6 +1,6 @@
-import math
 import copy
 import logging
+import math
 from typing import Dict, List
 
 import numpy as np
@@ -8,20 +8,19 @@ from scipy.misc import imread
 from vispy import gloo
 from vispy.gloo import gl
 
-from toolbox import io
 import rendkit.materials
 from meshkit import wavefront, Mesh
+from rendkit import io
+from rendkit.lights import Light, PointLight, DirectionalLight, \
+    RadianceMap
+from rendkit.materials import (GLSLProgram, SVBRDFMaterial, PhongMaterial,
+                               BasicMaterial, NormalMaterial, WorldCoordMaterial,
+                               DepthMaterial, UVMaterial, UnwrapToUVMaterial)
 from rendkit.postprocessing import GammaCorrectionProgram, IdentityProgram, \
     SSAAProgram
 from svbrdf import SVBRDF
-from rendkit.materials import (GLSLProgram, SVBRDFMaterial, PhongMaterial,
-                               BasicMaterial, TweakableSVBRDFMaterial,
-                               NormalMaterial, WorldCoordMaterial,
-                               DepthMaterial, UVMaterial, UnwrapToUVMaterial)
-from .core import Renderer, Scene
-from rendkit.lights import Light, PointLight, DirectionalLight, \
-    RadianceMap
 from .camera import CalibratedCamera, PerspectiveCamera, ArcballCamera
+from .core import Renderer, Scene
 
 
 class _nop():
