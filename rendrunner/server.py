@@ -1,10 +1,10 @@
+import io
 import logging
 from xmlrpc.server import SimpleXMLRPCServer
 
 import numpy as np
 from vispy import app
 
-from rendkit import io
 from rendkit.jsd import JSDRenderer
 from rendrunner import config
 

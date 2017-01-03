@@ -1,9 +1,8 @@
+import io
 from xmlrpc.client import ServerProxy
 
 import numpy as np
 from scipy.misc import imsave
-
-from rendkit import io
 
 JSD_TEST = {
     "camera": {

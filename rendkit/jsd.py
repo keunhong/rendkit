@@ -10,7 +10,7 @@ from vispy.gloo import gl
 
 import rendkit.materials
 from meshkit import wavefront, Mesh
-from rendkit import io
+from rendkit import pfm
 from rendkit.lights import Light, PointLight, DirectionalLight, \
     RadianceMap
 from rendkit.materials import (GLSLProgram, SVBRDFMaterial, PhongMaterial,
@@ -198,7 +198,7 @@ def import_radiance_map(jsd_dict) -> RadianceMap:
     if jsd_radmap['type'] == 'pfm':
         logger.info('Importing radiance map from {} with scale={}'.format(
             jsd_radmap['path'], scale))
-        array = io.load_pfm_texture(jsd_radmap['path'])
+        array = pfm.load_pfm_texture(jsd_radmap['path'])
     elif jsd_radmap['type'] == 'image':
         logger.info('Importing radiance map from {} with scale={}'.format(
             jsd_radmap['path'], scale))

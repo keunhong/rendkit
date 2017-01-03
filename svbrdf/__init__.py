@@ -1,7 +1,7 @@
 import logging
 import os
 
-from rendkit import io
+from rendkit import pfm
 
 MAP_DIFF_FNAME = 'map_diff.pfm'
 MAP_SPEC_FNAME = 'map_spec.pfm'
@@ -34,14 +34,14 @@ class SVBRDF:
                 line = f.readline()
                 self.alpha, _ = [float(i) for i in line.split(' ')]
 
-            self.diffuse_map = io.load_pfm_texture(
+            self.diffuse_map = pfm.load_pfm_texture(
                 os.path.join(data_path, MAP_DIFF_FNAME))
 
-            self.specular_map = io.load_pfm_texture(
+            self.specular_map = pfm.load_pfm_texture(
                 os.path.join(data_path, MAP_SPEC_FNAME))
-            self.normal_map = io.load_pfm_texture(
+            self.normal_map = pfm.load_pfm_texture(
                 os.path.join(data_path, MAP_NORMAL_FNAME))
-            self.spec_shape_map = io.load_pfm_texture(
+            self.spec_shape_map = pfm.load_pfm_texture(
                 os.path.join(data_path, MAP_SPEC_SHAPE_FNAME))
 
             logger.info('[SVBRDF] Loaded size=({}x{}), alpha={}'.format(
@@ -57,14 +57,14 @@ class SVBRDF:
         reverse_path = os.path.join(path, 'out', 'reverse')
         if not os.path.exists(reverse_path):
             os.makedirs(reverse_path)
-        io.save_pfm_texture(os.path.join(reverse_path, MAP_DIFF_FNAME),
-                            self.diffuse_map)
-        io.save_pfm_texture(os.path.join(reverse_path, MAP_SPEC_FNAME),
-                            self.specular_map)
-        io.save_pfm_texture(os.path.join(reverse_path, MAP_SPEC_SHAPE_FNAME),
-                            self.spec_shape_map)
-        io.save_pfm_texture(os.path.join(reverse_path, MAP_NORMAL_FNAME),
-                            self.normal_map)
+        pfm.save_pfm_texture(os.path.join(reverse_path, MAP_DIFF_FNAME),
+                             self.diffuse_map)
+        pfm.save_pfm_texture(os.path.join(reverse_path, MAP_SPEC_FNAME),
+                             self.specular_map)
+        pfm.save_pfm_texture(os.path.join(reverse_path, MAP_SPEC_SHAPE_FNAME),
+                             self.spec_shape_map)
+        pfm.save_pfm_texture(os.path.join(reverse_path, MAP_NORMAL_FNAME),
+                             self.normal_map)
         with open(os.path.join(reverse_path, MAP_PARAMS_FNAME), 'w') as f:
             f.write("{} {}".format(self.alpha, 0.0))
 
