@@ -45,6 +45,16 @@ class BaseCamera:
                                         self.view_mat(),
                                         x, y, depth, self.near, self.far)
 
+    def apply_projection(self, points):
+        homo = graphics_utils.euclidean_to_homogeneous(points)
+        proj = self.projection_mat().dot(self.view_mat().dot(homo.T)).T
+        proj = graphics_utils.homogeneous_to_euclidean(proj)[:, :2]
+        print(proj)
+        proj = (proj + 1) / 2
+        proj[:, 0] = (proj[:, 0] * self.size[0])
+        proj[:, 1] = self.size[1] - (proj[:, 1] * self.size[1])
+        return np.fliplr(proj)
+
     def get_position(self):
         return linalg.inv(self.view_mat())[:3, 3]
 

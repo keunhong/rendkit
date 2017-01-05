@@ -104,9 +104,9 @@ class Mesh:
     def expand_face_normals(self, filter=None):
         out_normals = []
         for face in self.get_faces(filter):
-            face_vertex_indices = [v for v in face['normals']]
+            face_normal_indices = [v for v in face['normals']]
             face_normals = [self.normals[i, :]
-                            for i in face_vertex_indices]
+                            for i in face_normal_indices]
             out_normals.extend(face_normals)
         return np.array(out_normals)
 
