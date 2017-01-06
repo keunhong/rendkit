@@ -55,14 +55,10 @@ class JSDRenderer(Renderer):
         self.use_gamma_correction = use_gamma_correction
         self.ssaa = min(max(1, ssaa), SSAAProgram.MAX_SCALE)
 
-        render_size = (self.size[0] * self.ssaa,
-                       self.size[1] * self.ssaa)
-        self.rendtex_size = ((2 ** (int(math.log2(render_size[0])) + 1)),
-                        (2 ** (int(math.log2(render_size[1]) + 1))))
-        logger.info("Render size: {}"
-                    " --SSAAx{}--> {}"
-                    " --pow of 2--> {}".format(
-            self.size, 2**ssaa, render_size, self.rendtex_size))
+        self.rendtex_size = (self.size[0] * self.ssaa,
+                             self.size[1] * self.ssaa)
+        logger.info("Render size: {} --SSAAx{}--> {}".format(
+            self.size, 2**ssaa, self.rendtex_size))
 
         # Buffer shapes are HxW, not WxH. Shapes are HxW, sizes are WxH.
         rendtex_shape = (self.rendtex_size[1], self.rendtex_size[0])
