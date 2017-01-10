@@ -161,20 +161,10 @@ def import_jsd_lights(jsd_dict) -> List[Light]:
         logger.warning("No lights defined, using default lights")
         jsd_lights = [
             {
-                "type": "point",
-                "position": [150, -100, 0],
-                "intensity": 3000
+                "type": "directional",
+                "position": [50, 100, -50],
+                "intensity": 0.8
             },
-            {
-                "type": "point",
-                "position": [70, 20, 70],
-                "intensity": 3000
-            },
-            {
-                "type": "point",
-                "position": [0, 150, 0],
-                "intensity": 3000
-            }
         ]
 
     for jsd_light in jsd_lights:
