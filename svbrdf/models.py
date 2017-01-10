@@ -16,6 +16,12 @@ class SVBRDF(Base):
     substance_name = Column(String(100), nullable=True)
     path = Column(String(1024))
 
+    def get_jsd(self):
+        return {
+            "type": 'svbrdf',
+            "path": self.path,
+        }
+
 
 class SVBRDFRendering(Base):
     __tablename__ = 'svbrdf_renderings'
