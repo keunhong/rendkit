@@ -1,51 +1,71 @@
-from typing import Tuple
-
 import numpy as np
 from numpy import linalg
+from scipy.spatial import ConvexHull
 from skimage import transform
+from sklearn.decomposition import PCA
 
 
-def find_corners(mask) -> np.ndarray:
+def _find_3d_extrema(hull_verts_3d, centroid, u, v):
+    """Searches for extrema in the u and v "axis" directions."""
+    mags_u = np.sort(np.dot(hull_verts_3d - centroid, u))
+    mags_v = np.sort(np.dot(hull_verts_3d - centroid, v))
+    min_u = u * mags_u[0]
+    max_u = u * mags_u[-1]
+    min_v = v * mags_v[0]
+    max_v = v * mags_v[-1]
+    return np.array((centroid + min_u + min_v,
+                     centroid + min_u + max_v,
+                     centroid + max_u + max_v,
+                     centroid + max_u + min_v))
+
+
+def find_3d_bbox(coords_im, normals_im, region_mask) -> np.ndarray:
     """
-    Finds corners of a rectangle which has undergone a projective transform.
+    Finds the 3D bounding box of a planar region given a mask of a planar
+    region. The bounding box is given as a 4-tuple which defines each corner
+    of the bounding box in 3D.
+
+    The algorithm is as follows:
+        1. Find 2D convex hull of region.
+        2. Unproject hull vertices onto 3D space.
+        3. Perform PCA on region coordinates to find dominant directions.
+        4. Adjust PCA directions (u, v) so they define an orthonormal basis
+           with the normal.
+        5. Find extrema in the u, v directions which defines the corners.
     """
-    y, x = np.where(mask)
-    c = np.vstack((y, x)).T
-    sorted_rows = np.argsort(c[:, 0])
-    sorted_cols = np.argsort(c[:, 1])
-    corners = np.array([
-        c[sorted_cols[0]],
-        c[sorted_rows[0]],
-        c[sorted_cols[-1]],
-        c[sorted_rows[-1]]
-    ])
-    return corners
+    yx = np.vstack(np.where(region_mask)).T
+    hull = ConvexHull(yx)
+    hull_verts_2d = hull.points[hull.vertices].astype(int)
+    hull_verts_3d = coords_im[hull_verts_2d[:, 0], hull_verts_2d[:, 1], :]
+
+    n = np.mean(normals_im[region_mask], axis=0)
+    n /= linalg.norm(n)
+
+    pca = PCA(n_components=2)
+    pca.fit(coords_im[region_mask])
+    # Make sure u, v, n form an orthonormal basis.
+    u = pca.components_[0, :]
+    v = np.cross(u, n)
+    u = np.cross(n, v)
+    return _find_3d_extrema(hull_verts_3d, pca.mean_, u, v)
 
 
-def compute_plane_size(corners: np.ndarray, coords: np.ndarray) -> Tuple[int, int]:
-    corner_coords = np.vstack([
-        coords[corners[:,0], corners[:, 1], 0],
-        coords[corners[:,0], corners[:, 1], 1],
-        coords[corners[:,0], corners[:, 1], 2]
-    ])
+def rectify_plane(image, corners):
+    """
+    Rectifies a region of the image defined by the bounding box. The bounding
+    box is a list of corners.
 
-    width = linalg.norm(corner_coords[:, 0] - corner_coords[:, 1])
-    height = linalg.norm(corner_coords[:, 1] - corner_coords[:, 2])
-    return height, width
-
-
-def rectify_plane(image, corners, height, width):
-    src = np.array((
-            (0, 0),
-            (width, 0),
-            (width, height),
-            (0, height),
-        ))
-    dst = corners[:, [1, 0]]
+    Note that we need all 4 coordinates since the corners define a
+    projectively transformed rectangle.
+    """
+    height = max(linalg.norm(corners[0] - corners[1]),
+                 linalg.norm(corners[2] - corners[3]))
+    width = max(linalg.norm(corners[1] - corners[2]),
+                linalg.norm(corners[0] - corners[3]))
+    reference_corners = np.array(
+        ((0, 0), (height, 0), (height, width), (0, width)))
     tform = transform.ProjectiveTransform()
-    tform.estimate(src, dst)
-    im_min, im_max = image.min(), image.max()
-    rectified = transform.warp((image - im_min)/(im_max - im_min), tform,
-                               output_shape=(height, width))[:,:]
-    rectified = rectified * (im_max - im_min) + im_min
-    return rectified
+    tform.estimate(np.fliplr(reference_corners), np.fliplr(corners))
+    rectified_image = transform.warp(
+        image, inverse_map=tform, output_shape=(int(height), int(width)))
+    return rectified_image
