@@ -39,7 +39,7 @@ class JSDRenderer(Renderer):
 
     def __init__(self, jsd_dict, camera=None, size=None,
                  conservative_raster=False,
-                 use_gamma_correction=False,
+                 gamma=None,
                  ssaa=0,
                  *args, **kwargs):
         if camera is None:
@@ -52,7 +52,7 @@ class JSDRenderer(Renderer):
             self.conservative_raster = nvidia.conservative_raster(True)
         else:
             self.conservative_raster = _nop()
-        self.use_gamma_correction = use_gamma_correction
+        self.gamma = gamma
         self.ssaa = min(max(1, ssaa), SSAAProgram.MAX_SCALE)
 
         self.rendtex_size = (self.size[0] * self.ssaa,
@@ -71,9 +71,10 @@ class JSDRenderer(Renderer):
             logger.info("Post-processing SSAAx{} enabled: rendtex {} -> {}".format(
                 ssaa, self.size, self.rendtex_size))
             self.pp_pipeline.append(SSAAProgram(rendtex, ssaa).compile())
-        if use_gamma_correction:
+        if gamma is not None:
             logger.info("Post-processing Gamma Correction enabled.")
-            self.pp_pipeline.append(GammaCorrectionProgram(rendtex, gamma=2.2).compile())
+            self.pp_pipeline.append(
+                GammaCorrectionProgram(rendtex, gamma=gamma).compile())
         else:
             self.pp_pipeline.append(IdentityProgram(rendtex).compile())
 
@@ -163,7 +164,7 @@ def import_jsd_lights(jsd_dict) -> List[Light]:
             {
                 "type": "directional",
                 "position": [50, 100, -50],
-                "intensity": 0.8
+                "intensity": 0.5
             },
         ]
 

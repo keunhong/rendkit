@@ -17,6 +17,7 @@ app.use_app('pyglet')
 parser = argparse.ArgumentParser()
 parser.add_argument('--jsd', dest='jsd_path', type=str, required=True)
 parser.add_argument('--ssaa', dest='ssaa', type=int, default=2)
+parser.add_argument('--gamma', dest='gamma', type=float, default=None)
 
 args = parser.parse_args()
 
@@ -68,5 +69,5 @@ if __name__ == '__main__':
         lookat=(0.0, 0.0, -0.0),
         up=(0.0, 1.0, 0.0))
     renderer= MyJSDRenderer(
-        jsd, camera, dpi=500, use_gamma_correction=True, ssaa=args.ssaa)
+        jsd, camera, dpi=500, gamma=args.gamma, ssaa=args.ssaa)
     app.run()
