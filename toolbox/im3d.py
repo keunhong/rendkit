@@ -3,6 +3,7 @@ from numpy import linalg
 from scipy.spatial import ConvexHull
 from skimage import transform
 from sklearn.decomposition import PCA
+from toolbox.data import reject_outliers
 
 
 def _find_3d_extrema(hull_verts_3d, centroid, u, v):
@@ -38,7 +39,9 @@ def find_3d_bbox(coords_im, normals_im, region_mask) -> np.ndarray:
     hull_verts_2d = hull.points[hull.vertices].astype(int)
     hull_verts_3d = coords_im[hull_verts_2d[:, 0], hull_verts_2d[:, 1], :]
 
-    n = np.mean(normals_im[region_mask], axis=0)
+    normals = reject_outliers(normals_im[region_mask], thres=1)
+
+    n = np.mean(normals, axis=0)
     n /= linalg.norm(n)
 
     pca = PCA(n_components=2)
