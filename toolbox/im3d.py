@@ -50,7 +50,7 @@ def find_3d_bbox(coords_im, normals_im, region_mask) -> np.ndarray:
     return _find_3d_extrema(hull_verts_3d, pca.mean_, u, v)
 
 
-def rectify_plane(image, corners):
+def rectify_plane(image, corners, corners_3d, scale=None):
     """
     Rectifies a region of the image defined by the bounding box. The bounding
     box is a list of corners.
@@ -58,10 +58,19 @@ def rectify_plane(image, corners):
     Note that we need all 4 coordinates since the corners define a
     projectively transformed rectangle.
     """
-    height = max(linalg.norm(corners[0] - corners[1]),
-                 linalg.norm(corners[2] - corners[3]))
-    width = max(linalg.norm(corners[1] - corners[2]),
-                linalg.norm(corners[0] - corners[3]))
+    if scale is None:
+        max_len = max(linalg.norm(corners[0] - corners[1]),
+                      linalg.norm(corners[2] - corners[3]),
+                      linalg.norm(corners[1] - corners[2]),
+                      linalg.norm(corners[0] - corners[3]))
+        height = linalg.norm(corners_3d[0] - corners_3d[1])
+        width = linalg.norm(corners_3d[1] - corners_3d[2])
+        max_len_3d = max(height, width)
+        scale = max_len / max_len_3d
+        height, width = height * scale, width * scale
+    else:
+        height = linalg.norm(corners_3d[0] - corners_3d[1]) * scale
+        width = linalg.norm(corners_3d[1] - corners_3d[2]) * scale
     reference_corners = np.array(
         ((0, 0), (height, 0), (height, width), (0, width)))
     tform = transform.ProjectiveTransform()
