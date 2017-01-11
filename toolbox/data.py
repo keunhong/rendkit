@@ -35,7 +35,7 @@ def reject_outliers(data, thres=3.5):
     elif abs(mean_abs_dev) > EPS:
         modified_z_score = 0.6745 * diff / mean_abs_dev
     else:
-        modified_z_score = 0
+        modified_z_score = np.zeros(diff.shape)
     inlier_mask = modified_z_score <= thres
     return data[inlier_mask]
 
