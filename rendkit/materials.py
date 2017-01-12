@@ -92,6 +92,32 @@ class NormalMaterial(GLSLProgram):
         return program
 
 
+class TangentMaterial(GLSLProgram):
+    def __init__(self):
+        super().__init__(GLSLTemplate.fromfile('default.vert.glsl'),
+                         GLSLTemplate.fromfile('tangent.frag.glsl'),
+                         use_uvs=True,
+                         use_cam_pos=False,
+                         use_lights=False,
+                         use_normals=True)
+
+    def update_uniforms(self, program):
+        return program
+
+
+class BitangentMaterial(GLSLProgram):
+    def __init__(self):
+        super().__init__(GLSLTemplate.fromfile('default.vert.glsl'),
+                         GLSLTemplate.fromfile('bitangent.frag.glsl'),
+                         use_uvs=True,
+                         use_cam_pos=False,
+                         use_lights=False,
+                         use_normals=True)
+
+    def update_uniforms(self, program):
+        return program
+
+
 class SVBRDFMaterial(GLSLProgram):
     def __init__(self, svbrdf):
         super().__init__(GLSLTemplate.fromfile('default.vert.glsl'),

@@ -106,3 +106,8 @@ def rgb2gray(image):
     return (0.2125 * image[:, :, 0]
             + 0.7154 * image[:, :, 1]
             + 0.0721 * image[:, :, 2])
+
+
+def trim_image(image, mask):
+    y, x = np.where(mask)
+    return image[y.min():y.max(), x.min():x.max()]

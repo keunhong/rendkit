@@ -1,6 +1,5 @@
 import copy
 import logging
-import math
 from typing import Dict, List
 
 import numpy as np
@@ -16,7 +15,8 @@ from rendkit.lights import Light, PointLight, DirectionalLight, \
     RadianceMap
 from rendkit.materials import (GLSLProgram, SVBRDFMaterial, PhongMaterial,
                                BasicMaterial, NormalMaterial, WorldCoordMaterial,
-                               DepthMaterial, UVMaterial, UnwrapToUVMaterial)
+                               DepthMaterial, UVMaterial, UnwrapToUVMaterial,
+                               TangentMaterial, BitangentMaterial)
 from rendkit.postprocessing import GammaCorrectionProgram, IdentityProgram, \
     SSAAProgram
 from svbrdf import SVBRDF
@@ -246,6 +246,10 @@ def import_jsd_material(jsd_material) -> rendkit.materials.GLSLProgram:
         return DepthMaterial()
     elif jsd_material['type'] == 'normal':
         return NormalMaterial()
+    elif jsd_material['type'] == 'tangent':
+        return TangentMaterial()
+    elif jsd_material['type'] == 'bitangent':
+        return BitangentMaterial()
     elif jsd_material['type'] == 'world':
         return WorldCoordMaterial()
     elif jsd_material['type'] == 'unwrap_to_uv':
