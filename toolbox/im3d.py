@@ -19,34 +19,30 @@ def _find_3d_extrema(hull_verts_3d, centroid, u, v):
                      centroid + max_u + min_v))
 
 
-def find_3d_bbox(coords_im, normals_im, tangents_im, region_mask) -> np.ndarray:
+def find_3d_bbox(coords_im, tangents_im, bitangents_im, region_mask) -> np.ndarray:
     """
     Finds the 3D bounding box of a planar region given a mask of a planar
     region. The bounding box is given as a 4-tuple which defines each corner
     of the bounding box in 3D.
 
     The algorithm is as follows:
-        1. Find 2D convex hull of region.
-        2. Unproject hull vertices onto 3D space.
-        3. Use tangent/bitangent directions as u, v directions.
-        4. Find extrema in the u, v directions which defines the corners.
+        1. Use tangent/bitangent directions as u, v directions.
+        2. Find extrema in the u, v directions which defines the corners.
     """
-    yx = np.vstack(np.where(region_mask)).T
-    hull = ConvexHull(yx)
-    hull_verts_2d = hull.points[hull.vertices].astype(int)
-    hull_verts_3d = coords_im[hull_verts_2d[:, 0], hull_verts_2d[:, 1], :]
+    hull_verts_3d = coords_im[region_mask]
 
-    normals = reject_outliers(normals_im[region_mask], thres=1)
     tangents = reject_outliers(tangents_im[region_mask], thres=1)
+    bitangents = reject_outliers(bitangents_im[region_mask], thres=1)
 
-    n = np.mean(normals, axis=0)
-    n /= linalg.norm(n)
     u = np.mean(tangents, axis=0)
+    if linalg.norm(u) == 0:
+        raise RuntimeError("Tangent is zero!")
     u /= linalg.norm(u)
+    v = np.mean(bitangents, axis=0)
+    if linalg.norm(v) == 0:
+        raise RuntimeError("Tangent is zero!")
+    v /= linalg.norm(v)
 
-    # Make sure u, v, n form an orthonormal basis.
-    v = np.cross(u, n)
-    u = np.cross(n, v)
     centroid = np.mean(coords_im[region_mask], axis=0)
     return _find_3d_extrema(hull_verts_3d, centroid, u, v)
 
