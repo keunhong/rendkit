@@ -79,6 +79,4 @@ def svbrdf_plane_renderer(svbrdf, mode='all', gamma_correction=False):
             }
         }
     }
-    return JSDRenderer(jsd, camera,
-                       size=(int(width), int(height)),
-                       use_gamma_correction=gamma_correction)
+    return JSDRenderer(jsd, camera, size=(int(width), int(height)), gamma=2.2)

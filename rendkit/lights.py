@@ -30,6 +30,7 @@ class RadianceMap(Light):
             array = array.astype(dtype=np.float32) / 255.0
         if len(array.shape) < 3:
             array = np.repeat(array[:, :, None], 3, axis=2)
+        array = array[:, :, :3]
         self.array = array * scale
         self.texture = gloo.Texture2D(self.array,
                                       interpolation='linear',

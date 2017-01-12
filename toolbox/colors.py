@@ -39,6 +39,7 @@ def _gmm_transfer_color(reference_gmm, target_gmm, target_lab):
 
 def _lab_color_gmm(lab, mask, n_components):
     gmm = GaussianMixture(n_components=n_components)
+    print(np.sum(mask))
     data = lab[mask].reshape(-1, 3)
     gmm.fit(data)
     return gmm
@@ -57,7 +58,8 @@ def match_color_gmm(reference_gmm, target_im, target_mask=None):
 
     n_components = reference_gmm.n_components
 
-    target_lab = rgb2lab(target_im)
+    print("Computing target GMM")
+    target_lab = rgb2lab(np.clip(target_im, 0, 1))
     target_gmm = _lab_color_gmm(target_lab[:, :, :],
                                 target_mask[:, :],
                                 n_components)
@@ -77,7 +79,7 @@ def match_color(reference_im, target_im,
     reference_lab = rgb2lab(reference_im)
     reference_gmm = _lab_color_gmm(reference_lab, reference_mask, n_components)
 
-    return match_color_gmm(reference_gmm, target_im, reference_mask)
+    return match_color_gmm(reference_gmm, target_im, target_mask)
 
 
 def compute_color_gmm_iter(image, mask, n_iters=10):
@@ -100,11 +102,13 @@ def compute_color_gmm_iter(image, mask, n_iters=10):
     return gmm, current_mask
 
 
-def svbrdf_match_color(reference_im, svbrdf):
+def svbrdf_match_color(reference_im, svbrdf, mask=None):
     with svbrdf_plane_renderer(svbrdf, mode='light_map') as renderer:
         light_map = renderer.render_to_image()
+    if mask is None:
+        mask = np.ones(reference_im.shape[:2], dtype=bool)
     target_map = (svbrdf.diffuse_map * light_map.mean())
-    reference_mask = _percentile_mask(reference_im, lo=0, hi=95)
+    reference_mask = mask# & _percentile_mask(reference_im, lo=0, hi=95)
     target_mask = _percentile_mask(target_map, lo=0, hi=100)
     recolored_map = match_color(reference_im, target_map,
                                 reference_mask=reference_mask,
