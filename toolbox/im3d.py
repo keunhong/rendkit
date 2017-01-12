@@ -1,8 +1,12 @@
+import logging
 import numpy as np
 from numpy import linalg
 from scipy.spatial import ConvexHull
 from skimage import transform
 from toolbox.data import reject_outliers
+
+
+logger = logging.getLogger(__name__)
 
 
 def _find_3d_extrema(hull_verts_3d, centroid, u, v):
@@ -47,7 +51,8 @@ def find_3d_bbox(coords_im, tangents_im, bitangents_im, region_mask) -> np.ndarr
     return _find_3d_extrema(hull_verts_3d, centroid, u, v)
 
 
-def rectify_plane(image, corners, corners_3d, scale=None):
+def rectify_plane(image, corners, corners_3d,
+                  height=None, width=None, scale=None):
     """
     Rectifies a region of the image defined by the bounding box. The bounding
     box is a list of corners.
@@ -55,19 +60,20 @@ def rectify_plane(image, corners, corners_3d, scale=None):
     Note that we need all 4 coordinates since the corners define a
     projectively transformed rectangle.
     """
-    if scale is None:
-        max_len = max(linalg.norm(corners[0] - corners[1]),
-                      linalg.norm(corners[2] - corners[3]),
-                      linalg.norm(corners[1] - corners[2]),
-                      linalg.norm(corners[0] - corners[3]))
+    if width is None or height is None:
         height = linalg.norm(corners_3d[0] - corners_3d[1])
         width = linalg.norm(corners_3d[1] - corners_3d[2])
-        max_len_3d = max(height, width)
-        scale = max_len / max_len_3d
-        height, width = height * scale, width * scale
-    else:
-        height = linalg.norm(corners_3d[0] - corners_3d[1]) * scale
-        width = linalg.norm(corners_3d[1] - corners_3d[2]) * scale
+        if scale is None:
+            max_len = max(linalg.norm(corners[0] - corners[1]),
+                          linalg.norm(corners[2] - corners[3]),
+                          linalg.norm(corners[1] - corners[2]),
+                          linalg.norm(corners[0] - corners[3]))
+            max_len_3d = max(height, width)
+            scale = max_len / max_len_3d
+            height, width = height * scale, width * scale
+        else:
+            height = linalg.norm(corners_3d[0] - corners_3d[1]) * scale
+            width = linalg.norm(corners_3d[1] - corners_3d[2]) * scale
     reference_corners = np.array(
         ((0, 0), (height, 0), (height, width), (0, width)))
     tform = transform.ProjectiveTransform()
@@ -75,3 +81,15 @@ def rectify_plane(image, corners, corners_3d, scale=None):
     rectified_image = transform.warp(
         image, inverse_map=tform, output_shape=(int(height), int(width)))
     return rectified_image
+
+
+def compute_uv_texture_extents(uv_coords, shape=(1000, 1000)):
+    uv_coords_max, uv_coords_min = uv_coords.max(axis=0), uv_coords.min(axis=0)
+    logger.info("uv_coords_max={}, uv_coords_min={}"
+                .format(uv_coords_max, uv_coords_min))
+    u_len, v_len = uv_coords_max - uv_coords_min
+    print(u_len, v_len)
+    v_scale, u_scale = shape[0] * v_len, shape[1] * u_len
+    ymin, xmin = uv_coords_min[1] * v_scale, uv_coords_min[0] * u_scale
+    ymax, xmax = uv_coords_max[1] * v_scale, uv_coords_max[0] * u_scale
+    return int(ymin), int(ymax), int(xmin), int(xmax)

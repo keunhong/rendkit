@@ -164,7 +164,7 @@ def import_jsd_lights(jsd_dict) -> List[Light]:
             {
                 "type": "directional",
                 "position": [50, 100, -50],
-                "intensity": 0.5
+                "intensity": 1.0
             },
         ]
 
