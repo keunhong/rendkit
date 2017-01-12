@@ -8,9 +8,12 @@ attribute vec2 a_uv;
 
 #if TPL.use_normals
 attribute vec3 a_normal;
+varying vec3 v_normal;
+#endif
+
+#if TPL.use_tangents
 attribute vec3 a_tangent;
 attribute vec3 a_bitangent;
-varying vec3 v_normal;
 varying vec3 v_tangent;
 varying vec3 v_bitangent;
 #endif
@@ -25,6 +28,9 @@ void main() {
 
     #if TPL.use_normals
     v_normal = a_normal;
+    #endif
+
+    #if TPL.use_tangents
     v_tangent = a_tangent;
     v_bitangent = a_bitangent;
     #endif

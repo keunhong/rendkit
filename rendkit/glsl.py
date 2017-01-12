@@ -31,13 +31,15 @@ class GLSLProgram:
                  use_cam_pos=False,
                  use_lights=True,
                  use_near_far=False,
-                 use_radiance_map=False):
+                 use_radiance_map=False,
+                 use_tangents=False):
         self.use_uvs = use_uvs
         self.use_cam_pos = use_cam_pos
         self.use_lights = use_lights
         self.use_normals = use_normals
         self.use_near_far = use_near_far
         self.use_radiance_map = use_radiance_map
+        self.use_tangents = use_tangents
 
         self._vert_shader = vert_shader
         self._frag_shader = frag_shader
@@ -46,7 +48,8 @@ class GLSLProgram:
     def compile(self, num_lights=0, use_radiance_map=False):
         use_radiance_map = use_radiance_map and self.use_radiance_map
         vs = self._vert_shader.substitute(
-            use_normals=_glsl_bool(self.use_normals))
+            use_normals=_glsl_bool(self.use_normals),
+            use_tangents=_glsl_bool(self.use_tangents))
         fs = self._frag_shader.substitute(
             num_lights=num_lights,
             use_radiance_map=_glsl_bool(use_radiance_map))

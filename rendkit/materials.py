@@ -11,7 +11,8 @@ class BasicMaterial(GLSLProgram):
                          use_uvs=False,
                          use_lights=False,
                          use_cam_pos=False,
-                         use_normals=False)
+                         use_normals=False,
+                         use_tangents=False)
         self.color = color
 
     def update_uniforms(self, program):
@@ -99,7 +100,7 @@ class TangentMaterial(GLSLProgram):
                          use_uvs=True,
                          use_cam_pos=False,
                          use_lights=False,
-                         use_normals=True)
+                         use_tangents=True)
 
     def update_uniforms(self, program):
         return program
@@ -112,7 +113,7 @@ class BitangentMaterial(GLSLProgram):
                          use_uvs=True,
                          use_cam_pos=False,
                          use_lights=False,
-                         use_normals=True)
+                         use_tangents=True)
 
     def update_uniforms(self, program):
         return program
@@ -126,6 +127,7 @@ class SVBRDFMaterial(GLSLProgram):
                          use_cam_pos=True,
                          use_lights=True,
                          use_normals=True,
+                         use_tangents=True,
                          use_radiance_map=True)
         self.alpha = svbrdf.alpha
         self.diff_map = Texture2D(svbrdf.diffuse_map,

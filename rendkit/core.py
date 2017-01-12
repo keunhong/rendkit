@@ -116,7 +116,7 @@ class Scene:
             }
             if material.use_normals:
                 attributes['a_normal'] = vertex_normals
-            if material.use_normals and material.use_uvs:
+            if material.use_tangents:
                 attributes['a_tangent'] = vertex_tangents
                 attributes['a_bitangent'] = vertex_bitangents
             if material.use_uvs:
