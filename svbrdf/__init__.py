@@ -2,6 +2,7 @@ import logging
 import os
 
 from rendkit import pfm
+from toolbox import images
 
 MAP_DIFF_FNAME = 'map_diff.pfm'
 MAP_SPEC_FNAME = 'map_spec.pfm'
@@ -19,12 +20,13 @@ class SVBRDF:
                  specular_map=None,
                  spec_shape_map=None,
                  normal_map=None,
-                 alpha=None):
+                 alpha=None,
+                 suppress_outliers=True):
         if path is not None:
             if not os.path.exists(path):
                 raise FileNotFoundError('The path {} does not exist'.format(path))
 
-            logger.info('[SVBRDF] Loading path={}'.format(path))
+            logger.info('Loading path={}'.format(path))
 
             self.path = path
 
@@ -44,14 +46,19 @@ class SVBRDF:
             self.spec_shape_map = pfm.load_pfm_texture(
                 os.path.join(data_path, MAP_SPEC_SHAPE_FNAME))
 
-            logger.info('[SVBRDF] Loaded size=({}x{}), alpha={}'.format(
-                self.diffuse_map.shape[1], self.diffuse_map.shape[0], self.alpha))
+            logger.info('Loaded shape={}, alpha={}'
+                .format(self.diffuse_map.shape, self.alpha))
         else:
             self.diffuse_map = diffuse_map
             self.specular_map = specular_map
             self.spec_shape_map = spec_shape_map
             self.normal_map = normal_map
             self.alpha = alpha
+
+        if suppress_outliers:
+            logger.info("Suppressing outliers in diffuse and specular maps.")
+            self.diffuse_map = images.suppress_outliers(self.diffuse_map)
+            self.specular_map = images.suppress_outliers(self.specular_map)
 
     def save(self, path):
         reverse_path = os.path.join(path, 'out', 'reverse')

@@ -4,6 +4,7 @@ from typing import Tuple
 
 import numpy as np
 from skimage import transform
+from toolbox.data import find_outliers
 
 logger = logging.getLogger(__name__)
 
@@ -111,3 +112,11 @@ def rgb2gray(image):
 def trim_image(image, mask):
     y, x = np.where(mask)
     return image[y.min():y.max(), x.min():x.max()]
+
+
+def suppress_outliers(image):
+    new_map = image.copy()
+    outliers = find_outliers(np.reshape(image, (-1, 3))).reshape(image.shape[:2])
+    med = np.median(image, axis=(0, 1))
+    new_map[outliers] = med
+    return new_map
