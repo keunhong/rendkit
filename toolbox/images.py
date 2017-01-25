@@ -3,6 +3,7 @@ import math
 from typing import Tuple
 
 import numpy as np
+from scipy.ndimage.interpolation import zoom
 from skimage import transform
 from toolbox.data import find_outliers
 
@@ -120,3 +121,22 @@ def suppress_outliers(image):
     med = np.median(image, axis=(0, 1))
     new_map[outliers] = med
     return new_map
+
+
+def resize(array, shape):
+    if len(array.shape) != 2 and len(array.shape) !=3:
+        raise RuntimeError("Input array must have 2 or 3 dimensions but {} "
+                           "were given.".format(len(array.shape)))
+    if isinstance(shape, float):
+        scales = (shape, shape, 1)
+    elif isinstance(shape, tuple):
+        scales = (shape[0] / array.shape[0],
+                  shape[1] / array.shape[1], 1)
+    else:
+        raise RuntimeError("shape must be tuple or float.")
+
+    n_channels = 1 if len(array.shape) == 2 else array.shape[2]
+    if n_channels == 1:
+        scales = scales[:2]
+    output = zoom(array, scales, order=1)
+    return output
