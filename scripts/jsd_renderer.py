@@ -7,6 +7,7 @@ from vispy import app
 
 from rendkit.camera import ArcballCamera
 from rendkit import jsd
+from rendkit.lights import PointLight
 
 
 LOG_FORMAT = '%(asctime)s\t%(levelname)s\t%(message)s\t[%(name)s]'
@@ -34,6 +35,8 @@ class MyJSDRenderer(jsd.JSDRenderer):
             self.app.quit()
             return
 
+        move_amount = 2.0
+
         old_uv_scale = self.uv_scale
         if event.key == '=':
             self.update_uv_scale(self.uv_scale * 2)
@@ -43,6 +46,23 @@ class MyJSDRenderer(jsd.JSDRenderer):
             self.update_uv_scale(self.uv_scale / 2)
             print('(-) UV scale {} -> {}'.format(old_uv_scale,
                                                  self.uv_scale))
+        elif event.key == 'w':
+            for light in self.scene.lights:
+                if isinstance(light, PointLight):
+                    light.position[2] += move_amount
+        elif event.key == 's':
+            for light in self.scene.lights:
+                if isinstance(light, PointLight):
+                    light.position[2] -= move_amount
+        elif event.key == 'a':
+            for light in self.scene.lights:
+                if isinstance(light, PointLight):
+                    light.position[0] -= move_amount
+        elif event.key == 'd':
+            for light in self.scene.lights:
+                if isinstance(light, PointLight):
+                    light.position[0] += move_amount
+        self.update()
         self.draw()
 
     def update_uv_scale(self, scale):
