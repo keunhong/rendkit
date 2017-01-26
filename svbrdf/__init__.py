@@ -21,7 +21,8 @@ class SVBRDF:
                  spec_shape_map=None,
                  normal_map=None,
                  alpha=None,
-                 suppress_outliers=True):
+                 suppress_outliers=True,
+                 transposed=False):
         if path is not None:
             if not os.path.exists(path):
                 raise FileNotFoundError('The path {} does not exist'.format(path))
@@ -37,14 +38,14 @@ class SVBRDF:
                 self.alpha, _ = [float(i) for i in line.split(' ')]
 
             self.diffuse_map = pfm.load_pfm_texture(
-                os.path.join(data_path, MAP_DIFF_FNAME))
+                os.path.join(data_path, MAP_DIFF_FNAME), transposed=transposed)
 
             self.specular_map = pfm.load_pfm_texture(
-                os.path.join(data_path, MAP_SPEC_FNAME))
+                os.path.join(data_path, MAP_SPEC_FNAME), transposed=transposed)
             self.normal_map = pfm.load_pfm_texture(
-                os.path.join(data_path, MAP_NORMAL_FNAME))
+                os.path.join(data_path, MAP_NORMAL_FNAME), transposed=transposed)
             self.spec_shape_map = pfm.load_pfm_texture(
-                os.path.join(data_path, MAP_SPEC_SHAPE_FNAME))
+                os.path.join(data_path, MAP_SPEC_SHAPE_FNAME), transposed=transposed)
 
             logger.info('Loaded shape={}, alpha={}'
                 .format(self.diffuse_map.shape, self.alpha))

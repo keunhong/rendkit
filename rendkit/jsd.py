@@ -225,7 +225,10 @@ def import_jsd_materials(jsd_dict) -> Dict[str, GLSLProgram]:
 
 def import_jsd_material(jsd_material) -> rendkit.materials.GLSLProgram:
     if jsd_material['type'] == 'svbrdf':
-        return SVBRDFMaterial(SVBRDF(jsd_material['path']))
+        transposed = False
+        if 'transposed' in jsd_material:
+            transposed = bool(jsd_material['transposed'])
+        return SVBRDFMaterial(SVBRDF(jsd_material['path'], transposed=transposed))
     elif jsd_material['type'] == 'basic':
         return BasicMaterial(jsd_material['color'])
     elif jsd_material['type'] == 'svbrdf_inline':

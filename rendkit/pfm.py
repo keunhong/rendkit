@@ -19,7 +19,7 @@ def _print_debug(header_magic, width, height, tex):
     )
 
 
-def load_pfm_texture(filename: str):
+def load_pfm_texture(filename: str, transposed=False):
     with open(filename, 'rb') as f:
         header_magic = f.readline().decode().strip()
         header_dims = f.readline().decode().strip()
@@ -28,6 +28,8 @@ def load_pfm_texture(filename: str):
         tex = np.fromfile(f, dtype=np.float32)
         dims = int(len(tex) / width / height)
         tex = np.squeeze(tex.reshape((height, width, dims)))
+    if transposed:
+        tex = np.swapaxes(tex, 0, 1)
 
     return tex
 
