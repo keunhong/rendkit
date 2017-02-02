@@ -51,15 +51,8 @@ def find_3d_bbox(coords_im, tangents_im, bitangents_im, region_mask) -> np.ndarr
     return _find_3d_extrema(hull_verts_3d, centroid, u, v)
 
 
-def rectify_plane(image, corners, corners_3d,
-                  height=None, width=None, scale=None):
-    """
-    Rectifies a region of the image defined by the bounding box. The bounding
-    box is a list of corners.
-
-    Note that we need all 4 coordinates since the corners define a
-    projectively transformed rectangle.
-    """
+def compute_rectify_tform(corners, corners_3d, height=None, width=None,
+                          scale=None):
     if width is None or height is None:
         height = linalg.norm(corners_3d[0] - corners_3d[1])
         width = linalg.norm(corners_3d[1] - corners_3d[2])
@@ -78,6 +71,17 @@ def rectify_plane(image, corners, corners_3d,
         ((0, 0), (height, 0), (height, width), (0, width)))
     tform = transform.ProjectiveTransform()
     tform.estimate(np.fliplr(reference_corners), np.fliplr(corners))
+    return tform, height, width
+
+
+def apply_rectify_tform(image, tform, height, width):
+    """
+    Rectifies a region of the image defined by the bounding box. The bounding
+    box is a list of corners.
+
+    Note that we need all 4 coordinates since the corners define a
+    projectively transformed rectangle.
+    """
     rectified_image = transform.warp(
         image, inverse_map=tform, output_shape=(int(height), int(width)))
     return rectified_image

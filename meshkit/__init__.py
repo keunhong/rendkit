@@ -1,6 +1,7 @@
 from typing import List, Dict
 
 import numpy as np
+from numpy import linalg
 
 EPSILON = 1e-10
 
@@ -128,3 +129,23 @@ class Mesh:
             return len(self.object_names)
         else:
             return len(self.group_names)
+
+    def material_uv_scale(self, material_id):
+        filter = {'material': material_id}
+        faces = self.get_faces(filter)
+        lengths = []
+        for face in faces:
+            face_vert_inds = [v for v in face['vertices']]
+            face_verts = [self.vertices[i, :] for i in face_vert_inds]
+            face_uv_inds = [v for v in face['uvs']]
+            face_uvs = [self.uvs[i, :] for i in face_uv_inds]
+            vert_lens = np.array([
+                linalg.norm(face_verts[0] - face_verts[1]),
+                linalg.norm(face_verts[1] - face_verts[2]),
+                linalg.norm(face_verts[0] - face_verts[2])])
+            uv_lens = np.array([
+                linalg.norm(face_uvs[0] - face_uvs[1]),
+                linalg.norm(face_uvs[1] - face_uvs[2]),
+                linalg.norm(face_uvs[0] - face_uvs[2])])
+            lengths.extend(uv_lens/vert_lens)
+        return np.mean(lengths)

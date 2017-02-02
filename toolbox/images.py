@@ -123,8 +123,8 @@ def suppress_outliers(image):
     return new_map
 
 
-def resize(array, shape):
-    if len(array.shape) != 2 and len(array.shape) !=3:
+def resize(array, shape, order=2):
+    if len(array.shape) != 2 and len(array.shape) != 3:
         raise RuntimeError("Input array must have 2 or 3 dimensions but {} "
                            "were given.".format(len(array.shape)))
     if isinstance(shape, float):
@@ -138,5 +138,5 @@ def resize(array, shape):
     n_channels = 1 if len(array.shape) == 2 else array.shape[2]
     if n_channels == 1:
         scales = scales[:2]
-    output = zoom(array, scales, order=1)
+    output = zoom(array, scales, order=order)
     return output

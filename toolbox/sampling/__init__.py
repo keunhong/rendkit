@@ -90,12 +90,8 @@ def random_crops(image, patch_size, num_crops):
     return bboxes_to_patches(image, bboxes, patch_size)
 
 
-def generate_random_bboxes(
-        mask: np.ndarray,
-        min_scale =0.23,
-        max_scale=0.23,
-        num_patches=5,
-        fixed_size=None):
+def generate_random_bboxes(mask: np.ndarray, scale_range=(1.0, 1.0),
+                           num_patches=5, fixed_size=None):
     """
     Generates random bounding boxes at random scales with centroid within the
     mask.
@@ -115,14 +111,17 @@ def generate_random_bboxes(
     patch_bboxes = []
     patch_scales = []
     while len(patch_bboxes) < num_patches:
-        scale = random.uniform(min_scale, max_scale)
+        scale = random.uniform(*scale_range)
         patch_scales.append(scale)
-        patch_size = fixed_size if fixed_size else int(scale * min_length)
+        patch_size = scale * fixed_size if fixed_size else int(scale * min_length)
         point_idx = np.random.randint(0, len(yinds))
         ycent, xcent = yinds[point_idx], xinds[point_idx]
         half = int(patch_size / 2)
 
         # Just squash the patch if it's out of bounds.
+        # if (ycent - half < 0 or ycent + half > mask.shape[0] or
+        #     xcent - half < 0 or xcent + half > mask.shape[1]):
+        #     continue
         bbox = (max(ycent - half, 0),
                 min(ycent + half + 1, mask.shape[0]),
                 max(xcent - half, 0),

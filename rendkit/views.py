@@ -1,6 +1,7 @@
 import json
 import logging
 
+import numpy as np
 from flask import Blueprint, render_template, request
 
 from gravel.webutils import image_to_png_response, make_response
@@ -36,9 +37,9 @@ def render_jsd_post():
 
     jsd_obj = json.loads(jsd_file.read().decode())
 
-    with JSDRenderer(jsd_obj, use_gamma_correction=True, ssaa=0) as renderer:
+    with JSDRenderer(jsd_obj, gamma=2.2, ssaa=0) as renderer:
         for renderable in renderer.scene.renderables:
             renderable.scale_uvs(uv_scale)
         image = renderer.render_to_image()
 
-    return image_to_png_response(image)
+    return image_to_png_response(np.clip(image, 0, 1))

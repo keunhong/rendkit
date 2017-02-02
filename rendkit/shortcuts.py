@@ -6,8 +6,12 @@ from .camera import ArcballCamera
 from .jsd import JSDRenderer
 
 
-def svbrdf_plane_renderer(svbrdf, mode='all', gamma_correction=False):
-    height, width, _ = svbrdf.diffuse_map.shape
+def svbrdf_plane_renderer(svbrdf, lights=list(), radiance_map=None, mode='all',
+                          gamma=2.2, uv_scale=1.0, shape=None):
+    if shape is None:
+        height, width, _ = svbrdf.diffuse_map.shape
+    else:
+        height, width = shape[:2]
     zeros = np.zeros(svbrdf.diffuse_map.shape, dtype=np.float32)
     ones = np.ones(svbrdf.diffuse_map.shape, dtype=np.float32)
     if mode != 'all':
@@ -22,28 +26,28 @@ def svbrdf_plane_renderer(svbrdf, mode='all', gamma_correction=False):
 
     camera = ArcballCamera(
         size=(width, height), fov=90, near=10, far=1000.0,
-        position=[0, 0, min(width, height)/max(width, height)*100],
+        position=[0, min(width, height)/max(width, height)*100, 0],
         lookat=(0.0, 0.0, -0.0),
-        up=(0.0, 1.0, 0.0))
+        up=(0.0, 0.0, -1.0))
 
     jsd = {
         "mesh": {
             "scale": 100,
             "type": "inline",
             "vertices": [
-                [width/height, -1.0, 0.0],
-                [width/height, 1.0, 0.0],
-                [-width/height, 1.0, 0.0],
-                [-width/height, -1.0, 0.0]
+                [width/height, 0.0, -1.0],
+                [width/height, 0.0, 1.0],
+                [-width/height, 0.0, 1.0],
+                [-width/height, 0.0, -1.0]
             ],
             "uvs": [
-                [1.0, 0.0],
-                [1.0, 1.0],
-                [0.0, 1.0],
+                [uv_scale, 0.0],
+                [uv_scale, uv_scale],
+                [0.0, uv_scale],
                 [0.0, 0.0]
             ],
             "normals": [
-                [0.0, 0.0, 1.0]
+                [0.0, 1.0, 0.0]
             ],
             "materials": ["plane"],
             "faces": [
@@ -61,13 +65,7 @@ def svbrdf_plane_renderer(svbrdf, mode='all', gamma_correction=False):
                 }
             ]
         },
-        "lights": [
-            {
-                "type": "directional",
-                "position": [0, 0, 1],
-                "intensity": 1.0,
-            }
-        ],
+        "lights": lights,
         "materials": {
             "plane": {
                 "type": "svbrdf_inline",
@@ -79,4 +77,6 @@ def svbrdf_plane_renderer(svbrdf, mode='all', gamma_correction=False):
             }
         }
     }
-    return JSDRenderer(jsd, camera, size=(int(width), int(height)), gamma=2.2)
+    if radiance_map is not None:
+        jsd['radiance_map'] = radiance_map
+    return JSDRenderer(jsd, camera, size=(int(width), int(height)), gamma=gamma)
