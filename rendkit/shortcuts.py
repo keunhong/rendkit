@@ -7,7 +7,7 @@ from .jsd import JSDRenderer
 
 
 def svbrdf_plane_renderer(svbrdf, lights=list(), radiance_map=None, mode='all',
-                          gamma=2.2, uv_scale=1.0, shape=None):
+                          gamma=2.2, uv_scale=1.0, shape=None, **kwargs):
     if shape is None:
         height, width, _ = svbrdf.diffuse_map.shape
     else:
@@ -79,4 +79,5 @@ def svbrdf_plane_renderer(svbrdf, lights=list(), radiance_map=None, mode='all',
     }
     if radiance_map is not None:
         jsd['radiance_map'] = radiance_map
-    return JSDRenderer(jsd, camera, size=(int(width), int(height)), gamma=gamma)
+    return JSDRenderer(jsd, camera, size=(int(width), int(height)), gamma=gamma,
+                       **kwargs)
