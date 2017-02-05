@@ -21,6 +21,7 @@ def svbrdf_plane_renderer(svbrdf, lights=list(), radiance_map=None, mode='all',
     elif mode == 'specular_only':
         svbrdf.diffuse_map = zeros
     elif mode == 'light_map':
+        gamma = None
         svbrdf.specular_map = zeros
         svbrdf.diffuse_map = ones
 

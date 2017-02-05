@@ -149,3 +149,15 @@ class Mesh:
                 linalg.norm(face_uvs[0] - face_uvs[2])])
             lengths.extend(uv_lens/vert_lens)
         return np.mean(lengths)
+
+    def rescale_material_uvs(self, material_id, scale):
+        filter = {'material': material_id}
+        faces = self.get_faces(filter)
+        processed_uvs = set([])
+        for face in faces:
+            face_uv_inds = [v for v in face['uvs']]
+            for i in face_uv_inds:
+                if i not in processed_uvs:
+                    self.uvs[i, :] *= scale
+                    processed_uvs.add(i)
+

@@ -3,6 +3,7 @@ import math
 from typing import Tuple
 
 import numpy as np
+from scipy import misc
 from scipy.ndimage.interpolation import zoom
 from skimage import transform
 from toolbox.data import find_outliers
@@ -140,3 +141,10 @@ def resize(array, shape, order=2):
         scales = scales[:2]
     output = zoom(array, scales, order=order)
     return output
+
+
+def imsave(path, array):
+    array = array.astype(dtype=float)
+    if array.max() <= 1.0:
+        array *= 255.0
+    misc.toimage(array, cmin=0, cmax=255).save(path)

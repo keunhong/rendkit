@@ -37,7 +37,7 @@ class Renderable:
         if 'a_uv' in self._attributes:
             self._attributes['a_uv'] *= scale / self._uv_scale
             if self._program is not None:
-                self._program['a_uv'] = self._attributes['a_uv']
+                self._program['a_uv'] = np.float32(self._attributes['a_uv'])
         self._uv_scale = scale
 
     def activate(self, scene, camera):

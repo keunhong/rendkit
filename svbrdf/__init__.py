@@ -61,6 +61,10 @@ class SVBRDF:
             self.diffuse_map = images.suppress_outliers(self.diffuse_map)
             self.specular_map = images.suppress_outliers(self.specular_map)
 
+    @property
+    def name(self):
+        return os.path.split(os.path.realpath(self.path))[1]
+
     def save(self, path):
         reverse_path = os.path.join(path, 'out', 'reverse')
         if not os.path.exists(reverse_path):
