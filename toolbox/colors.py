@@ -66,22 +66,24 @@ def match_color_gmm(reference_gmm, target_im, target_mask=None,
                                 n_components)
     if out_colors is not None:
         print("Setting out_colors!")
+        print(reference_gmm.means_, target_gmm.means_)
         out_colors[:50,:50, :] = reference_gmm.means_[0]
         out_colors[:50,50:, :] = reference_gmm.means_[1]
         out_colors[50:,:50, :] = target_gmm.means_[0]
         out_colors[50:,50:, :] = target_gmm.means_[1]
-        out_colors[:, :, :] = lab2rgb(out_colors)
+        out_colors[:, :, :] = lab2rgb(out_colors) ** (1/2.2)
 
     recolored_lab = _gmm_transfer_color(reference_gmm, target_gmm, target_lab)
     return lab2rgb(recolored_lab)
 
-
+from scipy import misc
 def match_color(reference_im, target_im,
                 reference_mask=None,
                 target_mask=None,
                 n_components=2, out_colors=None):
     if reference_mask is None:
         reference_mask = np.ones(reference_im.shape[:2], dtype=bool)
+    print(reference_im.min(), reference_im.max(), target_im.min(), target_im.max())
 
     print('Computing reference GMM')
     reference_lab = rgb2lab(reference_im)
@@ -111,14 +113,14 @@ def compute_color_gmm_iter(image, mask, n_iters=10):
 
 
 def svbrdf_match_color(reference_im, svbrdf, mask=None, out_colors=None):
-    radmap = np.random.normal(1.0, 2.0, (20, 20))
+    radmap = np.clip(np.random.normal(1.0, 2.0, (20, 20)), 0, None)
     radmap_jsd = dict(type='inline', array=radmap)
     with svbrdf_plane_renderer(
             svbrdf, mode='light_map', radiance_map=radmap_jsd) as renderer:
         light_map = renderer.render_to_image()
     if mask is None:
         mask = np.ones(reference_im.shape[:2], dtype=bool)
-    target_map = (svbrdf.diffuse_map * light_map.mean())
+    target_map = np.clip(svbrdf.diffuse_map * light_map.mean(), 0, 1)
     reference_mask = mask# & _percentile_mask(reference_im, lo=0, hi=95)
     target_mask = _percentile_mask(target_map, lo=0, hi=100)
     # target_mask = np.ones(target_map.shape[:2], dtype=bool)
