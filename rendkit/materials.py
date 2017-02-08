@@ -130,28 +130,29 @@ class SVBRDFMaterial(GLSLProgram):
                          use_tangents=True,
                          use_radiance_map=True)
         self.alpha = svbrdf.alpha
-        self.diff_map = Texture2D(svbrdf.diffuse_map,
-                                  interpolation='linear',
-                                  wrapping='repeat',
-                                  internalformat='rgb32f')
-        self.spec_map = Texture2D(svbrdf.specular_map,
-                                  interpolation='linear',
-                                  wrapping='repeat',
-                                  internalformat='rgb32f')
-        self.spec_shape_map = Texture2D(svbrdf.spec_shape_map,
-                                        wrapping='repeat',
-                                        internalformat='rgb32f')
-        self.normal_map = Texture2D(svbrdf.normal_map,
-                                    interpolation='linear',
-                                    wrapping='repeat',
-                                    internalformat='rgb32f')
+        self.diff_map = svbrdf.diffuse_map
+        self.spec_map = svbrdf.specular_map
+        self.spec_shape_map = svbrdf.spec_shape_map
+        self.normal_map = svbrdf.normal_map
 
     def update_uniforms(self, program):
         program['alpha'] = self.alpha
-        program['diff_map'] = self.diff_map
-        program['spec_map'] = self.spec_map
-        program['spec_shape_map'] = self.spec_shape_map
-        program['normal_map'] = self.normal_map
+        program['diff_map'] = Texture2D(self.diff_map,
+                                        interpolation='linear',
+                                        wrapping='repeat',
+                                        internalformat='rgb32f')
+        program['spec_map'] = Texture2D(self.spec_map,
+                                        interpolation='linear',
+                                        wrapping='repeat',
+                                        internalformat='rgb32f')
+        program['spec_shape_map'] = Texture2D(self.spec_shape_map,
+                                              interpolation='linear',
+                                              wrapping='repeat',
+                                              internalformat='rgb32f')
+        program['normal_map'] = Texture2D(self.normal_map,
+                                          interpolation='linear',
+                                          wrapping='repeat',
+                                          internalformat='rgb32f')
         return program
 
 
