@@ -3,7 +3,7 @@ import numpy as np
 from numpy import linalg
 from scipy.spatial import ConvexHull
 from skimage import transform
-from toolbox.data import reject_outliers
+from toolbox.stats import reject_outliers
 
 
 logger = logging.getLogger(__name__)

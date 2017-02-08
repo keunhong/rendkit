@@ -7,7 +7,9 @@ from .jsd import JSDRenderer
 
 
 def svbrdf_plane_renderer(svbrdf, lights=list(), radiance_map=None, mode='all',
-                          gamma=2.2, uv_scale=1.0, shape=None, **kwargs):
+                          gamma=2.2, uv_scale=1.0, shape=None,
+                          cam_lookat=(0.0, 0.0),
+                          cam_dist=1.0, **kwargs):
     if shape is None:
         height, width, _ = svbrdf.diffuse_map.shape
     else:
@@ -26,25 +28,27 @@ def svbrdf_plane_renderer(svbrdf, lights=list(), radiance_map=None, mode='all',
         svbrdf.diffuse_map = ones
 
     camera = ArcballCamera(
-        size=(width, height), fov=90, near=10, far=1000.0,
-        position=[0, min(width, height)/max(width, height)*100, 0],
-        lookat=(0.0, 0.0, -0.0),
+        size=(width, height), fov=90, near=0.1, far=1000.0,
+        position=[0, cam_dist*min(width, height)/max(width, height), 0],
+        lookat=(cam_lookat[0], 0.0, -cam_lookat[1]),
         up=(0.0, 0.0, -1.0))
+
+    plane_size = 200
 
     jsd = {
         "mesh": {
-            "scale": 100,
+            "scale": 1,
             "type": "inline",
             "vertices": [
-                [width/height, 0.0, -1.0],
-                [width/height, 0.0, 1.0],
-                [-width/height, 0.0, 1.0],
-                [-width/height, 0.0, -1.0]
+                [width/height*plane_size, 0.0, -plane_size],
+                [width/height*plane_size, 0.0, plane_size],
+                [-width/height*plane_size, 0.0, plane_size],
+                [-width/height*plane_size, 0.0, -plane_size]
             ],
             "uvs": [
-                [uv_scale, 0.0],
-                [uv_scale, uv_scale],
-                [0.0, uv_scale],
+                [uv_scale*plane_size, 0.0],
+                [uv_scale*plane_size, uv_scale*plane_size],
+                [0.0, uv_scale*plane_size],
                 [0.0, 0.0]
             ],
             "normals": [
