@@ -46,3 +46,11 @@ def reject_outliers(data, thres=3.5):
 
 def robust_mean(data, thres=3.5):
     return np.mean(reject_outliers(data, thres=thres))
+
+
+def gaussian2d(mean, sigma, size=(100, 100)):
+    x = np.linspace(-1, 1, num=size[1])
+    y = np.linspace(-1, 1, num=size[0])
+    gauss_y = np.exp(-((y - mean[0])**2)/(2*sigma[0]**2))[:, None]
+    gauss_x = np.exp(-((x - mean[1])**2)/(2*sigma[1]**2))[:, None]
+    return gauss_x.dot(gauss_y.T)

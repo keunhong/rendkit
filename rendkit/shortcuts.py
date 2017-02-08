@@ -6,9 +6,9 @@ from .camera import ArcballCamera
 from .jsd import JSDRenderer
 
 
-def svbrdf_plane_renderer(svbrdf, lights=list(), radiance_map=None, mode='all',
-                          gamma=2.2, uv_scale=1.0, shape=None,
-                          cam_lookat=(0.0, 0.0),
+def svbrdf_plane_renderer(svbrdf, size=None, lights=list(), radiance_map=None,
+                          mode='all', gamma=2.2, uv_scale=1.0, shape=None,
+                          transpose=False, cam_lookat=(0.0, 0.0), fov=90,
                           cam_dist=1.0, **kwargs):
     if shape is None:
         height, width, _ = svbrdf.diffuse_map.shape
@@ -27,13 +27,20 @@ def svbrdf_plane_renderer(svbrdf, lights=list(), radiance_map=None, mode='all',
         svbrdf.specular_map = zeros
         svbrdf.diffuse_map = ones
 
-    camera = ArcballCamera(
-        size=(width, height), fov=90, near=0.1, far=1000.0,
-        position=[0, cam_dist*min(width, height)/max(width, height), 0],
-        lookat=(cam_lookat[0], 0.0, -cam_lookat[1]),
-        up=(0.0, 0.0, -1.0))
+    up = (1.0, 0.0, 0.0) if transpose else (0.0, 0.0, -1.0)
+    if transpose:
+        cam_lookat = tuple(reversed(cam_lookat))
 
-    plane_size = 200
+    if size is None:
+        size = (width, height)
+        cam_dist = cam_dist * min(width, height)/max(width, height)
+
+    camera = ArcballCamera(
+        size=size, fov=fov, near=0.1, far=1000.0,
+        position=[0, cam_dist, 0],
+        lookat=(cam_lookat[0], 0.0, -cam_lookat[1]), up=up)
+
+    plane_size = 1000
 
     jsd = {
         "mesh": {
@@ -84,5 +91,5 @@ def svbrdf_plane_renderer(svbrdf, lights=list(), radiance_map=None, mode='all',
     }
     if radiance_map is not None:
         jsd['radiance_map'] = radiance_map
-    return JSDRenderer(jsd, camera, size=(int(width), int(height)), gamma=gamma,
+    return JSDRenderer(jsd, camera, size=size, gamma=gamma,
                        **kwargs)
