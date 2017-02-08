@@ -8,7 +8,7 @@ from vispy import app
 from rendkit.camera import ArcballCamera
 from rendkit import jsd
 from rendkit.lights import PointLight
-
+from rendkit.materials import SVBRDFMaterial
 
 LOG_FORMAT = '%(asctime)s\t%(levelname)s\t%(message)s\t[%(name)s]'
 
@@ -29,6 +29,8 @@ class MyJSDRenderer(jsd.JSDRenderer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs, show=True)
         self.uv_scale = 1.0
+        self.current_mat_idx = 0
+        self.current_mat = None
 
     def on_key_press(self, event):
         if event.key == 'Escape':
@@ -46,24 +48,43 @@ class MyJSDRenderer(jsd.JSDRenderer):
             self.update_uv_scale(self.uv_scale / 2)
             print('(-) UV scale {} -> {}'.format(old_uv_scale,
                                                  self.uv_scale))
-        elif event.key == 'w':
-            for light in self.scene.lights:
-                if isinstance(light, PointLight):
-                    light.position[2] += move_amount
-        elif event.key == 's':
-            for light in self.scene.lights:
-                if isinstance(light, PointLight):
-                    light.position[2] -= move_amount
+        elif event.key == '1':
+            mat_names, mats = zip(*list(self.scene.materials.items()))
+            self.current_mat_idx  = (self.current_mat_idx + 1) % len(mats)
+            self.current_mat = mats[self.current_mat_idx]
+            print("Selecting material {}: {}".format(
+                self.current_mat_idx,
+                mat_names[self.current_mat_idx]))
         elif event.key == 'a':
-            for light in self.scene.lights:
-                if isinstance(light, PointLight):
-                    light.position[0] -= move_amount
-        elif event.key == 'd':
-            for light in self.scene.lights:
-                if isinstance(light, PointLight):
-                    light.position[0] += move_amount
+            if self.current_mat is not None:
+                if isinstance(self.current_mat, SVBRDFMaterial):
+                    self.current_mat.alpha -= 0.1
+                    print('Setting alpha to {}'.format(self.current_mat.alpha))
+                    self.recompile_renderables()
+        elif event.key == 's':
+            if self.current_mat is not None:
+                if isinstance(self.current_mat, SVBRDFMaterial):
+                    self.current_mat.alpha += 0.1
+                    print('Setting alpha to {}'.format(self.current_mat.alpha))
+                    self.recompile_renderables()
+        elif event.key == 'z':
+            if self.current_mat is not None:
+                if isinstance(self.current_mat, SVBRDFMaterial):
+                    self.current_mat.spec_shape_map[:, :, :] /= 1.1
+                    print(np.mean(self.current_mat.spec_shape_map, axis=(0,1)))
+                    self.recompile_renderables()
+        elif event.key == 'x':
+            if self.current_mat is not None:
+                if isinstance(self.current_mat, SVBRDFMaterial):
+                    self.current_mat.spec_shape_map[:, :, :] *= 1.1
+                    print(np.mean(self.current_mat.spec_shape_map, axis=(0,1)))
+                    self.recompile_renderables()
         self.update()
         self.draw()
+
+    def recompile_renderables(self):
+        for renderable in self.scene.renderables:
+            renderable._program = renderable.compile(self.scene)
 
     def update_uv_scale(self, scale):
         for renderable in self.scene.renderables:
