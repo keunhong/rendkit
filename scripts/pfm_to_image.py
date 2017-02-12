@@ -1,6 +1,8 @@
-import os
 import argparse
+import os
+
 from scipy import misc
+
 from rendkit import pfm
 
 

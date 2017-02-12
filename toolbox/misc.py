@@ -1,5 +1,6 @@
 import numpy as np
 from numpy.random import ranf
+
 from toolbox.stats import gaussian2d
 
 

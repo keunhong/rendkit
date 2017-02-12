@@ -5,9 +5,8 @@ import logging
 import numpy as np
 from vispy import app
 
-from rendkit.camera import ArcballCamera
 from rendkit import jsd
-from rendkit.lights import PointLight
+from rendkit.camera import ArcballCamera
 from rendkit.materials import SVBRDFMaterial
 
 LOG_FORMAT = '%(asctime)s\t%(levelname)s\t%(message)s\t[%(name)s]'

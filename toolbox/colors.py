@@ -4,9 +4,9 @@ import numpy as np
 from scipy.ndimage import maximum_filter
 from skimage.color import rgb2lab, lab2rgb
 from sklearn.mixture import GaussianMixture
-from toolbox.images import apply_mask
 
 from rendkit.shortcuts import svbrdf_plane_renderer
+from toolbox.images import apply_mask
 
 
 def _gmm_transfer_color(reference_gmm, target_gmm, target_lab):

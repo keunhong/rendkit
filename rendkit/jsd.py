@@ -8,8 +8,8 @@ from vispy import gloo
 from vispy.gloo import gl
 
 import rendkit.materials
-from meshkit import wavefront
 from meshkit import Mesh
+from meshkit import wavefront
 from rendkit import pfm
 from rendkit.lights import Light, PointLight, DirectionalLight, \
     RadianceMap

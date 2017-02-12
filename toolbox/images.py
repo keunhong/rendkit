@@ -6,6 +6,7 @@ import numpy as np
 from scipy import misc
 from scipy.ndimage.interpolation import zoom
 from skimage import transform
+
 from toolbox.stats import find_outliers
 
 logger = logging.getLogger(__name__)

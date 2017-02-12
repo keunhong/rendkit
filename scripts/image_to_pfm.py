@@ -1,7 +1,9 @@
-import os
 import argparse
+import os
+
 import numpy as np
 from scipy import misc
+
 from rendkit import pfm
 
 
