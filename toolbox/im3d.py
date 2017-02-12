@@ -82,9 +82,10 @@ def apply_rectify_tform(image, tform, height, width):
     Note that we need all 4 coordinates since the corners define a
     projectively transformed rectangle.
     """
+    dtype = image.dtype
     rectified_image = transform.warp(
         image, inverse_map=tform, output_shape=(int(height), int(width)))
-    return rectified_image
+    return rectified_image.astype(dtype=dtype)
 
 
 def compute_uv_texture_extents(uv_coords, shape=(1000, 1000)):

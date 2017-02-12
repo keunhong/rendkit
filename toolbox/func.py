@@ -10,7 +10,7 @@ def lazyprop(fn):
     @property
     def _lazyprop(self):
         if not hasattr(self, attr_name):
-            logger.info("Evaluating lazy property \'{}\'".format(fn.__name__))
+            logger.debug("Evaluating lazy property \'{}\'".format(fn.__name__))
             setattr(self, attr_name, fn(self))
         return getattr(self, attr_name)
     return _lazyprop

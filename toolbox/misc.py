@@ -1,7 +1,12 @@
+import os
+import logging
 import numpy as np
 from numpy.random import ranf
 
 from toolbox.stats import gaussian2d
+
+
+logger = logging.getLogger(__name__)
 
 
 def random_radiance_map(size=50, n_gaussians=16):
@@ -16,3 +21,9 @@ def random_radiance_map(size=50, n_gaussians=16):
         radmap += a * gaussian2d(mean=mean, sigma=sigma, size=radmap.shape)
     return radmap
 
+
+def maybe_mkdirs(path):
+    if not os.path.exists(path):
+        logger.info("Creating {}".format(path))
+        os.makedirs(path)
+    return path
