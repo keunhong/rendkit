@@ -80,4 +80,11 @@ class SVBRDF:
         with open(os.path.join(reverse_path, MAP_PARAMS_FNAME), 'w') as f:
             f.write("{} {}".format(self.alpha, 0.0))
 
-
+    def to_jsd(self):
+        return dict(
+            type='svbrdf_inline',
+            diffuse_map=self.diffuse_map,
+            specular_map=self.specular_map,
+            spec_shape_map=self.spec_shape_map,
+            normal_map=self.normal_map,
+            alpha=self.alpha)
