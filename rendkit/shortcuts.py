@@ -6,10 +6,10 @@ from .camera import ArcballCamera
 from .jsd import JSDRenderer
 
 
-def svbrdf_plane_renderer(svbrdf, size=None, lights=list(), radiance_map=None,
+def svbrdf_plane_renderer(svbrdf, size=None, lights=list(), radmap=None,
                           mode='all', gamma=2.2, uv_scale=1.0, shape=None,
-                          transpose=False, cam_lookat=(0.0, 0.0), fov=90,
-                          cam_dist=1.0, **kwargs):
+                          transpose=False, cam_lookat=(0.0, 0.0), cam_fov=90,
+                          cam_dist=1.0, cam_up=(1.0, 0.0, 0.0), **kwargs):
     if shape is None:
         height, width, _ = svbrdf.diffuse_map.shape
     else:
@@ -27,7 +27,8 @@ def svbrdf_plane_renderer(svbrdf, size=None, lights=list(), radiance_map=None,
         svbrdf.specular_map = zeros
         svbrdf.diffuse_map = ones
 
-    up = (1.0, 0.0, 0.0) if transpose else (0.0, 0.0, -1.0)
+    if transpose:
+        cam_up = (0.0, 0.0, -1.0)
     if transpose:
         cam_lookat = tuple(reversed(cam_lookat))
 
@@ -36,11 +37,11 @@ def svbrdf_plane_renderer(svbrdf, size=None, lights=list(), radiance_map=None,
         cam_dist = cam_dist * min(width, height)/max(width, height)
 
     camera = ArcballCamera(
-        size=size, fov=fov, near=0.1, far=1000.0,
+        size=size, fov=cam_fov, near=0.1, far=1000.0,
         position=[0, cam_dist, 0],
-        lookat=(cam_lookat[0], 0.0, -cam_lookat[1]), up=up)
+        lookat=(cam_lookat[0], 0.0, -cam_lookat[1]), up=cam_up)
 
-    plane_size = 1000
+    plane_size = 100
 
     jsd = {
         "mesh": {
@@ -89,7 +90,59 @@ def svbrdf_plane_renderer(svbrdf, size=None, lights=list(), radiance_map=None,
             }
         }
     }
-    if radiance_map is not None:
-        jsd['radiance_map'] = radiance_map
+    if radmap is not None:
+        if isinstance(radmap, np.ndarray):
+            radmap = dict(type='inline', array=radmap)
+        jsd['radiance_map'] = radmap
     return JSDRenderer(jsd, camera, size=size, gamma=gamma,
                        **kwargs)
+
+
+def radmap_scale_plane(size=50):
+    jsd = {
+        "mesh": {
+            "scale": 1,
+            "type": "inline",
+            "vertices": [
+                [size, 0.0, -size],
+                [size, 0.0, size],
+                [-size, 0.0, size],
+                [-size, 0.0, -size]
+            ],
+            "uvs": [
+                [1.0, 0.0],
+                [1.0, 1.0],
+                [0.0, 1.0],
+                [0.0, 0.0]
+            ],
+            "normals": [
+                [0.0, 1.0, 0.0]
+            ],
+            "materials": ["plane"],
+            "faces": [
+                {
+                    "vertices": [0, 1, 2],
+                    "uvs": [0, 1, 2],
+                    "normals": [0, 0, 0],
+                    "material": 0
+                },
+                {
+                    "vertices": [0, 2, 3],
+                    "uvs": [0, 2, 3],
+                    "normals": [0, 0, 0],
+                    "material": 0
+                }
+            ]
+        },
+        "lights": lights,
+        "materials": {
+            "plane": {
+                "type": "svbrdf_inline",
+                "diffuse_map": svbrdf.diffuse_map,
+                "specular_map": svbrdf.specular_map,
+                "spec_shape_map": svbrdf.spec_shape_map,
+                "normal_map": svbrdf.normal_map,
+                "alpha": svbrdf.alpha,
+            }
+        }
+    }

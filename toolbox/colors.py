@@ -120,7 +120,7 @@ def svbrdf_match_color(reference_im, svbrdf, mask=None, radmap=None,
         radmap = np.clip(np.random.normal(1.0, 2.0, (20, 20)), 0, None)
     radmap_jsd = dict(type='inline', array=radmap)
     with svbrdf_plane_renderer(
-            svbrdf, mode='light_map', radiance_map=radmap_jsd, gamma=None) as renderer:
+            svbrdf, mode='light_map', radmap=radmap_jsd, gamma=None) as renderer:
         light_map = renderer.render_to_image()
         target_map = np.clip(svbrdf.diffuse_map * light_map, 0, 1)
     if mask is None:
