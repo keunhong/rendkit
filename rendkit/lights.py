@@ -6,6 +6,14 @@ class Light:
     pass
 
 
+class AmbientLight(Light):
+    type = 2
+
+    def __init__(self, position, intensity, color=(1.0, 1.0, 1.0)):
+        self.intensity = intensity
+        self.color = color
+
+
 class PointLight(Light):
     type = 0
 

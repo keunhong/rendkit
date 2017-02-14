@@ -53,6 +53,10 @@ class Renderable:
                     program['u_light_position[{}]'.format(i)] = light.position
                     program['u_light_intensity[{}]'.format(i)] = light.intensity
                     program['u_light_color[{}]'.format(i)] = light.color
+                elif light.type == AmbientLight.type:
+                    program['u_light_position[{}]'.format(i)] = [0, 0, 0]
+                    program['u_light_intensity[{}]'.format(i)] = light.intensity
+                    program['u_light_color[{}]'.format(i)] = light.color
 
         if scene.radiance_map is not None and self.material.use_radiance_map:
             program['u_radiance_map'] = scene.radiance_map.texture

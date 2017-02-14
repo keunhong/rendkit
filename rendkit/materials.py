@@ -130,10 +130,10 @@ class SVBRDFMaterial(GLSLProgram):
                          use_tangents=True,
                          use_radiance_map=True)
         self.alpha = svbrdf.alpha
-        self.diff_map = svbrdf.diffuse_map
-        self.spec_map = svbrdf.specular_map
-        self.spec_shape_map = svbrdf.spec_shape_map
-        self.normal_map = svbrdf.normal_map
+        self.diff_map = svbrdf.diffuse_map.astype(np.float32)
+        self.spec_map = svbrdf.specular_map.astype(np.float32)
+        self.spec_shape_map = svbrdf.spec_shape_map.astype(np.float32)
+        self.normal_map = svbrdf.normal_map.astype(np.float32)
 
     def update_uniforms(self, program):
         program['alpha'] = self.alpha

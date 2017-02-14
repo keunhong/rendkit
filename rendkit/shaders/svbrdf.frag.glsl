@@ -2,7 +2,7 @@
 
 #define LIGHT_POINT 0
 #define LIGHT_DIRECTIONAL 1
-#define LIGHT_RADIANCE_MAP 2
+#define LIGHT_AMBIENT 2
 
 uniform sampler2D diff_map;
 uniform sampler2D spec_map;
@@ -39,7 +39,7 @@ float fresnel_schlick(float F0, vec3 V, vec3 H) {
 }
 
 
-vec3 irradiance(vec3 N, vec3 L, vec3 light_color) {
+vec3 compute_irradiance(vec3 N, vec3 L, vec3 light_color) {
   float cosine_term = max(.0, dot(N, L));
   return cosine_term * max(vec3(0.0), light_color);
 }
@@ -74,6 +74,7 @@ void main() {
 
   mat3 TBN = mat3(v_tangent, v_bitangent, v_normal);
   vec3 N = normalize(TBN * texture2D(normal_map, v_uv).rgb);
+  N = v_normal;
 
   // Flip normal if back facing.
   bool is_back_facing = dot(V, v_normal) < 0;
@@ -101,7 +102,7 @@ void main() {
         vec3 L = vec3(x, sqrt(max(0, 1 - x*x - z*z)), z);
         vec3 light_color = texture2D(u_radiance_map, samp_ind).rgb;
         total_radiance +=
-          alb_d * irradiance(N, L, light_color) / radiance_map_area;
+          alb_d * compute_irradiance(N, L, light_color) / radiance_map_area;
       }
     }
   }
@@ -119,7 +120,7 @@ void main() {
         vec3 L = vec3(x, sqrt(max(0, 1 - x*x - z*z)), z);
         vec3 light_color = texture2D(u_radiance_map, samp_ind).rgb;
         total_radiance += spec_reflectance(N, V, L, alb_s, R, S)
-          * irradiance(N, L, light_color) / spec_area;
+          * compute_irradiance(N, L, light_color) / spec_area;
       }
     }
   }
@@ -128,24 +129,28 @@ void main() {
 
   #if TPL.num_lights > 0
   for (int i = 0; i < NUM_LIGHTS; i++) {
-    vec3 L;
-    float attenuation = 1.0;
-    if (u_light_type[i] == LIGHT_POINT) {
-      L = u_light_position[i] - v_position;
-      attenuation = 1.0 / dot(L, L);
-      L = normalize(L);
-    } else if (u_light_type[i] == LIGHT_DIRECTIONAL) {
-      L = normalize(u_light_position[i]);
+    vec3 irradiance = vec3(0);
+    if (u_light_type[i] == LIGHT_AMBIENT) {
+      irradiance = u_light_intensity[i] * u_light_color[i];
     } else {
-      continue;
+      vec3 L;
+      float attenuation = 1.0;
+      if (u_light_type[i] == LIGHT_POINT) {
+        L = u_light_position[i] - v_position;
+        attenuation = 1.0 / dot(L, L);
+        L = normalize(L);
+      } else if (u_light_type[i] == LIGHT_DIRECTIONAL) {
+        L = normalize(u_light_position[i]);
+      } else {
+        continue;
+      }
+      bool is_light_visible = dot(L, N) >= 0;
+      if (is_light_visible) {
+        irradiance = compute_irradiance(N, L, u_light_intensity[i] * u_light_color[i]);
+        total_radiance += spec_reflectance(N, V, L, alb_s, R, S) * irradiance;
+      }
     }
-    bool is_light_visible = dot(L, N) >= 0;
-    if (is_light_visible) {
-        total_radiance +=
-            alb_d * irradiance(N, L, u_light_intensity[i] * u_light_color[i]);
-        total_radiance += spec_reflectance(N, V, L, alb_s, R, S)
-            * irradiance(N, L, u_light_intensity[i] * u_light_color[i]);
-    }
+    total_radiance += alb_d * irradiance;
   }
   #endif
 

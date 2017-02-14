@@ -208,6 +208,8 @@ def import_jsd_light(jsd_light) -> Light:
     elif jsd_light['type'] == 'directional':
         return DirectionalLight(jsd_light['position'],
                                 jsd_light['intensity'])
+    elif jsd_light['type'] == 'ambient':
+        return AmbientLight(jsd_light['intensity'])
     else:
         raise RuntimeError('Unknown light type {}'.format(jsd_light['type']))
 
