@@ -27,8 +27,6 @@ class SVBRDF:
             if not os.path.exists(path):
                 raise FileNotFoundError('The path {} does not exist'.format(path))
 
-            logger.info('Loading path={}'.format(path))
-
             self.path = path
 
             data_path = os.path.join(self.path, 'out/reverse')
@@ -47,8 +45,8 @@ class SVBRDF:
             self.spec_shape_map = pfm.load_pfm_texture(
                 os.path.join(data_path, MAP_SPEC_SHAPE_FNAME), transposed=transposed)
 
-            logger.info('Loaded shape={}, alpha={}'
-                .format(self.diffuse_map.shape, self.alpha))
+            logger.info("Loaded \'{}\', shape={}, alpha={}"
+                .format(self.name, self.diffuse_map.shape, self.alpha))
         else:
             self.diffuse_map = diffuse_map
             self.specular_map = specular_map

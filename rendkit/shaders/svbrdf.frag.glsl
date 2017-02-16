@@ -74,13 +74,12 @@ void main() {
 
   mat3 TBN = mat3(v_tangent, v_bitangent, v_normal);
   vec3 N = normalize(TBN * texture2D(normal_map, v_uv).rgb);
-  N = v_normal;
 
   // Flip normal if back facing.
-  bool is_back_facing = dot(V, v_normal) < 0;
-  if (is_back_facing) {
-    N *= -1;
-  }
+//  bool is_back_facing = dot(V, v_normal) < 0;
+//  if (is_back_facing) {
+//    N *= -1;
+//  }
 
   mat3 R = mat3(0, 0, N.x,
       0, 0, N.y,

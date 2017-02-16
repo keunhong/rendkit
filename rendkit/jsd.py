@@ -57,7 +57,7 @@ class JSDRenderer(Renderer):
 
         self.rendtex_size = (self.size[0] * self.ssaa,
                              self.size[1] * self.ssaa)
-        logger.info("Render size: {} --SSAAx{}--> {}".format(
+        logger.debug("Render size: {} --SSAAx{}--> {}".format(
             self.size, 2**ssaa, self.rendtex_size))
 
         # Buffer shapes are HxW, not WxH. Shapes are HxW, sizes are WxH.
@@ -68,11 +68,11 @@ class JSDRenderer(Renderer):
         self.rendfb = gloo.FrameBuffer(rendtex, gloo.RenderBuffer(rendtex_shape))
         self.pp_pipeline = []
         if self.ssaa > 1:
-            logger.info("Post-processing SSAAx{} enabled: rendtex {} -> {}".format(
+            logger.debug("Post-processing SSAAx{} enabled: rendtex {} -> {}".format(
                 ssaa, self.size, self.rendtex_size))
             self.pp_pipeline.append(SSAAProgram(rendtex, ssaa).compile())
         if gamma is not None:
-            logger.info("Post-processing Gamma Correction enabled.")
+            logger.debug("Post-processing Gamma Correction enabled.")
             self.pp_pipeline.append(
                 GammaCorrectionProgram(rendtex, gamma=gamma).compile())
         else:

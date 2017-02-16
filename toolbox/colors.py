@@ -9,7 +9,7 @@ from rendkit.shortcuts import svbrdf_plane_renderer
 from toolbox.images import apply_mask
 
 
-def _gmm_transfer_color(reference_gmm, target_gmm, target_lab):
+def _gmm_coerce_distribution(reference_gmm, target_gmm, target_lab):
     # Predict which color "segment" each pixel is in.
     target_pred = target_gmm.predict(target_lab.reshape(-1, 3)).reshape(
         target_lab.shape[:2])
@@ -37,9 +37,9 @@ def _gmm_transfer_color(reference_gmm, target_gmm, target_lab):
     return recolored_lab
 
 
-def _lab_color_gmm(lab, mask, n_components):
+def _compute_image_gmm(image_lab, mask, n_components):
     gmm = GaussianMixture(n_components=n_components)
-    data = lab[mask].reshape(-1, 3)
+    data = image_lab[mask].reshape(-1, 3)
     gmm.fit(data)
     return gmm
 
@@ -53,44 +53,35 @@ def _percentile_mask(im, lo=0, hi=95, mask=None):
     return (mean_im > percentile_lo) & (mean_im < percentile_hi)
 
 
-def match_color_gmm(reference_gmm, target_im, target_mask=None,
-                    out_colors=None):
-    if target_mask is None:
-        target_mask = np.ones(target_im.shape[:2], dtype=bool)
-
-    n_components = reference_gmm.n_components
-
-    print("Computing target GMM")
-    target_lab = rgb2lab(np.clip(target_im, 0, 1))
-    target_gmm = _lab_color_gmm(target_lab[:, :, :],
-                                target_mask[:, :],
-                                n_components)
-    if out_colors is not None:
-        print("Setting out_colors!")
-        print(reference_gmm.means_, target_gmm.means_)
-        out_colors[:50,:50, :] = reference_gmm.means_[0]
-        out_colors[:50,50:, :] = reference_gmm.means_[1]
-        out_colors[60:,:50, :] = target_gmm.means_[0]
-        out_colors[60:,50:, :] = target_gmm.means_[1]
-        out_colors[:, :, :] = lab2rgb(out_colors) ** (1/2.2)
-
-    recolored_lab = _gmm_transfer_color(reference_gmm, target_gmm, target_lab)
-    return lab2rgb(recolored_lab)
+def visualize_color(colors, size=50):
+    n_colors = colors.shape[0]
+    vis = np.zeros((size, n_colors*size, 3))
+    for i in range(n_colors):
+        vis[:, i*size:i*size+size] = colors[i]
+    return vis
 
 
-def match_color(reference_im, target_im,
+def match_color(reference_im,
+                target_im,
                 reference_mask=None,
                 target_mask=None,
-                n_components=2, out_colors=None):
+                n_components=2):
     if reference_mask is None:
         reference_mask = np.ones(reference_im.shape[:2], dtype=bool)
     print(reference_im.min(), reference_im.max(), target_im.min(), target_im.max())
 
     print('Computing reference GMM')
-    reference_lab = rgb2lab(reference_im)
-    reference_gmm = _lab_color_gmm(reference_lab, reference_mask, n_components)
+    reference_lab = rgb2lab(np.clip(reference_im, 0, 1))
+    reference_gmm = _compute_image_gmm(reference_lab, reference_mask, n_components)
+    target_lab = rgb2lab(np.clip(target_im, 0, 1))
+    target_gmm = _compute_image_gmm(target_lab, target_mask, n_components)
 
-    return match_color_gmm(reference_gmm, target_im, target_mask, out_colors=out_colors)
+
+    # TODO: return mean colors.
+    result = lab2rgb(_gmm_coerce_distribution(reference_gmm, target_gmm, target_lab))
+    reference_means = lab2rgb(reference_gmm.means_.reshape((1, 2, 3)))[0]
+    target_means = lab2rgb(target_gmm.means_.reshape((1, 2, 3)))[0]
+    return result, reference_means, target_means
 
 
 def compute_color_gmm_iter(image, mask, n_iters=10):
@@ -113,9 +104,7 @@ def compute_color_gmm_iter(image, mask, n_iters=10):
     return gmm, current_mask
 
 
-from scipy import misc
-def svbrdf_match_color(reference_im, svbrdf, mask=None, radmap=None,
-                       out_colors=None):
+def svbrdf_match_color(reference_im, svbrdf, mask=None, radmap=None):
     if radmap is None:
         radmap = np.clip(np.random.normal(1.0, 2.0, (20, 20)), 0, None)
     radmap_jsd = dict(type='inline', array=radmap)
@@ -126,32 +115,10 @@ def svbrdf_match_color(reference_im, svbrdf, mask=None, radmap=None,
     if mask is None:
         mask = np.ones(reference_im.shape[:2], dtype=bool)
     reference_mask = _percentile_mask(reference_im, lo=1, hi=95, mask=mask)
-    misc.imsave('/tmp/{}_reference_mask1.png'.format(svbrdf.name), reference_mask)
-    reference_mask &= mask
-    misc.imsave('/tmp/{}_reference_mask2.png'.format(svbrdf.name), reference_mask)
-    target_mask = _percentile_mask(target_map, lo=0, hi=100)
-    misc.imsave('/tmp/{}_target_mask.png'.format(svbrdf.name), target_mask)
     recolored_map = match_color(reference_im, target_map,
-                                reference_mask=reference_mask,
-                                target_mask=target_mask,
-                                out_colors=out_colors)
+                                reference_mask=reference_mask)
     # Undo gamma correction and lighting effects.
     recolored_map = recolored_map / light_map
-    recolored_svbrdf = copy(svbrdf)
-    recolored_svbrdf.diffuse_map = recolored_map.astype(dtype=np.float32)
-
-    return recolored_svbrdf
-
-
-def svbrdf_match_color_gmm(reference_gmm, svbrdf):
-    light_map = svbrdf_plane_renderer(svbrdf,
-                                      mode='light_map').render_to_image()
-    target_map = (svbrdf.diffuse_map * light_map.mean())
-    target_mask = _percentile_mask(target_map, lo=0, hi=100)
-    recolored_map = match_color_gmm(reference_gmm, target_map,
-                                    target_mask=target_mask)
-    # Undo gamma correction and lighting effects.
-    recolored_map = recolored_map / light_map.mean()
     recolored_svbrdf = copy(svbrdf)
     recolored_svbrdf.diffuse_map = recolored_map.astype(dtype=np.float32)
 

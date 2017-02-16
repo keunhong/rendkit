@@ -145,7 +145,8 @@ def resize(array, shape, order=2):
 
 
 def imsave(path, array):
-    array = array.astype(dtype=float)
-    if array.max() <= 1.0:
-        array *= 255.0
-    misc.toimage(array, cmin=0, cmax=255).save(path)
+    if array.dtype == np.uint8:
+        array = array.astype(dtype=float)
+        array /= 255.0
+    array = np.clip(array, 0.0, 1.0)
+    misc.toimage(array, cmin=0, cmax=1.0).save(path)

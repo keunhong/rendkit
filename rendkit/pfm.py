@@ -37,7 +37,7 @@ def load_pfm_texture(filename: str, transposed=False):
 
 def save_pfm_texture(filename: str, tex: np.ndarray):
     if tex.dtype != np.float32:
-        logger.info('Input is not 32 bit precision: converting to 32 bits.')
+        logger.debug('Input is not 32 bit precision: converting to 32 bits.')
         tex = tex.astype(np.float32)
     height, width = tex.shape[0], tex.shape[1]
     with open(filename, 'wb+') as f:
