@@ -8,14 +8,14 @@ from random import randint
 ## that a randomly selected element is returned.
 ##
 # This class is useful for implementing algorithms that gather
-# elements, and need to process them randomly. Something along the
+# elements, and need to filter them randomly. Something along the
 # lines of:
 #
 # @code
 # while not rqueue.empty():
-#   #generates 3 new elements to process
+#   #generates 3 new elements to filter
 #   for i in range(3):
-#     rqueue.push(process(rqueue.pop()))
+#     rqueue.push(filter(rqueue.pop()))
 # @endcode
 class RandomQueue:
     ## Constructs a new empty RandomQueue
@@ -449,7 +449,7 @@ class Container2D(Container):
     # @code
     #     for col in grid:
     #        for item in col:
-    #            process(item)
+    #            filter(item)
     # @endcode
     # Use of this iterator is discouraged - it is slow
     def __iter__(self):
@@ -463,7 +463,7 @@ class Container2D(Container):
 
     # @code
     # for cell in cell_iter(grid):
-    #   process(cell)
+    #   filter(cell)
     # @endcode
     def cell_iter(self):
         for i in range(self.width):
@@ -559,7 +559,7 @@ class Grid1D(Container1D, PrincipleContainer):
 
     # @code
     # for cell in cell_iter(grid):
-    #   process(cell)
+    #   filter(cell)
     # @endcode
     def cell_iter(self):
         for i in range(self.width):
@@ -688,7 +688,7 @@ class Grid2D(Container2D, PrincipleContainer):
     # This allows you to write:
     # @code
     # for cell in cell_iter(grid):
-    #   process(cell)
+    #   filter(cell)
     # @endcode
     def cell_iter(self):
         for i in range(self.width):
