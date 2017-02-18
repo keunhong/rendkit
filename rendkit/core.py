@@ -11,6 +11,7 @@ from rendkit.camera import BaseCamera
 from rendkit.lights import Light, PointLight, DirectionalLight
 from rendkit.materials import PLACEHOLDER_MATERIAL, GLSLProgram
 
+
 logger = logging.getLogger(__name__)
 
 
@@ -55,8 +56,7 @@ class Renderable:
                     program['u_light_color[{}]'.format(i)] = light.color
 
         if scene.radiance_map is not None and self.material.use_radiance_map:
-            program['u_radiance_map'] = scene.radiance_map.texture
-            program['u_radiance_map_size'] = scene.radiance_map.size[:2]
+            program['u_irradiance_map'] = scene.radiance_map.irradiance_map
 
         if self.material.use_cam_pos:
             program['u_cam_pos'] = linalg.inv(camera.view_mat())[:3, 3]
@@ -128,9 +128,7 @@ class Scene:
 
 
 class Renderer(app.Canvas):
-    def __init__(self,
-                 scene: Scene,
-                 size: Tuple[int, int],
+    def __init__(self, size: Tuple[int, int],
                  camera: BaseCamera, *args, **kwargs):
         if size is None:
             size = camera.size
@@ -139,7 +137,6 @@ class Renderer(app.Canvas):
         gloo.set_state(depth_test=True)
         gloo.set_viewport(0, 0, *self.size)
 
-        self.scene = scene
         self.active_program = None
         self.size = size
 

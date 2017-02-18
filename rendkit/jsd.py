@@ -1,6 +1,7 @@
+import os
 import copy
 import logging
-from typing import Dict, List
+from typing import Dict, List, Union
 
 import numpy as np
 from scipy.misc import imread
@@ -11,6 +12,7 @@ import rendkit.materials
 from meshkit import Mesh
 from meshkit import wavefront
 from rendkit import pfm
+from rendkit import cubemap as cm
 from rendkit.lights import Light, PointLight, DirectionalLight, \
     RadianceMap
 from rendkit.materials import (GLSLProgram, SVBRDFMaterial, PhongMaterial,
@@ -44,8 +46,8 @@ class JSDRenderer(Renderer):
                  *args, **kwargs):
         if camera is None:
             camera = import_jsd_camera(jsd_dict)
-        scene = import_jsd_scene(jsd_dict)
-        super().__init__(scene, size, camera, *args, **kwargs)
+        super().__init__(size, camera, *args, **kwargs)
+        self.scene = import_jsd_scene(jsd_dict)
         gloo.set_state(depth_test=True)
         if conservative_raster:
             from . import nvidia
@@ -174,31 +176,36 @@ def import_jsd_lights(jsd_dict) -> List[Light]:
     return lights
 
 
-def import_radiance_map(jsd_dict) -> RadianceMap:
+def import_radiance_map(jsd_dict) -> Union[RadianceMap, None]:
     if 'radiance_map' not in jsd_dict:
         return None
     jsd_radmap = jsd_dict['radiance_map']
     scale = jsd_radmap['scale'] if ('scale' in jsd_radmap) else 1.0
 
-    if 'type' not in jsd_radmap:
-        raise RuntimeError('Radiance map type not specified')
-
-    if jsd_radmap['type'] == 'pfm':
-        logger.info('Importing radiance map from {} with scale={}'.format(
-            jsd_radmap['path'], scale))
-        array = pfm.load_pfm_texture(jsd_radmap['path'])
-    elif jsd_radmap['type'] == 'image':
-        logger.info('Importing radiance map from {} with scale={}'.format(
-            jsd_radmap['path'], scale))
-        array = imread(jsd_radmap['path'])
+    if 'path' in jsd_radmap:
+        path = jsd_radmap['path']
+        ext = os.path.splitext(path)[1]
+        logger.info('Importing radiance map from {} with scale={}'
+                    .format(path, scale))
+        if ext == '.pfm':
+            array = pfm.load_pfm_texture(jsd_radmap['path'])
+            cube_faces = cm.unstack_cross(array)
+        elif ext == '.jpg' or ext == '.png' or ext == '.tiff':
+            array = imread(path)
+            cube_faces = cm.unstack_cross(array)
+        elif os.path.isdir(path):
+            cube_faces = cm.load_cube_faces(path)
+        else:
+            raise RuntimeError("Invalid radiance map path.")
     elif jsd_radmap['type'] == 'inline':
         logger.info("Importing inline radiance map with shape={}".format(
             jsd_radmap['array'].shape))
-        array = np.array(jsd_radmap['array'], dtype=np.float32)
+        cube_faces = np.array(jsd_radmap['array'], dtype=np.float32)
     else:
         raise RuntimeError('Unknown radiance map type {}!'.format(
             jsd_radmap['type']))
-    return RadianceMap(array, scale)
+    assert cube_faces.shape[0] == 6
+    return RadianceMap(cube_faces, scale)
 
 
 def import_jsd_light(jsd_light) -> Light:
@@ -208,8 +215,6 @@ def import_jsd_light(jsd_light) -> Light:
     elif jsd_light['type'] == 'directional':
         return DirectionalLight(jsd_light['position'],
                                 jsd_light['intensity'])
-    elif jsd_light['type'] == 'ambient':
-        return AmbientLight(jsd_light['intensity'])
     else:
         raise RuntimeError('Unknown light type {}'.format(jsd_light['type']))
 

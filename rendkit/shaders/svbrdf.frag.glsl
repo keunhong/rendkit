@@ -24,8 +24,7 @@ uniform int u_light_type[TPL.num_lights];
 #endif
 
 #if TPL.use_radiance_map
-uniform sampler2D u_radiance_map;
-uniform vec2 u_radiance_map_size;
+uniform samplerCube u_irradiance_map;
 #endif
 
 const float NUM_LIGHTS = TPL.num_lights;
@@ -91,38 +90,25 @@ void main() {
   vec3 total_radiance = vec3(0.0);
 
   #if TPL.use_radiance_map
-  float radiance_map_area = u_radiance_map_size.x * u_radiance_map_size.y;
-  for (float s = 0; s <= 1.0; s += 1.0/u_radiance_map_size.s) {
-    for (float t = 0; t <= 1.0; t += 1.0/u_radiance_map_size.t) {
-      float x = s * 2 - 1;
-      float z = t * 2 - 1;
-      if (x*x + z*z <= 1) {
-        vec2 samp_ind = vec2((z+1)/2, (x+1)/2);
-        vec3 L = vec3(x, sqrt(max(0, 1 - x*x - z*z)), z);
-        vec3 light_color = texture2D(u_radiance_map, samp_ind).rgb;
-        total_radiance +=
-          alb_d * compute_irradiance(N, L, light_color) / radiance_map_area;
-      }
-    }
-  }
+  total_radiance += alb_d * textureCube(u_irradiance_map, N).rgb;
 
-  vec3 Q = reflect(-V, v_normal);
-  float samp_radius = 0.5;
-  float spec_area = radiance_map_area / (4.0 * samp_radius * samp_radius);
-  for (float s = 0; s <= 1.0; s += 1.0/u_radiance_map_size.s) {
-    for (float t = 0; t <= 1.0; t += 1.0/u_radiance_map_size.t) {
-      float x = Q.x + (2 * s - 1) * samp_radius;
-      float z = Q.z + (2 * t - 1) * samp_radius;
-      if (x*x + z*z <= 1) {
-        vec2 samp_ind = vec2((z + 1.0) / 2.0,
-                             (x + 1.0) / 2.0);
-        vec3 L = vec3(x, sqrt(max(0, 1 - x*x - z*z)), z);
-        vec3 light_color = texture2D(u_radiance_map, samp_ind).rgb;
-        total_radiance += spec_reflectance(N, V, L, alb_s, R, S)
-          * compute_irradiance(N, L, light_color) / spec_area;
-      }
-    }
-  }
+//  vec3 Q = reflect(-V, v_normal);
+//  float samp_radius = 0.5;
+//  float spec_area = radiance_map_area / (4.0 * samp_radius * samp_radius);
+//  for (float s = 0; s <= 1.0; s += 1.0/u_radiance_map_size.s) {
+//    for (float t = 0; t <= 1.0; t += 1.0/u_radiance_map_size.t) {
+//      float x = Q.x + (2 * s - 1) * samp_radius;
+//      float z = Q.z + (2 * t - 1) * samp_radius;
+//      if (x*x + z*z <= 1) {
+//        vec2 samp_ind = vec2((z + 1.0) / 2.0,
+//                             (x + 1.0) / 2.0);
+//        vec3 L = vec3(x, sqrt(max(0, 1 - x*x - z*z)), z);
+//        vec3 light_color = texture2D(u_radiance_map, samp_ind).rgb;
+//        total_radiance += spec_reflectance(N, V, L, alb_s, R, S)
+//          * compute_irradiance(N, L, light_color) / spec_area;
+//      }
+//    }
+//  }
   // TODO: Lower hemisphere.
   #endif
 

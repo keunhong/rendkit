@@ -1,5 +1,10 @@
+import logging
 import numpy as np
 from vispy import gloo
+from rendkit.cubemap import prefilter_irradiance
+
+
+logger = logging.getLogger(__name__)
 
 
 class Light:
@@ -33,24 +38,15 @@ class DirectionalLight(Light):
 
 
 class RadianceMap(Light):
-    def __init__(self, array: np.ndarray, scale=1.0):
-        if array.dtype != np.float32:
-            array = array.astype(dtype=np.float32) / 255.0
-        if len(array.shape) < 3:
-            array = np.repeat(array[:, :, None], 3, axis=2)
-        array = array[:, :, :3]
-        self.array = array * scale
-        self.texture = gloo.Texture2D(self.array,
-                                      interpolation='linear',
-                                      internalformat='rgb32f')
+    def __init__(self, cube_faces: np.ndarray, scale=1.0):
+        if cube_faces.shape[0] != 6:
+            raise RuntimeError('Cubemap must have exactly 6 faces.')
+        self.cube_faces = cube_faces * scale
+        logger.info("Prefiltering irradiance map.")
+        self.irradiance_map = prefilter_irradiance(self.cube_faces)
+        self.irradiance_map_tex = gloo.TextureCubeMap(
+            self.irradiance_map, interpolation='linear', internalformat='rgb32f')
 
     @property
     def size(self):
-        return self.array.shape
-
-    def __getitem__(self, key):
-        return self.array[key]
-
-    def __setitem__(self, key, value):
-        self.array[key] = value
-        self.texture.set_data(self.array)
+        return self.cube_faces.shape[1:3]
