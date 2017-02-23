@@ -20,7 +20,7 @@ in vec3 v_tangent;
 in vec3 v_bitangent;
 in vec2 v_uv;
 
-uniform float alpha;
+uniform float u_alpha;
 #if TPL.num_lights > 0
 uniform float u_light_intensity[TPL.num_lights];
 uniform vec3 u_light_position[TPL.num_lights];
@@ -88,7 +88,7 @@ void main() {
     vec3 L = reflect(-V, H);
     vec3 light_color = texture(u_radiance_map, L).rgb;
     specular += compute_irradiance(N, L, light_color) *
-      aittala_spec(N, V, L, rho_s, S, alpha);
+      aittala_spec(N, V, L, rho_s, S, u_alpha);
   }
   specular /= N_SAMPLES;
   total_radiance += specular;
@@ -114,7 +114,7 @@ void main() {
       bool is_light_visible = dot(L, N) >= 0;
       if (is_light_visible) {
         irradiance = compute_irradiance(N, L, u_light_intensity[i] * u_light_color[i]);
-        total_radiance += aittala_spec(N, V, L, rho_s, S, alpha) * irradiance;
+        total_radiance += aittala_spec(N, V, L, rho_s, S, u_alpha) * irradiance;
       }
     }
     total_radiance += rho_d * irradiance;
