@@ -205,6 +205,8 @@ def import_radiance_map(jsd_dict) -> Union[RadianceMap, None]:
         raise RuntimeError('Unknown radiance map type {}!'.format(
             jsd_radmap['type']))
     assert cube_faces.shape[0] == 6
+    if 'max' in jsd_radmap:
+        cube_faces = np.clip(cube_faces, 0, jsd_radmap['max'])
     return RadianceMap(cube_faces, scale)
 
 
