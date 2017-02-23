@@ -1,4 +1,6 @@
 import numpy as np
+from scipy.special._ufuncs import gammaincinv
+
 from vispy.gloo import Texture2D
 
 from rendkit.glsl import GLSLProgram, GLSLTemplate
@@ -135,25 +137,46 @@ class SVBRDFMaterial(GLSLProgram):
         self.spec_shape_map = svbrdf.spec_shape_map.astype(np.float32)
         self.normal_map = svbrdf.normal_map.astype(np.float32)
 
+        S = self.spec_shape_map.reshape((-1, 3))
+        S = S[:, [0, 2, 2, 1]].reshape((-1, 2, 2))
+        trace = S[:, 0, 0] + S[:, 1, 1]
+        beta = trace / 2
+        self.sigma = beta ** (-1.0 / 4)
+        x = np.linspace(0.0, 1, 500, endpoint=True)
+        s = np.linspace(self.sigma.min(), self.sigma.max(), 500)
+        self.theta_cdf = np.apply_along_axis(
+            self.sample_cdf, 1, s[:, None], x=x).astype(dtype=np.float32)
+
     def update_uniforms(self, program):
-        program['alpha'] = self.alpha
-        program['diff_map'] = Texture2D(self.diff_map,
+        program['u_alpha'] = self.alpha
+        program['u_diff_map'] = Texture2D(self.diff_map,
                                         interpolation='linear',
                                         wrapping='repeat',
                                         internalformat='rgb32f')
-        program['spec_map'] = Texture2D(self.spec_map,
+        program['u_spec_map'] = Texture2D(self.spec_map,
                                         interpolation='linear',
                                         wrapping='repeat',
                                         internalformat='rgb32f')
-        program['spec_shape_map'] = Texture2D(self.spec_shape_map,
+        program['u_spec_shape_map'] = Texture2D(self.spec_shape_map,
                                               interpolation='linear',
                                               wrapping='repeat',
                                               internalformat='rgb32f')
-        program['normal_map'] = Texture2D(self.normal_map,
+        program['u_normal_map'] = Texture2D(self.normal_map,
                                           interpolation='linear',
                                           wrapping='repeat',
                                           internalformat='rgb32f')
+        program['u_theta_cdf'] = Texture2D(self.theta_cdf,
+                                         interpolation='linear',
+                                         wrapping='repeat',
+                                         internalformat='r32f')
+        program['u_sigma_range'] = (self.sigma.min(), self.sigma.max())
         return program
+
+    def sample_cdf(self, sigma, x):
+        alpha = self.alpha
+        return np.arctan(sigma ** 2 * gammaincinv(1 / alpha, np.clip(
+            1 - alpha / sigma ** 2 * x, 0, 1)) ** (1 / alpha))
+
 
 
 class UnwrapToUVMaterial(GLSLProgram):

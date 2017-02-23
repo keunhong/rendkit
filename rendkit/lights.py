@@ -46,6 +46,8 @@ class RadianceMap(Light):
         self.irradiance_map = prefilter_irradiance(self.cube_faces)
         self.irradiance_map_tex = gloo.TextureCubeMap(
             self.irradiance_map, interpolation='linear', internalformat='rgb32f')
+        self.radiance_map_tex = gloo.TextureCubeMap(
+            self.cube_faces, interpolation='linear', internalformat='rgb32f')
 
     @property
     def size(self):

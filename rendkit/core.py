@@ -56,7 +56,8 @@ class Renderable:
                     program['u_light_color[{}]'.format(i)] = light.color
 
         if scene.radiance_map is not None and self.material.use_radiance_map:
-            program['u_irradiance_map'] = scene.radiance_map.irradiance_map
+            program['u_irradiance_map'] = scene.radiance_map.irradiance_map_tex
+            program['u_radiance_map'] = scene.radiance_map.radiance_map_tex
 
         if self.material.use_cam_pos:
             program['u_cam_pos'] = linalg.inv(camera.view_mat())[:3, 3]

@@ -1,10 +1,14 @@
 import os
 from string import Template
 
+from vispy.util import config as vispy_config
 from vispy import gloo
 
 _package_dir = os.path.dirname(os.path.realpath(__file__))
 _shader_dir = os.path.join(_package_dir, 'shaders')
+
+
+vispy_config['include_path'].append(_shader_dir)
 
 
 class GLSLTemplate(Template):
