@@ -1,5 +1,6 @@
 import os
 import numpy as np
+from functools import partial
 
 from scipy import misc
 
@@ -30,38 +31,67 @@ class LambertPrefilterProgram(GLSLProgram):
         return program
 
 
-def stack_cross(cube_faces: np.ndarray):
-    """
-    Stacks the cubemap into an unwrapped cross.
-     - Top row: +y
-     - Middle row: -x, -z, +x, +z
-     - Bottom row: -y
-    :param cube_faces: of shape 6xHxWxC
-    :return: stacked cross image
-    """
+def _set_grid(grid: np.ndarray, height, width, u, v, value):
+    grid[u*height:(u+1)*height, v*width:(v+1)*width] = value
+
+
+def _get_grid(grid, height, width, u, v):
+    return grid[u*height:(u+1)*height, v*width:(v+1)*width]
+
+
+def stack_cross(cube_faces: np.ndarray, format='vertical'):
     _, height, width, n_channels = cube_faces.shape
-    result = np.zeros((height * 3, width * 4, n_channels))
-    result[height:2*height, 2*width:3*width] = cube_faces[0]
-    result[height:2*height, :width] = cube_faces[1]
-    result[:height, width:2*width] = cube_faces[2]
-    result[2*height:3*height, width:2*width] = cube_faces[3]
-    result[height:2*height, width:2*width] = cube_faces[4]
-    result[height:2*height, 3*width:4*width] = cube_faces[5]
+    if format == 'vertical':
+        result = np.zeros((height * 4, width * 3, n_channels))
+        gridf = partial(_set_grid, result, height, width)
+        gridf(0, 1, cube_faces[_FACE_NAMES['+y']])
+        gridf(1, 0, cube_faces[_FACE_NAMES['-x']])
+        gridf(1, 1, cube_faces[_FACE_NAMES['+z']])
+        gridf(1, 2, cube_faces[_FACE_NAMES['+x']])
+        gridf(2, 1, cube_faces[_FACE_NAMES['-y']])
+        gridf(3, 1, np.fliplr(np.flipud(cube_faces[_FACE_NAMES['-z']])))
+    elif format == 'horizontal':
+        result = np.zeros((height * 3, width * 4, n_channels))
+        gridf = partial(_set_grid, result, height, width)
+        gridf(1, 2, cube_faces[_FACE_NAMES['+x']])
+        gridf(1, 0, cube_faces[_FACE_NAMES['-x']])
+        gridf(0, 1, cube_faces[_FACE_NAMES['+y']])
+        gridf(2, 1, cube_faces[_FACE_NAMES['-y']])
+        gridf(1, 1, cube_faces[_FACE_NAMES['+z']])
+        gridf(1, 3, cube_faces[_FACE_NAMES['-z']])
+    else:
+        raise RuntimeError("Unknown format {}".format(format))
     return result
 
 
 def unstack_cross(cross):
-    assert cross.shape[0] % 3 == 0
-    assert cross.shape[1] % 4 == 0
-    height, width = cross.shape[0] // 3, cross.shape[1] // 4
+    if cross.shape[0] % 3 == 0 and cross.shape[1] % 4 == 0:
+        format = 'horizontal'
+        height, width = cross.shape[0] // 3, cross.shape[1] // 4
+    elif cross.shape[0] % 4 == 0 and cross.shape[1] % 3 == 0:
+        format = 'vertical'
+        height, width = cross.shape[0] // 4, cross.shape[1] // 3
+    else:
+        raise RuntimeError("Unknown cross format.")
+
     n_channels = cross.shape[2]
     faces = np.zeros((6, height, width, n_channels), dtype=np.float32)
-    faces[0] = cross[height:2 * height, 2 * width:3 * width]
-    faces[1] = cross[height:2 * height, :width]
-    faces[2] = cross[:height, width:2 * width]
-    faces[3] = cross[2 * height:3 * height, width:2 * width]
-    faces[4] = cross[height:2 * height, width:2 * width]
-    faces[5] = cross[height:2 * height, 3 * width:4 * width]
+    gridf = partial(_get_grid, cross, height, width)
+
+    if format == 'vertical':
+        faces[0] = gridf(1, 2)
+        faces[1] = gridf(1, 0)
+        faces[2] = gridf(0, 1)
+        faces[3] = gridf(2, 1)
+        faces[4] = gridf(1, 1)
+        faces[5] = np.flipud(np.fliplr(gridf(3, 1)))
+    elif format == 'horizontal':
+        faces[0] = gridf(1, 2)
+        faces[1] = gridf(1, 0)
+        faces[2] = gridf(0, 1)
+        faces[3] = gridf(2, 1)
+        faces[4] = gridf(1, 1)
+        faces[5] = gridf(1, 3)
     return faces
 
 
