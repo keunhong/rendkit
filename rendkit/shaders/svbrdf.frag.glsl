@@ -52,7 +52,9 @@ vec3 compute_irradiance(vec3 N, vec3 L, vec3 light_color) {
 
 vec2 compute_sample_angles(float sigma, vec2 xi) {
   float phi = 2.0f * M_PI * xi.x;
-  float theta = texture2D(u_theta_cdf, vec2(xi.y, sigma)).r;
+  float sigma_samp = (sigma - u_sigma_range.x) / (u_sigma_range.y - u_sigma_range.x);
+  float theta = texture2D(u_theta_cdf, vec2(xi.y, sigma_samp)).r;
+//  float theta = M_PI/2 * xi.y;
   return vec2(phi, theta);
 }
 
@@ -99,7 +101,7 @@ void main() {
   float r1 = rand(v_uv);
   float r2 = rand(vec2(r1));
   float sigma = tr(S) / 2;
-  int N_SAMPLES = 40;
+  int N_SAMPLES = 128;
   for (int i = 0; i < N_SAMPLES; i++) {
     vec2 xi = vec2(rand(vec2(r1 + i, r2 + i)));
     vec2 sample_angle = compute_sample_angles(sigma, xi);
