@@ -1,3 +1,6 @@
+const float M_PI = 3.14;
+
+
 float tr(mat2 S) {
   return S[0][0] + S[1][1];
 }

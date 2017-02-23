@@ -1,5 +1,5 @@
 #include "brdf/fresnel.glsl"
-#include "math.glsl"
+#include "utils/math.glsl"
 
 
 float aittala_ndf(vec3 N, vec3 H, mat2 S, float alpha) {
