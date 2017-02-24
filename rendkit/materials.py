@@ -1,5 +1,7 @@
 import numpy as np
-from scipy.special._ufuncs import gammaincinv
+from numpy import linalg
+from scipy.special import gammaincinv, gamma
+from vispy.gloo import Texture1D
 
 from vispy.gloo import Texture2D
 
@@ -122,6 +124,17 @@ class BitangentMaterial(GLSLProgram):
 
 
 class SVBRDFMaterial(GLSLProgram):
+
+    @classmethod
+    def compute_cdf_normalized(cls, sigma, alpha, xi_theta: np.ndarray):
+        return np.arctan(sigma ** 2 * gammaincinv(1 / alpha, xi_theta) ** alpha)
+
+    @classmethod
+    def compute_pdf(cls, sigma, alpha, xi_theta):
+        theta = np.arctan(sigma ** 2 * gammaincinv(1 / alpha, xi_theta) ** (alpha))
+        norm = alpha / (sigma ** 2 * np.pi * gamma(1 / alpha))
+        return norm * np.exp(-(np.tan(theta) / sigma ** 2) ** alpha)
+
     def __init__(self, svbrdf):
         super().__init__(GLSLTemplate.fromfile('default.vert.glsl'),
                          GLSLTemplate.fromfile('svbrdf.frag.glsl'),
@@ -139,44 +152,57 @@ class SVBRDFMaterial(GLSLProgram):
 
         S = self.spec_shape_map.reshape((-1, 3))
         S = S[:, [0, 2, 2, 1]].reshape((-1, 2, 2))
+
+        # Approximate isotropic roughness with smallest eigenvalue of S.
         trace = S[:, 0, 0] + S[:, 1, 1]
-        beta = trace / 2
-        self.sigma = beta ** (-1.0 / 4)
-        x = np.linspace(0.0, 1, 500, endpoint=True)
-        s = np.linspace(self.sigma.min(), self.sigma.max(), 500)
-        self.theta_cdf = np.apply_along_axis(
-            self.sample_cdf, 1, s[:, None], x=x).astype(dtype=np.float32)
+        beta = (trace) / 2
+        self.sigma: np.ndarray = beta ** (-1.0 / 4)
+
+        # Create 2D sample texture for sampling the CDF since we need different
+        # CDFs for difference roughness values.
+        xi_samps = np.linspace(0.0, 1, 1024, endpoint=True)
+        sigma_samps = np.linspace(self.sigma.min(), self.sigma.max(), 1024)
+        self.cdf_sampler = np.apply_along_axis(
+            self.compute_cdf_normalized, 1, sigma_samps[:, None],
+            alpha=self.alpha, xi_theta=xi_samps)
+        self.pdf_sampler = np.apply_along_axis(
+            self.compute_pdf, 1, sigma_samps[:, None],
+            alpha=self.alpha, xi_theta=xi_samps)
 
     def update_uniforms(self, program):
         program['u_alpha'] = self.alpha
-        program['u_diff_map'] = Texture2D(self.diff_map,
-                                        interpolation='linear',
-                                        wrapping='repeat',
-                                        internalformat='rgb32f')
-        program['u_spec_map'] = Texture2D(self.spec_map,
-                                        interpolation='linear',
-                                        wrapping='repeat',
-                                        internalformat='rgb32f')
-        program['u_spec_shape_map'] = Texture2D(self.spec_shape_map,
-                                              interpolation='linear',
-                                              wrapping='repeat',
-                                              internalformat='rgb32f')
-        program['u_normal_map'] = Texture2D(self.normal_map,
-                                          interpolation='linear',
-                                          wrapping='repeat',
-                                          internalformat='rgb32f')
-        program['u_theta_cdf'] = Texture2D(self.theta_cdf,
-                                         interpolation='linear',
-                                         wrapping='repeat',
-                                         internalformat='r32f')
+        program['u_diff_map'] = Texture2D(
+            self.diff_map,
+            interpolation='linear',
+            wrapping='repeat',
+            internalformat='rgb32f')
+        program['u_spec_map'] = Texture2D(
+            self.spec_map,
+            interpolation='linear',
+            wrapping='repeat',
+            internalformat='rgb32f')
+        program['u_spec_shape_map'] = Texture2D(
+            self.spec_shape_map,
+            interpolation='linear',
+            wrapping='repeat',
+            internalformat='rgb32f')
+        program['u_normal_map'] = Texture2D(
+            self.normal_map,
+            interpolation='linear',
+            wrapping='repeat',
+            internalformat='rgb32f')
+        program['u_cdf_sampler'] = Texture2D(
+            self.cdf_sampler.astype(np.float32),
+            interpolation='linear',
+            wrapping='clamp_to_edge',
+            internalformat='r32f')
+        program['u_pdf_sampler'] = Texture2D(
+            self.pdf_sampler.astype(np.float32),
+            interpolation='linear',
+            wrapping='clamp_to_edge',
+            internalformat='r32f')
         program['u_sigma_range'] = (self.sigma.min(), self.sigma.max())
         return program
-
-    def sample_cdf(self, sigma, x):
-        alpha = self.alpha
-        return np.arctan(sigma ** 2 * gammaincinv(1 / alpha, np.clip(
-            1 - alpha / sigma ** 2 * x, 0, 1)) ** (1 / alpha))
-
 
 
 class UnwrapToUVMaterial(GLSLProgram):

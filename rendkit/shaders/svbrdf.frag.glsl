@@ -1,7 +1,7 @@
 #version 150
-#include "brdf/aittala.glsl"
 #include "utils/math.glsl"
 #include "utils/sampling.glsl"
+#include "brdf/aittala.glsl"
 
 #define LIGHT_POINT 0
 #define LIGHT_DIRECTIONAL 1
@@ -11,8 +11,9 @@ uniform sampler2D u_diff_map;
 uniform sampler2D u_spec_map;
 uniform sampler2D u_spec_shape_map;
 uniform sampler2D u_normal_map;
-uniform sampler2D u_theta_cdf;
 uniform vec2 u_sigma_range;
+uniform sampler2D u_cdf_sampler;
+uniform sampler2D u_pdf_sampler; // Normalization factor for PDF.
 uniform vec3 u_cam_pos;
 in vec3 v_position;
 in vec3 v_normal;
@@ -44,9 +45,13 @@ vec3 compute_irradiance(vec3 N, vec3 L, vec3 light_color) {
 vec2 compute_sample_angles(float sigma, vec2 xi) {
   float phi = 2.0f * M_PI * xi.x;
   float sigma_samp = (sigma - u_sigma_range.x) / (u_sigma_range.y - u_sigma_range.x);
-  float theta = texture2D(u_theta_cdf, vec2(xi.y, sigma_samp)).r;
-//  float theta = M_PI/2 * xi.y;
+  float theta = texture2D(u_cdf_sampler, vec2(xi.y, sigma_samp)).r;
   return vec2(phi, theta);
+}
+
+float get_pdf_value(float sigma, vec2 xi) {
+  float sigma_samp = (sigma - u_sigma_range.x) / (u_sigma_range.y - u_sigma_range.x);
+  return texture(u_pdf_sampler, vec2(xi.y, sigma_samp)).r;
 }
 
 
@@ -75,12 +80,10 @@ void main() {
   total_radiance += rho_d * texture(u_irradiance_map, N).rgb;
 
   vec3 specular = vec3(0);
-  float r1 = rand(v_uv);
-  float r2 = rand(vec2(r1));
-  float sigma = tr(S) / 2;
-  int N_SAMPLES = 128;
-  for (int i = 0; i < N_SAMPLES; i++) {
-    vec2 xi = vec2(rand(vec2(r1 + i, r2 + i)));
+  float sigma = pow(tr(S)/2, -1.0/4.0);
+  uint N_SAMPLES = 128u;
+  for (uint i = 0u; i < N_SAMPLES; i++) {
+    vec2 xi = hammersley(i, N_SAMPLES); // Use psuedo-random point set.
     vec2 sample_angle = compute_sample_angles(sigma, xi);
     float phi = sample_angle.x;
     float theta = sample_angle.y;
@@ -88,7 +91,7 @@ void main() {
     vec3 L = reflect(-V, H);
     vec3 light_color = texture(u_radiance_map, L).rgb;
     specular += compute_irradiance(N, L, light_color) *
-      aittala_spec(N, V, L, rho_s, S, u_alpha);
+      aittala_spec_is(N, V, L, rho_s, S, u_alpha, get_pdf_value(sigma, xi));
   }
   specular /= N_SAMPLES;
   total_radiance += specular;

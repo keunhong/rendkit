@@ -22,3 +22,17 @@ vec3 aittala_spec(vec3 N, vec3 V, vec3 L, vec3 rho_s, mat2 S, float alpha) {
   float F = fresnel_schlick(F0, V, H) / F0;
   return rho_s * D * F * max(0.0, dot(L, H));
 }
+
+
+vec3 aittala_spec_is(vec3 N, vec3 V, vec3 L, vec3 rho_s, mat2 S, float alpha, float pdf) {
+  // Avoid a divide by zero by making really small probabilities just black.
+  // This makes sense to anyway since the PDF is proportional to the NDF.
+  if (pdf < 0.001) {
+    return vec3(0);
+  }
+  vec3 H = normalize(L + V);
+  float D = aittala_ndf(N, H, S, alpha);
+  float F = fresnel_schlick(F0, V, H) / F0;
+  return rho_s * F * D * max(0.0, dot(L, H)) / pdf;
+}
+
