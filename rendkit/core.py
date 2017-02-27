@@ -128,6 +128,13 @@ class Scene:
         self.renderables.append(renderable)
 
 
+class DummyRenderer(app.Canvas):
+    def __init__(self):
+        super().__init__(size=(1000, 1000), show=False)
+        gloo.set_state(depth_test=True)
+        gloo.set_viewport(0, 0, *self.size)
+
+
 class Renderer(app.Canvas):
     def __init__(self, size: Tuple[int, int],
                  camera: BaseCamera, *args, **kwargs):
