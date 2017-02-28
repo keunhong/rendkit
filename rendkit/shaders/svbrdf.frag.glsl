@@ -81,7 +81,7 @@ void main() {
 
   vec3 specular = vec3(0);
   float sigma = pow(tr(S)/2, -1.0/4.0);
-  uint N_SAMPLES = 128u;
+  uint N_SAMPLES = 64u;
   for (uint i = 0u; i < N_SAMPLES; i++) {
     vec2 xi = hammersley(i, N_SAMPLES); // Use psuedo-random point set.
     vec2 sample_angle = compute_sample_angles(sigma, xi);

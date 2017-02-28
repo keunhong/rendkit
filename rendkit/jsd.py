@@ -23,7 +23,8 @@ from rendkit.postprocessing import GammaCorrectionProgram, IdentityProgram, \
     SSAAProgram
 from svbrdf import SVBRDF
 from .camera import CalibratedCamera, PerspectiveCamera, ArcballCamera
-from .core import Renderer, Scene
+from .core import Scene
+from rendkit.renderers import Renderer
 
 
 class _nop():
@@ -39,15 +40,19 @@ logger = logging.getLogger(__name__)
 
 class JSDRenderer(Renderer):
 
-    def __init__(self, jsd_dict, camera=None, size=None,
+    def __init__(self, jsd_dict_or_scene, camera=None, size=None,
                  conservative_raster=False,
                  gamma=None,
                  ssaa=0,
                  *args, **kwargs):
         if camera is None:
-            camera = import_jsd_camera(jsd_dict)
+            camera = import_jsd_camera(jsd_dict_or_scene)
         super().__init__(size, camera, *args, **kwargs)
-        self.scene = import_jsd_scene(jsd_dict)
+        if isinstance(jsd_dict_or_scene, Scene):
+            self.scene = jsd_dict_or_scene
+        else:
+            self.scene = import_jsd_scene(jsd_dict_or_scene)
+
         gloo.set_state(depth_test=True)
         if conservative_raster:
             from . import nvidia
@@ -184,19 +189,9 @@ def import_radiance_map(jsd_dict) -> Union[RadianceMap, None]:
 
     if 'path' in jsd_radmap:
         path = jsd_radmap['path']
-        ext = os.path.splitext(path)[1]
         logger.info('Importing radiance map from {} with scale={}'
                     .format(path, scale))
-        if ext == '.pfm':
-            array = pfm.load_pfm_texture(jsd_radmap['path'])
-            cube_faces = cm.unstack_cross(array)
-        elif ext == '.jpg' or ext == '.png' or ext == '.tiff':
-            array = imread(path)
-            cube_faces = cm.unstack_cross(array)
-        elif os.path.isdir(path):
-            cube_faces = cm.load_cube_faces(path)
-        else:
-            raise RuntimeError("Invalid radiance map path.")
+        cube_faces = cm.load_cubemap(path)
     elif jsd_radmap['type'] == 'inline':
         logger.info("Importing inline radiance map with shape={}".format(
             jsd_radmap['array'].shape))

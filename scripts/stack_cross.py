@@ -21,7 +21,7 @@ app.use_app('glfw')
 def main():
     app.Canvas(show=False)
     cross = cm.stack_cross(
-        cm.load_cube_faces(os.path.join(_cubemap_dir, 'yokohama')),
+        cm.load_cubemap(os.path.join(_cubemap_dir, 'yokohama')),
         format=args.format)
     plt.imshow(cross)
     plt.show()

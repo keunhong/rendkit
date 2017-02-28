@@ -3,10 +3,13 @@ import numpy as np
 from functools import partial
 
 from scipy import misc
+from scipy.misc import imread
 
+from rendkit import pfm
 from rendkit.glsl import GLSLProgram, GLSLTemplate
 from vispy import gloo
 from vispy.gloo import gl
+from toolbox.images import resize
 
 
 _FACE_NAMES = {
@@ -95,14 +98,27 @@ def unstack_cross(cross):
     return faces
 
 
-def load_cube_faces(path, size=(256, 256)):
-    cubemap = np.zeros((6, *size, 3), dtype=np.float32)
-    for fname in os.listdir(path):
-        name = os.path.splitext(fname)[0]
-        image = misc.imread(os.path.join(path, fname))
-        image = misc.imresize(image, size).astype(np.float32) / 255.0
-        cubemap[_FACE_NAMES[name]] = image
-    return cubemap
+def load_cubemap(path, size=(256, 256)):
+    ext = os.path.splitext(path)[1]
+    shape = (*size, 3)
+    cube_faces = np.zeros((6, *shape), dtype=np.float32)
+    if os.path.isdir(path):
+        for fname in os.listdir(path):
+            name = os.path.splitext(fname)[0]
+            image = misc.imread(os.path.join(path, fname))
+            image = misc.imresize(image, size).astype(np.float32) / 255.0
+            cube_faces[_FACE_NAMES[name]] = image
+    elif ext == '.pfm':
+        array = np.flipud(pfm.load_pfm_texture(path))
+        for i, face in enumerate(unstack_cross(array)):
+            cube_faces[i] = resize(face, size)[:, :, :3]
+    elif ext == '.jpg' or ext == '.png' or ext == '.tiff':
+        array = imread(path)
+        for i, face in enumerate(unstack_cross(array)):
+            cube_faces[i] = resize(face, size)[:, :, :3]
+    else:
+        raise RuntimeError("Unknown cube map format.")
+    return cube_faces
 
 
 def prefilter_irradiance(cube_faces):
