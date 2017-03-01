@@ -80,8 +80,10 @@ void main() {
   total_radiance += rho_d * texture(u_irradiance_map, N).rgb;
 
   vec3 specular = vec3(0);
-  float sigma = pow(tr(S)/2, -1.0/4.0);
-  uint N_SAMPLES = 64u;
+  vec2 e = eig(S);
+  float sigma = pow(min(e.x, e.y), -1.0/4.0);
+//  float sigma = pow(tr(S)/2, -1.0/4.0);
+  uint N_SAMPLES = 128u;
   for (uint i = 0u; i < N_SAMPLES; i++) {
     vec2 xi = hammersley(i, N_SAMPLES); // Use psuedo-random point set.
     vec2 sample_angle = compute_sample_angles(sigma, xi);

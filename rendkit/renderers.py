@@ -1,25 +1,35 @@
 from typing import Tuple
 
+import logging
 import numpy as np
 from numpy import linalg
 
 from rendkit import vector_utils
 from rendkit.camera import BaseCamera
+from rendkit.core import Scene
 from vispy import app, gloo
 
 
-class DummyRenderer(app.Canvas):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        gloo.set_viewport(0, 0, *self.size)
+logger = logging.getLogger(__name__)
+
+
+class _nop():
+    def __enter__(self):
+        return None
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        return False
 
 
 class Renderer(app.Canvas):
     def __init__(self, size: Tuple[int, int],
-                 camera: BaseCamera, *args, **kwargs):
+                 camera: BaseCamera,
+                 scene: Scene,
+                 *args, **kwargs):
         if size is None:
             size = camera.size
         self.camera = camera
+        self.scene = scene
         super().__init__(size=size, *args, **kwargs)
         gloo.set_state(depth_test=True)
         gloo.set_viewport(0, 0, *self.size)
@@ -82,3 +92,36 @@ class Renderer(app.Canvas):
     def __enter__(self):
         self._backend._vispy_warmup()
         return self
+
+
+class DummyRenderer(app.Canvas):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        gloo.set_viewport(0, 0, *self.size)
+
+    def __enter__(self):
+        self._backend._vispy_warmup()
+        return self
+
+
+class ContextProvider:
+    def __init__(self, size):
+        self.size = size
+        canvas = gloo.get_current_canvas()
+        self.context_exists = canvas is not None and not canvas._closed
+        if self.context_exists:
+            logger.debug("Using existing OpenGL context.")
+            self.provider = gloo.get_current_canvas()
+            self.previous_size = self.provider.size
+        else:
+            logger.debug("Providing temporary context with DummyRenderer.")
+            self.provider = DummyRenderer(size=size)
+
+    def __enter__(self):
+        gloo.set_viewport(0, 0, *self.size)
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if not self.context_exists:
+            self.provider.close()
+        else:
+            gloo.set_viewport(0, 0, *self.previous_size)

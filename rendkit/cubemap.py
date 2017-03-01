@@ -7,6 +7,8 @@ from scipy.misc import imread
 
 from rendkit import pfm
 from rendkit.glsl import GLSLProgram, GLSLTemplate
+from rendkit.lights import logger
+from rendkit.renderers import ContextProvider
 from vispy import gloo
 from vispy.gloo import gl
 from toolbox.images import resize
@@ -140,3 +142,55 @@ def prefilter_irradiance(cube_faces):
             program.draw(gl.GL_TRIANGLE_STRIP)
             results[i] = gloo.read_pixels(out_type=np.float32, alpha=False)
     return results
+
+
+class RadianceMap():
+    def __init__(self, cube_faces: np.ndarray, scale=1.0):
+        if cube_faces.shape[0] != 6:
+            raise RuntimeError('Cubemap must have exactly 6 faces.')
+        face_height, face_width = cube_faces.shape[1:3]
+        self._radiance_faces = None
+        self._radiance_tex = None
+        self._irradiance_faces = None
+        self._irradiance_tex = None
+
+        self.radiance_faces = cube_faces * scale
+        logger.info("Prefiltering irradiance map.")
+        with ContextProvider((face_width, face_height)):
+            self.irradiance_faces = prefilter_irradiance(self.radiance_faces)
+
+    @property
+    def radiance_faces(self):
+        return self._radiance_faces
+
+    @radiance_faces.setter
+    def radiance_faces(self, radiance_faces):
+        self._radiance_faces = radiance_faces
+        self._radiance_tex = gloo.TextureCubeMap(
+            self.radiance_faces,
+            interpolation='linear',
+            internalformat='rgb32f')
+
+    @property
+    def irradiance_faces(self):
+        return self._irradiance_faces
+
+    @irradiance_faces.setter
+    def irradiance_faces(self, irradiance_faces):
+        self._irradiance_faces = irradiance_faces
+        self._irradiance_tex = gloo.TextureCubeMap(
+            self._irradiance_faces,
+            interpolation='linear',
+            internalformat='rgb32f')
+
+    @property
+    def radiance_tex(self):
+        return self._radiance_tex
+
+    @property
+    def irradiance_tex(self):
+        return self._irradiance_tex
+
+    @property
+    def size(self):
+        return self.radiance_faces.shape[1:3]

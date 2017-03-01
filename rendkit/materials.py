@@ -1,7 +1,7 @@
 import numpy as np
 from numpy import linalg
 from scipy.special import gammaincinv, gamma
-from vispy.gloo import Texture1D
+from matplotlib import pyplot as plt
 
 from vispy.gloo import Texture2D
 
@@ -131,7 +131,7 @@ class SVBRDFMaterial(GLSLProgram):
 
     @classmethod
     def compute_pdf(cls, sigma, alpha, xi_theta):
-        theta = np.arctan(sigma ** 2 * gammaincinv(1 / alpha, xi_theta) ** (alpha))
+        theta = np.arctan(sigma ** 2 * gammaincinv(1 / alpha, xi_theta) ** alpha)
         norm = alpha / (sigma ** 2 * np.pi * gamma(1 / alpha))
         return norm * np.exp(-(np.tan(theta) / sigma ** 2) ** alpha)
 
@@ -155,7 +155,8 @@ class SVBRDFMaterial(GLSLProgram):
 
         # Approximate isotropic roughness with smallest eigenvalue of S.
         trace = S[:, 0, 0] + S[:, 1, 1]
-        beta = (trace) / 2
+        root = np.sqrt(np.clip(trace*trace - 4 * linalg.det(S), 0, 1))
+        beta = (trace - root) / 3
         self.sigma: np.ndarray = beta ** (-1.0 / 4)
 
         # Create 2D sample texture for sampling the CDF since we need different
@@ -168,28 +169,37 @@ class SVBRDFMaterial(GLSLProgram):
         self.pdf_sampler = np.apply_along_axis(
             self.compute_pdf, 1, sigma_samps[:, None],
             alpha=self.alpha, xi_theta=xi_samps)
+        plt.subplot(121)
+        plt.imshow(self.cdf_sampler)
+        plt.subplot(122)
+        plt.imshow(self.pdf_sampler)
+        plt.show()
 
     def update_uniforms(self, program):
         program['u_alpha'] = self.alpha
         program['u_diff_map'] = Texture2D(
             self.diff_map,
-            interpolation='linear',
+            interpolation=('linear_mipmap_linear', 'linear'),
             wrapping='repeat',
+            mipmap_levels=10,
             internalformat='rgb32f')
         program['u_spec_map'] = Texture2D(
             self.spec_map,
-            interpolation='linear',
+            interpolation=('linear_mipmap_linear', 'linear'),
             wrapping='repeat',
+            mipmap_levels=10,
             internalformat='rgb32f')
         program['u_spec_shape_map'] = Texture2D(
             self.spec_shape_map,
-            interpolation='linear',
+            interpolation=('linear_mipmap_linear', 'linear'),
             wrapping='repeat',
+            mipmap_levels=10,
             internalformat='rgb32f')
         program['u_normal_map'] = Texture2D(
             self.normal_map,
-            interpolation='linear',
+            interpolation=('linear_mipmap_linear', 'linear'),
             wrapping='repeat',
+            mipmap_levels=10,
             internalformat='rgb32f')
         program['u_cdf_sampler'] = Texture2D(
             self.cdf_sampler.astype(np.float32),

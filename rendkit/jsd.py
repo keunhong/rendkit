@@ -11,10 +11,9 @@ from vispy.gloo import gl
 import rendkit.materials
 from meshkit import Mesh
 from meshkit import wavefront
-from rendkit import pfm
 from rendkit import cubemap as cm
-from rendkit.lights import Light, PointLight, DirectionalLight, \
-    RadianceMap
+from rendkit.lights import Light, PointLight, DirectionalLight
+from rendkit.cubemap import RadianceMap
 from rendkit.materials import (GLSLProgram, SVBRDFMaterial, PhongMaterial,
                                BasicMaterial, NormalMaterial, WorldCoordMaterial,
                                DepthMaterial, UVMaterial, UnwrapToUVMaterial,
@@ -47,12 +46,11 @@ class JSDRenderer(Renderer):
                  *args, **kwargs):
         if camera is None:
             camera = import_jsd_camera(jsd_dict_or_scene)
-        super().__init__(size, camera, *args, **kwargs)
-        if isinstance(jsd_dict_or_scene, Scene):
-            self.scene = jsd_dict_or_scene
-        else:
-            self.scene = import_jsd_scene(jsd_dict_or_scene)
+        scene = jsd_dict_or_scene
+        if isinstance(scene, dict):
+            scene = import_jsd_scene(jsd_dict_or_scene)
 
+        super().__init__(size, camera, scene, *args, **kwargs)
         gloo.set_state(depth_test=True)
         if conservative_raster:
             from . import nvidia
@@ -284,6 +282,12 @@ def import_jsd_mesh(jsd_mesh):
         mesh.resize(jsd_mesh['size'])
     elif 'scale' in jsd_mesh:
         mesh.rescale(jsd_mesh['scale'])
+
+    if 'uv_scale' in jsd_mesh:
+        uv_scale = float(jsd_mesh['uv_scale'])
+        logger.info("UV scale is set to {:.04f} for mesh"
+                    .format(uv_scale))
+        mesh.uvs *= float(uv_scale)
 
     return mesh
 
