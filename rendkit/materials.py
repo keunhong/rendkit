@@ -160,7 +160,6 @@ class SVBRDFMaterial(GLSLProgram):
         root = np.sqrt(np.clip(trace*trace - 4 * linalg.det(S), 0, None))
         beta = (trace + root) / 2
         self.sigma: np.ndarray = 1.0 / np.sqrt(beta)
-        print(self.sigma.mean(), beta.mean())
 
         # Create 2D sample texture for sampling the CDF since we need different
         # CDFs for difference roughness values.
