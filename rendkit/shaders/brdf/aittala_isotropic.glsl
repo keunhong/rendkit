@@ -14,7 +14,7 @@ float aittala_ndf_iso(vec3 N, vec3 H, mat2 S, float alpha) {
   vec2 e = eig(S);
   // Approximate isotropic version from Brady et al.
   float beta = min(e.x, e.y); // The mean eigen value is equal to tr/2.
-  float sigma = pow(beta, -1.0/4.0);
+  float sigma = pow(beta, -1.0/2.0);
   return exp(-pow(sqrt(h.x*h.x+h.y*h.y) / (sigma*sigma), alpha));
 }
 

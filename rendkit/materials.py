@@ -126,14 +126,16 @@ class BitangentMaterial(GLSLProgram):
 class SVBRDFMaterial(GLSLProgram):
 
     @classmethod
-    def compute_cdf_normalized(cls, sigma, alpha, xi_theta: np.ndarray):
-        return np.arctan(sigma ** 2 * gammaincinv(1 / alpha, xi_theta) ** alpha)
+    def compute_cdf(cls, sigma, alpha, xi_theta: np.ndarray):
+        p = alpha / 2
+        return np.arctan(sigma * gammaincinv(1 / p, xi_theta) ** p)
 
     @classmethod
     def compute_pdf(cls, sigma, alpha, xi_theta):
-        theta = np.arctan(sigma ** 2 * gammaincinv(1 / alpha, xi_theta) ** alpha)
-        norm = alpha / (sigma ** 2 * np.pi * gamma(1 / alpha))
-        return norm * np.exp(-(np.tan(theta) / sigma ** 2) ** alpha)
+        p = alpha / 2
+        theta = cls.compute_cdf(sigma, alpha, xi_theta)
+        norm = p / ((sigma ** 2) * np.pi * gamma(1 / p))
+        return norm * np.exp(-((np.tan(theta) ** 2) / (sigma ** 2)) ** p)
 
     def __init__(self, svbrdf):
         super().__init__(GLSLTemplate.fromfile('default.vert.glsl'),
@@ -155,25 +157,21 @@ class SVBRDFMaterial(GLSLProgram):
 
         # Approximate isotropic roughness with smallest eigenvalue of S.
         trace = S[:, 0, 0] + S[:, 1, 1]
-        root = np.sqrt(np.clip(trace*trace - 4 * linalg.det(S), 0, 1))
-        beta = (trace - root) / 3
-        self.sigma: np.ndarray = beta ** (-1.0 / 4)
+        root = np.sqrt(np.clip(trace*trace - 4 * linalg.det(S), 0, None))
+        beta = (trace + root) / 2
+        self.sigma: np.ndarray = 1.0 / np.sqrt(beta)
+        print(self.sigma.mean(), beta.mean())
 
         # Create 2D sample texture for sampling the CDF since we need different
         # CDFs for difference roughness values.
         xi_samps = np.linspace(0.0, 1, 1024, endpoint=True)
         sigma_samps = np.linspace(self.sigma.min(), self.sigma.max(), 1024)
         self.cdf_sampler = np.apply_along_axis(
-            self.compute_cdf_normalized, 1, sigma_samps[:, None],
+            self.compute_cdf, 1, sigma_samps[:, None],
             alpha=self.alpha, xi_theta=xi_samps)
         self.pdf_sampler = np.apply_along_axis(
             self.compute_pdf, 1, sigma_samps[:, None],
             alpha=self.alpha, xi_theta=xi_samps)
-        plt.subplot(121)
-        plt.imshow(self.cdf_sampler)
-        plt.subplot(122)
-        plt.imshow(self.pdf_sampler)
-        plt.show()
 
     def update_uniforms(self, program):
         program['u_alpha'] = self.alpha
@@ -191,13 +189,13 @@ class SVBRDFMaterial(GLSLProgram):
             internalformat='rgb32f')
         program['u_spec_shape_map'] = Texture2D(
             self.spec_shape_map,
-            interpolation=('linear_mipmap_linear', 'linear'),
+            interpolation=('linear', 'linear'),
             wrapping='repeat',
             mipmap_levels=10,
             internalformat='rgb32f')
         program['u_normal_map'] = Texture2D(
             self.normal_map,
-            interpolation=('linear_mipmap_linear', 'linear'),
+            interpolation=('linear', 'linear'),
             wrapping='repeat',
             mipmap_levels=10,
             internalformat='rgb32f')
