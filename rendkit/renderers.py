@@ -125,7 +125,6 @@ class ContextProvider:
 
 
 class SceneRenderer(BaseRenderer):
-
     def __init__(self, scene, camera, size=None,
                  gamma=None, ssaa=0, exposure=1.0,
                  conservative_raster=False,

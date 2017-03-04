@@ -13,9 +13,11 @@ class Mesh:
                  uvs: np.ndarray,
                  faces: List[Dict],
                  materials: List[str],
-                 group_names: List[str]=[],
-                 object_names: List[str]=[],
-                 center=True):
+                 group_names: List[str]=list(),
+                 object_names: List[str]=list(),
+                 center=True,
+                 name='unnamed'):
+        self.name = name
         self.vertices = vertices
         self.normals = normals
         self.uvs = uvs[:, :2] if len(uvs) > 0 else []

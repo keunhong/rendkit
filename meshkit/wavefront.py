@@ -1,3 +1,4 @@
+import os
 import logging
 import re
 from collections import OrderedDict
@@ -114,13 +115,15 @@ def read_obj_file(path):
                     object_ids[object_name] = object_counter
                 current_object_id = object_ids[object_name]
 
+    name = os.path.split(path)[-1]
     return Mesh(np.array(vertices, dtype=np.float32),
                 np.array(normals, dtype=np.float32),
                 np.array(uvs, dtype=np.float32),
                 faces,
                 list(material_ids.keys()),
                 list(group_ids.keys()),
-                list(object_ids.keys()))
+                list(object_ids.keys()),
+                name=name)
 
 
 def read_mtl_file(path, model):
