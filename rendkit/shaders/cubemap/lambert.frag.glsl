@@ -1,11 +1,27 @@
-#version 120
+#version 150
+#include "utils/math.glsl"
+#include "utils/sampling.glsl"
 
 #define M_PI 3.1415926535897932384626433832795
 
 
-uniform samplerCube u_cubemap;
+uniform samplerCube u_radiance_map;
+uniform vec2 u_cubemap_size;
 uniform int u_cube_face;
-varying vec2 v_uv;
+in vec2 v_uv;
+
+
+vec3 importance_sample(vec2 xi) {
+  float phi = 2.0f * M_PI * xi.x;
+  float cos_theta = 1.0 - xi.y / (2 * M_PI);
+  float sin_theta = sqrt(1 - cos_theta * cos_theta);
+
+  vec3 H;
+  H.x = sin_theta * cos(phi);
+  H.y = sin_theta * sin(phi);
+  H.z = cos_theta;
+  return H;
+}
 
 
 // Adapted from http://www.codinglabs.net/article_physically_based_rendering.aspx
@@ -24,18 +40,18 @@ vec4 samp(vec2 pos, int cube_face) {
   vec3 right = normalize(cross(up, normal));
   up = cross(normal, right);
 
-  vec3 samp_color = vec3(0, 0, 0);
-  float num_samples = 0;
-  for (float phi = 0; phi < 2 * M_PI; phi += 0.025) {
-    for (float theta = 0; theta < M_PI / 2; theta += 0.1) {
-      vec3 temp = cos(phi) * right + sin(phi) * up;
-      vec3 samp_vec = cos(theta) * normal + sin(theta) * temp;
-      samp_color += textureCube(u_cubemap, samp_vec).rgb * cos(theta) * sin(theta);
-      num_samples++;
-    }
+  vec3 total_color = vec3(0.0);
+  uint N_SAMPLES = 4096u;
+  for (uint i = 0u; i < N_SAMPLES; i++) {
+    vec2 xi = hammersley(i, N_SAMPLES); // Use psuedo-random point set.
+    vec3 L = importance_sample(xi);
+    L = sample_to_world(L, normal);
+    float pdf = L.z;
+		float lod = compute_lod(pdf, N_SAMPLES, u_cubemap_size.x, u_cubemap_size.y);
+    vec3 light_color = textureLod(u_radiance_map, L, lod).rgb;
+    total_color += 1.0 / float(N_SAMPLES) * light_color;
   }
-
-  return vec4(M_PI * samp_color / num_samples, 1.0);
+  return vec4(total_color, 1.0);
 }
 
 

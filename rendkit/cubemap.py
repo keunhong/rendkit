@@ -133,8 +133,9 @@ def prefilter_irradiance(cube_faces):
     framebuffer = gloo.FrameBuffer(
         rendtex, gloo.RenderBuffer((width, height, n_channels)))
     gloo.set_viewport(0, 0, width, height)
-    program['u_cubemap'] = gloo.TextureCubeMap(
-        cube_faces, internalformat=internal_format)
+    program['u_radiance_map'] = gloo.TextureCubeMap(
+        cube_faces, internalformat=internal_format, mipmap_levels=8)
+    program['u_cubemap_size'] = (width, height)
     results = np.zeros(cube_faces.shape, dtype=np.float32)
     for i in range(6):
         program['u_cube_face'] = i
@@ -168,8 +169,9 @@ class RadianceMap():
         self._radiance_faces = radiance_faces
         self._radiance_tex = gloo.TextureCubeMap(
             self.radiance_faces,
-            interpolation='linear',
-            internalformat='rgb32f')
+            interpolation='linear_mipmap_linear',
+            internalformat='rgb32f',
+            mipmap_levels=8)
 
     @property
     def irradiance_faces(self):
@@ -193,4 +195,4 @@ class RadianceMap():
 
     @property
     def size(self):
-        return self.radiance_faces.shape[1:3]
+        return (self.radiance_faces.shape[2], self.radiance_faces.shape[1])
