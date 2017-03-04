@@ -3,10 +3,12 @@ from typing import Tuple
 import logging
 import numpy as np
 from numpy import linalg
+from vispy.gloo import gl
 
 from rendkit import vector_utils
 from rendkit.camera import BaseCamera
 from rendkit.core import Scene
+from rendkit import postprocessing as pp
 from vispy import app, gloo
 
 
@@ -21,7 +23,7 @@ class _nop():
         return False
 
 
-class Renderer(app.Canvas):
+class BaseRenderer(app.Canvas):
     def __init__(self, size: Tuple[int, int],
                  camera: BaseCamera,
                  scene: Scene,
@@ -34,7 +36,6 @@ class Renderer(app.Canvas):
         gloo.set_state(depth_test=True)
         gloo.set_viewport(0, 0, *self.size)
 
-        self.active_program = None
         self.size = size
 
         # Buffer shapes are HxW, not WxH...
@@ -43,10 +44,6 @@ class Renderer(app.Canvas):
             internalformat='rgba32f')
         self._fbo = gloo.FrameBuffer(self._rendertex, gloo.RenderBuffer(
             shape=(size[1], size[0])))
-
-        self.mesh = None
-
-        self._current_material = None
 
     def set_program(self, vertex_shader, fragment_shader):
         self.active_program = gloo.Program(vertex_shader, fragment_shader)
@@ -125,3 +122,51 @@ class ContextProvider:
             self.provider.close()
         else:
             gloo.set_viewport(0, 0, *self.previous_size)
+
+
+class SceneRenderer(BaseRenderer):
+
+    def __init__(self, scene, camera, size=None,
+                 gamma=None, ssaa=0, exposure=1.0,
+                 conservative_raster=False,
+                 *args, **kwargs):
+        if size is None:
+            size = camera.size
+        super().__init__(size, camera, scene, *args, **kwargs)
+        gloo.set_state(depth_test=True)
+        if conservative_raster:
+            from . import nvidia
+            self.conservative_raster = nvidia.conservative_raster(True)
+        else:
+            self.conservative_raster = _nop()
+        self.gamma = gamma
+        self.ssaa = min(max(1, ssaa), pp.SSAAProgram.MAX_SCALE)
+
+        self.render_size = (self.size[0] * self.ssaa, self.size[1] * self.ssaa)
+        self.pp_pipeline = pp.PostprocessPipeline(self.size, self)
+        self.render_tex, self.render_fb = pp.create_rend_target(self.render_size)
+
+        logger.info("Render size: {} --SSAAx{}--> {}".format(
+            self.size, self.ssaa, self.render_size))
+
+        if self.ssaa > 1:
+            self.pp_pipeline.add_program(pp.SSAAProgram(ssaa))
+        if gamma is not None:
+            logger.info("Post-processing gamma={}, exposure={}."
+                        .format(gamma, exposure))
+            self.pp_pipeline.add_program(pp.ExposureProgram(exposure))
+            self.pp_pipeline.add_program(pp.GammaCorrectionProgram(gamma))
+        else:
+            self.pp_pipeline.add_program(pp.IdentityProgram())
+
+    def draw(self):
+        with self.render_fb:
+            gloo.clear(color=self.camera.clear_color)
+            gloo.set_state(depth_test=True)
+            gloo.set_viewport(0, 0, *self.render_size)
+            for renderable in self.scene.renderables:
+                program = renderable.activate(self.scene, self.camera)
+                with self.conservative_raster:
+                    program.draw(gl.GL_TRIANGLES)
+
+        self.pp_pipeline.draw(self.render_tex)

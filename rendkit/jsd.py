@@ -1,11 +1,8 @@
-import os
 import copy
 import logging
 from typing import Dict, List, Union
 
 import numpy as np
-from vispy import gloo
-from vispy.gloo import gl
 
 import rendkit.materials
 from meshkit import Mesh
@@ -17,77 +14,23 @@ from rendkit.materials import (GLSLProgram, SVBRDFMaterial, PhongMaterial,
                                BasicMaterial, NormalMaterial, WorldCoordMaterial,
                                DepthMaterial, UVMaterial, UnwrapToUVMaterial,
                                TangentMaterial, BitangentMaterial)
-from rendkit import postprocessing as pp
 from svbrdf import SVBRDF
 from .camera import CalibratedCamera, PerspectiveCamera, ArcballCamera
 from .core import Scene
-from rendkit.renderers import Renderer
-
-
-class _nop():
-    def __enter__(self):
-        return None
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        return False
+from rendkit.renderers import SceneRenderer
 
 
 logger = logging.getLogger(__name__)
 
 
-class JSDRenderer(Renderer):
-
-    def __init__(self, jsd_dict_or_scene, camera=None, size=None,
-                 conservative_raster=False,
-                 gamma=None,
-                 ssaa=0,
-                 exposure=1.0,
-                 *args, **kwargs):
+class JSDRenderer(SceneRenderer):
+    def __init__(self, jsd_dict_or_scene, camera=None, *args, **kwargs):
         if camera is None:
             camera = import_jsd_camera(jsd_dict_or_scene)
         scene = jsd_dict_or_scene
         if isinstance(scene, dict):
             scene = import_jsd_scene(jsd_dict_or_scene)
-
-        super().__init__(size, camera, scene, *args, **kwargs)
-        gloo.set_state(depth_test=True)
-        if conservative_raster:
-            from . import nvidia
-            self.conservative_raster = nvidia.conservative_raster(True)
-        else:
-            self.conservative_raster = _nop()
-        self.gamma = gamma
-        self.ssaa = min(max(1, ssaa), pp.SSAAProgram.MAX_SCALE)
-
-        # Create original rendering buffer.
-        self.render_size = (self.size[0] * self.ssaa, self.size[1] * self.ssaa)
-        self.pp_pipeline = pp.PostprocessPipeline(self.size, self)
-        self.render_tex, self.render_fb = pp.create_rend_target(self.render_size)
-
-        logger.info("Render size: {} --SSAAx{}--> {}".format(
-            self.size, self.ssaa, self.render_size))
-
-        if self.ssaa > 1:
-            self.pp_pipeline.add_program(pp.SSAAProgram(ssaa))
-        if gamma is not None:
-            logger.info("Post-processing gamma={}, exposure={}."
-                        .format(gamma, exposure))
-            self.pp_pipeline.add_program(pp.ExposureProgram(exposure))
-            self.pp_pipeline.add_program(pp.GammaCorrectionProgram(gamma))
-        else:
-            self.pp_pipeline.add_program(pp.IdentityProgram())
-
-    def draw(self):
-        with self.render_fb:
-            gloo.clear(color=self.camera.clear_color)
-            gloo.set_state(depth_test=True)
-            gloo.set_viewport(0, 0, *self.render_size)
-            for renderable in self.scene.renderables:
-                program = renderable.activate(self.scene, self.camera)
-                with self.conservative_raster:
-                    program.draw(gl.GL_TRIANGLES)
-
-        self.pp_pipeline.draw(self.render_tex)
+        super().__init__(scene=scene, camera=camera, *args, **kwargs)
 
 
 def import_jsd_scene(jsd_dict):
