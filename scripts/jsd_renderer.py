@@ -18,6 +18,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--jsd', dest='jsd_path', type=str, required=True)
 parser.add_argument('--ssaa', dest='ssaa', type=int, default=2)
 parser.add_argument('--gamma', dest='gamma', type=float, default=None)
+parser.add_argument('--exposure', dest='exposure', type=float, default=1.0)
 
 args = parser.parse_args()
 
@@ -108,6 +109,6 @@ if __name__ == '__main__':
         position=[0, 100, 100],
         lookat=(0.0, 0.0, -0.0),
         up=(0.0, 1.0, 0.0))
-    renderer= MyJSDRenderer(
-        jsd, camera, dpi=500, gamma=args.gamma, ssaa=args.ssaa)
+    renderer= MyJSDRenderer(jsd, camera, dpi=500, gamma=args.gamma,
+                            ssaa=args.ssaa, exposure=args.exposure)
     app.run()

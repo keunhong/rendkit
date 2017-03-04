@@ -4,7 +4,6 @@ import logging
 from typing import Dict, List, Union
 
 import numpy as np
-from scipy.misc import imread
 from vispy import gloo
 from vispy.gloo import gl
 
@@ -18,8 +17,7 @@ from rendkit.materials import (GLSLProgram, SVBRDFMaterial, PhongMaterial,
                                BasicMaterial, NormalMaterial, WorldCoordMaterial,
                                DepthMaterial, UVMaterial, UnwrapToUVMaterial,
                                TangentMaterial, BitangentMaterial)
-from rendkit.postprocessing import GammaCorrectionProgram, IdentityProgram, \
-    SSAAProgram
+from rendkit import postprocessing as pp
 from svbrdf import SVBRDF
 from .camera import CalibratedCamera, PerspectiveCamera, ArcballCamera
 from .core import Scene
@@ -43,6 +41,7 @@ class JSDRenderer(Renderer):
                  conservative_raster=False,
                  gamma=None,
                  ssaa=0,
+                 exposure=1.0,
                  *args, **kwargs):
         if camera is None:
             camera = import_jsd_camera(jsd_dict_or_scene)
@@ -58,54 +57,37 @@ class JSDRenderer(Renderer):
         else:
             self.conservative_raster = _nop()
         self.gamma = gamma
-        self.ssaa = min(max(1, ssaa), SSAAProgram.MAX_SCALE)
+        self.ssaa = min(max(1, ssaa), pp.SSAAProgram.MAX_SCALE)
 
-        self.rendtex_size = (self.size[0] * self.ssaa,
-                             self.size[1] * self.ssaa)
-        logger.debug("Render size: {} --SSAAx{}--> {}".format(
-            self.size, 2**ssaa, self.rendtex_size))
+        # Create original rendering buffer.
+        self.render_size = (self.size[0] * self.ssaa, self.size[1] * self.ssaa)
+        self.pp_pipeline = pp.PostprocessPipeline(self.size, self)
+        self.render_tex, self.render_fb = pp.create_rend_target(self.render_size)
 
-        # Buffer shapes are HxW, not WxH. Shapes are HxW, sizes are WxH.
-        rendtex_shape = (self.rendtex_size[1], self.rendtex_size[0])
-        rendtex = gloo.Texture2D((*rendtex_shape, 4), interpolation='linear',
-                                 internalformat='rgba32f')
-        self.rendtex = rendtex
-        self.rendfb = gloo.FrameBuffer(rendtex, gloo.RenderBuffer(rendtex_shape))
-        self.pp_pipeline = []
+        logger.info("Render size: {} --SSAAx{}--> {}".format(
+            self.size, self.ssaa, self.render_size))
+
         if self.ssaa > 1:
-            logger.debug("Post-processing SSAAx{} enabled: rendtex {} -> {}".format(
-                ssaa, self.size, self.rendtex_size))
-            self.pp_pipeline.append(SSAAProgram(rendtex, ssaa).compile())
+            self.pp_pipeline.add_program(pp.SSAAProgram(ssaa))
         if gamma is not None:
-            logger.debug("Post-processing Gamma Correction enabled.")
-            self.pp_pipeline.append(
-                GammaCorrectionProgram(rendtex, gamma=gamma).compile())
+            logger.info("Post-processing gamma={}, exposure={}."
+                        .format(gamma, exposure))
+            self.pp_pipeline.add_program(pp.ExposureProgram(exposure))
+            self.pp_pipeline.add_program(pp.GammaCorrectionProgram(gamma))
         else:
-            self.pp_pipeline.append(IdentityProgram(rendtex).compile())
+            self.pp_pipeline.add_program(pp.IdentityProgram())
 
     def draw(self):
-        with self.rendfb:
+        with self.render_fb:
             gloo.clear(color=self.camera.clear_color)
             gloo.set_state(depth_test=True)
-            gloo.set_viewport(0, 0, *self.rendtex_size)
+            gloo.set_viewport(0, 0, *self.render_size)
             for renderable in self.scene.renderables:
                 program = renderable.activate(self.scene, self.camera)
                 with self.conservative_raster:
                     program.draw(gl.GL_TRIANGLES)
 
-        # Run postprocessing programs.
-        for i, program in enumerate(self.pp_pipeline):
-            is_last = i == len(self.pp_pipeline) - 1
-            if is_last:
-                gloo.set_viewport(0, 0, *self.physical_size)
-                gloo.clear(color=True)
-                gloo.set_state(depth_test=False)
-            else:
-                gloo.set_viewport(0, 0, *self.rendtex_size)
-
-            with _nop() if is_last else self.rendfb:
-                program['u_rendtex'] = self.rendtex
-                program.draw(gl.GL_TRIANGLE_STRIP)
+        self.pp_pipeline.draw(self.render_tex)
 
 
 def import_jsd_scene(jsd_dict):
@@ -200,6 +182,8 @@ def import_radiance_map(jsd_dict) -> Union[RadianceMap, None]:
     assert cube_faces.shape[0] == 6
     if 'max' in jsd_radmap:
         cube_faces = np.clip(cube_faces, 0, jsd_radmap['max'])
+    logger.info('Radiance range: ({}, {})'
+                .format(cube_faces.min(), cube_faces.max()))
     return RadianceMap(cube_faces, scale)
 
 

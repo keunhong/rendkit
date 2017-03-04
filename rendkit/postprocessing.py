@@ -1,35 +1,38 @@
+from vispy.gloo import gl
+
 from vispy import gloo
 
 from rendkit.glsl import GLSLTemplate, GLSLProgram
 
 
-class IdentityProgram(GLSLProgram):
-    def __init__(self, rendtex: gloo.Texture2D):
+class PostprocessProgram(GLSLProgram):
+    def upload_input(self, program, input_tex):
+        program['u_rendtex'] = input_tex
+        return program
+
+
+class IdentityProgram(PostprocessProgram):
+    def __init__(self):
         super().__init__(
             GLSLTemplate.fromfile('postprocessing/quad.vert.glsl'),
             GLSLTemplate.fromfile('postprocessing/identity.frag.glsl'))
-        self.rendtex = rendtex
 
     def update_uniforms(self, program):
         program['a_texcoord'] = [(0, 0), (0, 1), (1, 0), (1, 1)]
         program['a_position'] = [(-1, -1), (-1, +1), (+1, -1), (+1, +1)]
-        program['u_rendtex'] = self.rendtex
         return program
 
 
-class SSAAProgram(GLSLProgram):
+class SSAAProgram(PostprocessProgram):
     MAX_SCALE = 3
 
-    def __init__(self, rendtex: gloo.Texture2D, scale: int):
+    def __init__(self, scale: int):
         super().__init__(
             GLSLTemplate.fromfile('postprocessing/quad.vert.glsl'),
             GLSLTemplate.fromfile('postprocessing/ssaa.frag.glsl'))
-        self.rendtex = rendtex
         self.scale = scale
 
     def update_uniforms(self, program):
-        program['u_rendtex'] = self.rendtex
-        program['u_texture_shape'] = self.rendtex.shape[:2]
         program['u_aa_kernel'] = [
             None,
             None,
@@ -42,19 +45,90 @@ class SSAAProgram(GLSLProgram):
         program['a_position'] = [(-1, -1), (-1, +1), (+1, -1), (+1, +1)]
         return program
 
+    def upload_input(self, program, input_tex):
+        program['u_rendtex'] = input_tex
+        program['u_texture_shape'] = input_tex.shape[:2]
+        return program
 
 
-class GammaCorrectionProgram(GLSLProgram):
-    def __init__(self, rendtex, gamma=2.2):
+class GammaCorrectionProgram(PostprocessProgram):
+    def __init__(self, gamma=2.2):
         super().__init__(
             GLSLTemplate.fromfile('postprocessing/quad.vert.glsl'),
             GLSLTemplate.fromfile('postprocessing/gamma_correction.frag.glsl'))
-        self.rendtex = rendtex
         self.gamma = gamma
 
     def update_uniforms(self, program):
         program['a_texcoord'] = [(0, 0), (0, 1), (1, 0), (1, 1)]
         program['a_position'] = [(-1, -1), (-1, +1), (+1, -1), (+1, +1)]
-        program['u_rendtex'] = self.rendtex
         program['u_gamma'] = self.gamma
         return program
+
+
+class ReinhardProgram(PostprocessProgram):
+    def __init__(self):
+        super().__init__(
+            GLSLTemplate.fromfile('postprocessing/quad.vert.glsl'),
+            GLSLTemplate.fromfile('postprocessing/reinhard_tonemap.frag.glsl'))
+
+    def update_uniforms(self, program):
+        program['a_texcoord'] = [(0, 0), (0, 1), (1, 0), (1, 1)]
+        program['a_position'] = [(-1, -1), (-1, +1), (+1, -1), (+1, +1)]
+        return program
+
+
+class ExposureProgram(PostprocessProgram):
+    def __init__(self, exposure):
+        super().__init__(
+            GLSLTemplate.fromfile('postprocessing/quad.vert.glsl'),
+            GLSLTemplate.fromfile('postprocessing/exposure_tonemap.frag.glsl'))
+        self.exposure = exposure
+
+    def update_uniforms(self, program):
+        program['a_texcoord'] = [(0, 0), (0, 1), (1, 0), (1, 1)]
+        program['a_position'] = [(-1, -1), (-1, +1), (+1, -1), (+1, +1)]
+        program['u_exposure'] = self.exposure
+        return program
+
+
+class PostprocessPipeline:
+    def __init__(self, size, renderer):
+        self.programs = []
+        self.compiled = []
+        self.render_textures = []
+        self.render_framebuffers = []
+        self.size = size
+        self.renderer = renderer
+
+    def add_program(self, program):
+        self.programs.append(program)
+        self.compiled.append(program.compile())
+        tex, fb = create_rend_target(self.size)
+        self.render_textures.append(tex)
+        self.render_framebuffers.append(fb)
+
+    def draw(self, input_tex):
+        current_tex = input_tex
+        for i, program in enumerate(self.programs):
+            is_last = i == (len(self.programs) - 1)
+            compiled = self.compiled[i]
+            program.upload_input(compiled, current_tex)
+            gloo.clear(color=True)
+            gloo.set_state(depth_test=False)
+            if is_last:
+                gloo.set_viewport(0, 0, *self.renderer.physical_size)
+                compiled.draw(gl.GL_TRIANGLE_STRIP)
+            else:
+                gloo.set_viewport(0, 0, *self.size)
+                with self.render_framebuffers[i]:
+                    compiled.draw(gl.GL_TRIANGLE_STRIP)
+            current_tex = self.render_textures[i]
+
+
+def create_rend_target(size):
+    shape = (size[1], size[0])
+    rendtex = gloo.Texture2D((*shape, 4),
+                             interpolation='linear',
+                             internalformat='rgba32f')
+    fb = gloo.FrameBuffer(rendtex, gloo.RenderBuffer(shape))
+    return rendtex, fb

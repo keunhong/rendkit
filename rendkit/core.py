@@ -23,8 +23,8 @@ class Renderable:
         self._program = None
 
     def compile(self, scene):
-        program = self.material.compile(len(scene.lights),
-                                        scene.radiance_map is not None)
+        program = self.material.compile(
+            len(scene.lights), scene.radiance_map is not None)
         for k, v in self._attributes.items():
             program[k] = v.astype(np.float32)
 

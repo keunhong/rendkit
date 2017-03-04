@@ -46,7 +46,6 @@ class GLSLProgram:
 
         self._vert_shader = vert_shader
         self._frag_shader = frag_shader
-        self._instance = None
 
     def compile(self, num_lights=0, use_radiance_map=False):
         use_radiance_map = use_radiance_map and self.use_radiance_map
