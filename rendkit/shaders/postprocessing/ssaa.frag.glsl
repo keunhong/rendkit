@@ -5,6 +5,7 @@ uniform vec2 u_texture_shape;
 uniform vec4 u_aa_kernel;
 varying vec2 v_texcoord;
 
+
 void main() {
     vec2 pos = v_texcoord.xy;
     vec3 color = vec3(0.0);
@@ -13,14 +14,12 @@ void main() {
     float dy = 1.0 / u_texture_shape.x;
 
     // Convolve
-    int sze = 3;
-    for (int y=-sze; y<sze+1; y++)
-    {
-        for (int x=-sze; x<sze+1; x++)
-        {
+    int window_size = 3;
+    for (int y = -window_size; y <= window_size; y++) {
+        for (int x = -window_size; x <= window_size; x++) {
             float k = u_aa_kernel[int(abs(float(x)))]
             			* u_aa_kernel[int(abs(float(y)))];
-            vec2 dpos = vec2(float(x)*dx, float(y)*dy);
+            vec2 dpos = vec2(float(x) * dx, float(y) * dy);
             color += texture2D(u_rendtex, pos + dpos).rgb * k;
         }
     }

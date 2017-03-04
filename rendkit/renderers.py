@@ -3,13 +3,13 @@ from typing import Tuple
 import logging
 import numpy as np
 from numpy import linalg
+from vispy import app, gloo
 from vispy.gloo import gl
 
 from rendkit import vector_utils
 from rendkit.camera import BaseCamera
 from rendkit.core import Scene
 from rendkit import postprocessing as pp
-from vispy import app, gloo
 
 
 logger = logging.getLogger(__name__)
@@ -140,17 +140,19 @@ class SceneRenderer(BaseRenderer):
         else:
             self.conservative_raster = _nop()
         self.gamma = gamma
-        self.ssaa = min(max(1, ssaa), pp.SSAAProgram.MAX_SCALE)
+        self.ssaa_scale = min(max(1, ssaa),pp.DownsampleProgram.MAX_SCALE)
 
-        self.render_size = (self.size[0] * self.ssaa, self.size[1] * self.ssaa)
-        self.pp_pipeline = pp.PostprocessPipeline(self.size, self)
-        self.render_tex, self.render_fb = pp.create_rend_target(self.render_size)
-
+        self.render_size = (self.size[0] * self.ssaa_scale,
+                            self.size[1] * self.ssaa_scale)
+        self.render_tex, self.render_fb = \
+            pp.create_rend_target(self.render_size)
         logger.info("Render size: {} --SSAAx{}--> {}".format(
-            self.size, self.ssaa, self.render_size))
+            self.size, self.ssaa_scale, self.render_size))
 
-        if self.ssaa > 1:
-            self.pp_pipeline.add_program(pp.SSAAProgram(ssaa))
+        self.pp_pipeline = pp.PostprocessPipeline(self.size, self)
+
+        if self.ssaa_scale >= 2:
+            self.pp_pipeline.add_program(pp.DownsampleProgram(ssaa))
         if gamma is not None:
             logger.info("Post-processing gamma={}, exposure={}."
                         .format(gamma, exposure))
