@@ -32,6 +32,7 @@ uniform int u_light_type[TPL.num_lights];
 #if TPL.use_radiance_map
 uniform samplerCube u_irradiance_map;
 uniform samplerCube u_radiance_map;
+uniform vec2 u_cubemap_size;
 #endif
 
 const float NUM_LIGHTS = TPL.num_lights;
@@ -89,11 +90,14 @@ void main() {
     vec2 sample_angle = compute_sample_angles(sigma, xi);
     float phi = sample_angle.x;
     float theta = sample_angle.y;
-    vec3 H = sample_to_world(phi, theta, N);
+    vec3 H = angle_to_vec(phi, theta);
+    H = sample_to_world(H, N);
     vec3 L = reflect(-V, H);
-    vec3 light_color = texture(u_radiance_map, L).rgb;
+    float pdf = get_pdf_value(sigma, xi);
+		float lod = compute_lod(pdf, N_SAMPLES, u_cubemap_size.x, u_cubemap_size.y);
+    vec3 light_color = textureLod(u_radiance_map, L, lod).rgb;
     specular += compute_irradiance(N, L, light_color) *
-      aittala_spec_is(N, V, L, rho_s, S, u_alpha, get_pdf_value(sigma, xi));
+      aittala_spec_is(N, V, L, rho_s, S, u_alpha, pdf);
   }
   specular /= N_SAMPLES;
   total_radiance += specular;

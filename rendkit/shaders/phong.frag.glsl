@@ -23,54 +23,52 @@ uniform int u_light_type[TPL.num_lights];
 #if TPL.use_radiance_map
 uniform samplerCube u_irradiance_map;
 uniform samplerCube u_radiance_map;
+uniform vec2 u_cubemap_size;
 #endif
 
 const float NUM_LIGHTS = TPL.num_lights;
 
-vec3 irradiance(vec3 N, vec3 L, vec3 light_color) {
-  float cosine_term = max(.0, dot(N, L));
-  return cosine_term * light_color;
+
+vec3 importance_sample(vec2 xi, float shininess) {
+  float phi = 2.0f * M_PI * xi.x;
+  float cos_theta = pow(xi.y, 1.0/(shininess + 1.0));
+  float sin_theta = sqrt(1.0 - cos_theta * cos_theta);
+
+  vec3 H;
+  H.x = sin_theta * cos(phi);
+  H.y = sin_theta * sin(phi);
+  H.z = cos_theta;
+  return H;
 }
 
-vec2 compute_sample_angles(vec2 xi) {
-  float phi = 2.0f * M_PI * xi.x;
-  float theta = acos(pow(1 - xi.y, 1.0/(u_shininess + 1)));
-  return vec2(phi, theta);
+
+float compute_pdf(vec3 H, float shininess) {
+  float D = (shininess + 2.0) / (2.0 * M_PI)
+              * clamp(pow(H.z, shininess), 0.0, 1.0);
+  return D * H.z;
 }
 
 
 void main() {
   vec3 V = normalize(u_cam_pos - v_position);
 
-	bool is_back_facing = dot(v_normal, V) < 0;
-	if (is_back_facing) {
-		gl_FragColor = vec4(0.0);
-		return;
-	}
-
 	vec3 total_radiance = vec3(0.0);
 
   #if TPL.use_radiance_map
   total_radiance += u_diff * texture(u_irradiance_map, v_normal).rgb;
   vec3 specular = vec3(0);
-  float r1 = rand(v_position.xy);
-  float r2 = rand(vec2(r1));
-  int N_SAMPLES = 128;
-  for (int i = 0; i < N_SAMPLES; i++) {
-    vec2 xi = vec2(rand(vec2(r1 + i, r2 + i)));
-    vec2 sample_angle = compute_sample_angles(xi);
-    float phi = sample_angle.x;
-    float theta = sample_angle.y;
-    vec3 H = sample_to_world(phi, theta, v_normal);
+  uint N_SAMPLES = 256u;
+  for (uint i = 0u; i < N_SAMPLES; i++) {
+    vec2 xi = hammersley(i, N_SAMPLES); // Use psuedo-random point set.
+    vec3 H = importance_sample(xi, u_shininess);
+    H = sample_to_world(H, v_normal);
+    float pdf = compute_pdf(H, u_shininess);
+		float lod = compute_lod(pdf, N_SAMPLES, u_cubemap_size.x, u_cubemap_size.y);
+
     vec3 L = reflect(-V, H);
-    vec3 light_color = texture(u_radiance_map, L).rgb;
-    float ndotl = max(0.0, dot(v_normal, L));
-		vec3 refl_dir = normalize(2.0 * ndotl * v_normal - L);
-		float rdotv = max(0.0, dot(refl_dir, V));
-		vec3 Is = u_spec * pow(rdotv, u_shininess);
-    specular += irradiance(v_normal, L, light_color) * Is * ndotl;
+    vec3 light_color = textureLod(u_radiance_map, L, lod).rgb;
+    specular += u_spec / float(N_SAMPLES) * light_color;
   }
-  specular /= N_SAMPLES;
   total_radiance += specular;
   #endif
 

@@ -9,12 +9,18 @@ highp float rand(vec2 co) {
 }
 
 
-// From https://github.com/thefranke/dirtchamber/blob/master/shader/importance.hlsl.
-vec3 sample_to_world(float phi, float theta, vec3 N) {
+vec3 angle_to_vec(float phi, float theta) {
   vec3 H;
+  float sin_theta = sin(theta);
   H.x = sin(theta) * cos(phi);
   H.y = sin(theta) * sin(phi);
   H.z = cos(theta);
+  return H;
+}
+
+
+// From https://github.com/thefranke/dirtchamber/blob/master/shader/importance.hlsl.
+vec3 sample_to_world(vec3 H, vec3 N) {
   vec3 up_vec = abs(N.z) < 0.999 ? vec3(0,0,1) : vec3(1,0,0);
   vec3 tangent_x = normalize(cross(up_vec, N));
   vec3 tangent_y = cross(N, tangent_x);
@@ -36,3 +42,8 @@ vec2 hammersley(uint i, uint N) {
   return vec2(float(i) / float(N), radical_inverse_vdc(i));
 }
 
+
+float compute_lod(float pdf, uint n_samples, float width, float height) {
+    float lod = (0.5 * log2((width * height)/float(n_samples))) - 0.5 * log2(pdf);
+    return max(lod, 0);
+}
