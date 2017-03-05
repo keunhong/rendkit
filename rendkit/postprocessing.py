@@ -5,13 +5,13 @@ from vispy import gloo
 from rendkit.glsl import GLSLTemplate, GLSLProgram
 
 
-class PostprocessProgram(GLSLProgram):
+class RendtexInputMixin:
     def upload_input(self, program, input_tex):
         program['u_rendtex'] = input_tex
         return program
 
 
-class IdentityProgram(PostprocessProgram):
+class IdentityProgram(GLSLProgram, RendtexInputMixin):
     def __init__(self):
         super().__init__(
             GLSLTemplate.fromfile('postprocessing/quad.vert.glsl'),
@@ -23,7 +23,7 @@ class IdentityProgram(PostprocessProgram):
         return program
 
 
-class DownsampleProgram(PostprocessProgram):
+class DownsampleProgram(GLSLProgram, RendtexInputMixin):
     MAX_SCALE = 3
     LANCZOS_KERNELS = [
         [0.44031130485056913, 0.29880437751590694,
@@ -51,7 +51,7 @@ class DownsampleProgram(PostprocessProgram):
         return program
 
 
-class GammaCorrectionProgram(PostprocessProgram):
+class GammaCorrectionProgram(GLSLProgram, RendtexInputMixin):
     def __init__(self, gamma=2.2):
         super().__init__(
             GLSLTemplate.fromfile('postprocessing/quad.vert.glsl'),
@@ -65,7 +65,7 @@ class GammaCorrectionProgram(PostprocessProgram):
         return program
 
 
-class ReinhardProgram(PostprocessProgram):
+class ReinhardProgram(GLSLProgram, RendtexInputMixin):
     def __init__(self, thres):
         super().__init__(
             GLSLTemplate.fromfile('postprocessing/quad.vert.glsl'),
@@ -79,7 +79,7 @@ class ReinhardProgram(PostprocessProgram):
         return program
 
 
-class ExposureProgram(PostprocessProgram):
+class ExposureProgram(GLSLProgram, RendtexInputMixin):
     def __init__(self, exposure):
         super().__init__(
             GLSLTemplate.fromfile('postprocessing/quad.vert.glsl'),
