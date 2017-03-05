@@ -36,7 +36,7 @@ class BaseCamera:
     def view_mat(self):
         raise NotImplementedError
 
-    def handle_mouse(self):
+    def handle_mouse(self, last_pos, cur_pos):
         pass
 
     def unproject(self, x: np.ndarray, y: np.ndarray, depth: np.ndarray):

@@ -110,7 +110,8 @@ def _get_grid(grid, height, width, u, v):
 
 
 def stack_cross(cube_faces: np.ndarray, format='vertical'):
-    _, height, width, n_channels = cube_faces.shape
+    _, height, width = cube_faces.shape[:3]
+    n_channels = cube_faces.shape[3] if len(cube_faces.shape) == 4 else 1
     if format == 'vertical':
         result = np.zeros((height * 4, width * 3, n_channels))
         gridf = partial(_set_grid, result, height, width)
@@ -144,8 +145,10 @@ def unstack_cross(cross):
     else:
         raise RuntimeError("Unknown cross format.")
 
-    n_channels = cross.shape[2]
-    faces = np.zeros((6, height, width, n_channels), dtype=np.float32)
+    n_channels = cross.shape[2] if len(cross.shape) == 3 else 1
+    faces_shape = ((6, height, width, n_channels)
+                   if n_channels > 1 else (6, height, width))
+    faces = np.zeros(faces_shape, dtype=np.float32)
     gridf = partial(_get_grid, cross, height, width)
 
     if format == 'vertical':
