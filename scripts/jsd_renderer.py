@@ -17,7 +17,10 @@ app.use_app('pyglet')
 parser = argparse.ArgumentParser()
 parser.add_argument('--jsd', dest='jsd_path', type=str, required=True)
 parser.add_argument('--ssaa', dest='ssaa', type=int, default=2)
-parser.add_argument('--gamma', dest='gamma', type=float, default=None)
+parser.add_argument('--gamma', dest='gamma', type=float, default=2.2)
+parser.add_argument('--tonemap', dest='tonemap', type=str, default='reinhard')
+parser.add_argument(
+    '--reinhard-thres', dest='reinhard_thres', type=float, default=3.0)
 parser.add_argument('--exposure', dest='exposure', type=float, default=1.0)
 
 args = parser.parse_args()
@@ -36,8 +39,6 @@ class MyJSDRenderer(jsd.JSDRenderer):
         if event.key == 'Escape':
             self.app.quit()
             return
-
-        move_amount = 2.0
 
         old_uv_scale = self.uv_scale
         if event.key == '=':
@@ -109,6 +110,10 @@ if __name__ == '__main__':
         position=[0, 100, 100],
         lookat=(0.0, 0.0, -0.0),
         up=(0.0, 1.0, 0.0))
-    renderer= MyJSDRenderer(jsd, camera, dpi=500, gamma=args.gamma,
-                            ssaa=args.ssaa, exposure=args.exposure)
+    renderer= MyJSDRenderer(jsd, camera, dpi=500,
+                            gamma=args.gamma,
+                            ssaa=args.ssaa,
+                            tonemap=args.tonemap,
+                            exposure=args.exposure,
+                            reinhard_thres=args.reinhard_thres)
     app.run()

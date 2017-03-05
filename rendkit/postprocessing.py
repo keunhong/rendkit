@@ -66,14 +66,16 @@ class GammaCorrectionProgram(PostprocessProgram):
 
 
 class ReinhardProgram(PostprocessProgram):
-    def __init__(self):
+    def __init__(self, thres):
         super().__init__(
             GLSLTemplate.fromfile('postprocessing/quad.vert.glsl'),
             GLSLTemplate.fromfile('postprocessing/reinhard_tonemap.frag.glsl'))
+        self.thres = thres
 
     def update_uniforms(self, program):
         program['a_uv'] = [(0, 0), (0, 1), (1, 0), (1, 1)]
         program['a_position'] = [(-1, -1), (-1, +1), (+1, -1), (+1, +1)]
+        program['u_thres'] = self.thres
         return program
 
 

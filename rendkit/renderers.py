@@ -126,7 +126,11 @@ class ContextProvider:
 
 class SceneRenderer(BaseRenderer):
     def __init__(self, scene, camera, size=None,
-                 gamma=None, ssaa=0, exposure=1.0,
+                 gamma=None,
+                 ssaa=0,
+                 tonemap=None,
+                 exposure=1.0,
+                 reinhard_thres=3.0,
                  conservative_raster=False,
                  *args, **kwargs):
         if size is None:
@@ -152,10 +156,19 @@ class SceneRenderer(BaseRenderer):
 
         if self.ssaa_scale >= 2:
             self.pp_pipeline.add_program(pp.DownsampleProgram(ssaa))
-        if gamma is not None:
-            logger.info("Post-processing gamma={}, exposure={}."
-                        .format(gamma, exposure))
+
+        if tonemap == 'reinhard':
+            logger.info("Tonemapping mode reinhard with threshold={}"
+                        .format(reinhard_thres))
+            self.pp_pipeline.add_program(pp.ReinhardProgram(reinhard_thres))
+        elif tonemap == 'exposure':
+            logger.info("Tonemapping mode exposure with exposure={}"
+                        .format(exposure))
             self.pp_pipeline.add_program(pp.ExposureProgram(exposure))
+
+        if gamma is not None:
+            logger.info("Gamma correction with gamma={}"
+                        .format(gamma))
             self.pp_pipeline.add_program(pp.GammaCorrectionProgram(gamma))
         else:
             self.pp_pipeline.add_program(pp.IdentityProgram())
