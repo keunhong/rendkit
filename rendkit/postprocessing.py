@@ -18,7 +18,7 @@ class IdentityProgram(PostprocessProgram):
             GLSLTemplate.fromfile('postprocessing/identity.frag.glsl'))
 
     def update_uniforms(self, program):
-        program['a_texcoord'] = [(0, 0), (0, 1), (1, 0), (1, 1)]
+        program['a_uv'] = [(0, 0), (0, 1), (1, 0), (1, 1)]
         program['a_position'] = [(-1, -1), (-1, +1), (+1, -1), (+1, +1)]
         return program
 
@@ -41,7 +41,7 @@ class DownsampleProgram(PostprocessProgram):
 
     def update_uniforms(self, program):
         program['u_aa_kernel'] = self.LANCZOS_KERNELS[self.scale - 2]
-        program['a_texcoord'] = [(0, 0), (0, 1), (1, 0), (1, 1)]
+        program['a_uv'] = [(0, 0), (0, 1), (1, 0), (1, 1)]
         program['a_position'] = [(-1, -1), (-1, +1), (+1, -1), (+1, +1)]
         return program
 
@@ -59,7 +59,7 @@ class GammaCorrectionProgram(PostprocessProgram):
         self.gamma = gamma
 
     def update_uniforms(self, program):
-        program['a_texcoord'] = [(0, 0), (0, 1), (1, 0), (1, 1)]
+        program['a_uv'] = [(0, 0), (0, 1), (1, 0), (1, 1)]
         program['a_position'] = [(-1, -1), (-1, +1), (+1, -1), (+1, +1)]
         program['u_gamma'] = self.gamma
         return program
@@ -72,7 +72,7 @@ class ReinhardProgram(PostprocessProgram):
             GLSLTemplate.fromfile('postprocessing/reinhard_tonemap.frag.glsl'))
 
     def update_uniforms(self, program):
-        program['a_texcoord'] = [(0, 0), (0, 1), (1, 0), (1, 1)]
+        program['a_uv'] = [(0, 0), (0, 1), (1, 0), (1, 1)]
         program['a_position'] = [(-1, -1), (-1, +1), (+1, -1), (+1, +1)]
         return program
 
@@ -85,7 +85,7 @@ class ExposureProgram(PostprocessProgram):
         self.exposure = exposure
 
     def update_uniforms(self, program):
-        program['a_texcoord'] = [(0, 0), (0, 1), (1, 0), (1, 1)]
+        program['a_uv'] = [(0, 0), (0, 1), (1, 0), (1, 1)]
         program['a_position'] = [(-1, -1), (-1, +1), (+1, -1), (+1, +1)]
         program['u_exposure'] = self.exposure
         return program

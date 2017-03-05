@@ -3,11 +3,11 @@
 uniform sampler2D u_rendtex;
 uniform vec2 u_texture_shape;
 uniform vec4 u_aa_kernel;
-varying vec2 v_texcoord;
+varying vec2 v_uv;
 
 
 void main() {
-    vec2 pos = v_texcoord.xy;
+    vec2 pos = v_uv.xy;
     vec3 color = vec3(0.0);
 
     float dx = 1.0 / u_texture_shape.y;

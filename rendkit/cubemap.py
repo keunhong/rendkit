@@ -36,6 +36,71 @@ class LambertPrefilterProgram(GLSLProgram):
         return program
 
 
+def prefilter_irradiance(cube_faces):
+    program = LambertPrefilterProgram().compile()
+    _, height, width, n_channels = cube_faces.shape
+    internal_format = 'rgba32f' if n_channels == 4 else 'rgb32f'
+
+    with ContextProvider((height, width)):
+        rendtex = gloo.Texture2D(
+            (height, width, n_channels), interpolation='linear',
+            wrapping='repeat', internalformat=internal_format)
+        framebuffer = gloo.FrameBuffer(
+            rendtex, gloo.RenderBuffer((width, height, n_channels)))
+        gloo.set_viewport(0, 0, width, height)
+        program['u_radiance_map'] = gloo.TextureCubeMap(
+            cube_faces, internalformat=internal_format, mipmap_levels=8)
+        program['u_cubemap_size'] = (width, height)
+        results = np.zeros(cube_faces.shape, dtype=np.float32)
+        for i in range(6):
+            program['u_cube_face'] = i
+            with framebuffer:
+                program.draw(gl.GL_TRIANGLE_STRIP)
+                results[i] = gloo.read_pixels(out_type=np.float32, alpha=False)
+    return results
+
+
+class CubemapToDualParaboloidProgram(GLSLProgram):
+    def __init__(self):
+        super().__init__(
+            GLSLTemplate.fromfile('postprocessing/quad.vert.glsl'),
+            GLSLTemplate.fromfile('cubemap/cubemap_to_dual_paraboloid.frag.glsl'))
+
+    def update_uniforms(self, program):
+        program['a_position'] = [(-1, -1), (-1, +1), (+1, -1), (+1, +1)]
+        program['a_uv'] = [(0, 0), (0, 1), (1, 0), (1, 1)]
+        return program
+
+
+def cubemap_to_dual_paraboloid(cube_faces):
+    _, height, width, n_channels = cube_faces.shape
+    height, width = height * 2, width * 2
+    internal_format = 'rgba32f' if n_channels == 4 else 'rgb32f'
+
+    with ContextProvider((height, width)):
+        rendtex = gloo.Texture2D(
+            (height, width, n_channels), interpolation='linear',
+            wrapping='repeat', internalformat=internal_format)
+
+        framebuffer = gloo.FrameBuffer(
+            rendtex, gloo.RenderBuffer((width, height, n_channels)))
+
+        program = CubemapToDualParaboloidProgram().compile()
+        program['u_cubemap'] = gloo.TextureCubeMap(
+            cube_faces, internalformat=internal_format, mipmap_levels=8)
+        program['u_cubemap_size'] = (width, height)
+
+        results = []
+        for i in range(2):
+            with framebuffer:
+                gloo.set_viewport(0, 0, width, height)
+                program['u_hemisphere'] = i
+                program.draw(gl.GL_TRIANGLE_STRIP)
+                results.append(gloo.read_pixels(out_type=np.float32, alpha=False))
+
+    return results[0], results[1]
+
+
 def _set_grid(grid: np.ndarray, height, width, u, v, value):
     grid[u*height:(u+1)*height, v*width:(v+1)*width] = value
 
@@ -100,7 +165,7 @@ def unstack_cross(cross):
     return faces
 
 
-def load_cubemap(path, size=(256, 256)):
+def load_cubemap(path, size=(512, 512)):
     ext = os.path.splitext(path)[1]
     shape = (*size, 3)
     cube_faces = np.zeros((6, *shape), dtype=np.float32)
@@ -123,28 +188,6 @@ def load_cubemap(path, size=(256, 256)):
     return cube_faces
 
 
-def prefilter_irradiance(cube_faces):
-    program = LambertPrefilterProgram().compile()
-    _, height, width, n_channels = cube_faces.shape
-    internal_format = 'rgba32f' if n_channels == 4 else 'rgb32f'
-    rendtex = gloo.Texture2D(
-        (height, width, n_channels), interpolation='linear',
-        wrapping='repeat', internalformat=internal_format)
-    framebuffer = gloo.FrameBuffer(
-        rendtex, gloo.RenderBuffer((width, height, n_channels)))
-    gloo.set_viewport(0, 0, width, height)
-    program['u_radiance_map'] = gloo.TextureCubeMap(
-        cube_faces, internalformat=internal_format, mipmap_levels=8)
-    program['u_cubemap_size'] = (width, height)
-    results = np.zeros(cube_faces.shape, dtype=np.float32)
-    for i in range(6):
-        program['u_cube_face'] = i
-        with framebuffer:
-            program.draw(gl.GL_TRIANGLE_STRIP)
-            results[i] = gloo.read_pixels(out_type=np.float32, alpha=False)
-    return results
-
-
 class RadianceMap():
     def __init__(self, cube_faces: np.ndarray, scale=1.0):
         if cube_faces.shape[0] != 6:
@@ -157,8 +200,7 @@ class RadianceMap():
 
         self.radiance_faces = cube_faces * scale
         logger.info("Prefiltering irradiance map.")
-        with ContextProvider((face_width, face_height)):
-            self.irradiance_faces = prefilter_irradiance(self.radiance_faces)
+        self.irradiance_faces = prefilter_irradiance(self.radiance_faces)
 
     @property
     def radiance_faces(self):
