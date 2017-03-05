@@ -69,8 +69,9 @@ class Renderable:
 
         if scene.radiance_map is not None and material.use_radiance_map:
             program['u_irradiance_map'] = scene.radiance_map.irradiance_tex
-            program['u_radiance_map'] = scene.radiance_map.radiance_tex
             program['u_cubemap_size'] = scene.radiance_map.size
+            program['u_radiance_upper'] = scene.radiance_map.radiance_upper_tex
+            program['u_radiance_lower'] = scene.radiance_map.radiance_lower_tex
 
         if material.use_cam_pos:
             program['u_cam_pos'] = linalg.inv(camera.view_mat())[:3, 3]

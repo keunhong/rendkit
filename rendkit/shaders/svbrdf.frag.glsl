@@ -2,6 +2,7 @@
 #include "utils/math.glsl"
 #include "utils/sampling.glsl"
 #include "brdf/aittala.glsl"
+#include "cubemap/dual_paraboloid.glsl"
 
 #define LIGHT_POINT 0
 #define LIGHT_DIRECTIONAL 1
@@ -31,7 +32,8 @@ uniform int u_light_type[TPL.num_lights];
 
 #if TPL.use_radiance_map
 uniform samplerCube u_irradiance_map;
-uniform samplerCube u_radiance_map;
+uniform sampler2D u_radiance_upper;
+uniform sampler2D u_radiance_lower;
 uniform vec2 u_cubemap_size;
 #endif
 
@@ -95,7 +97,13 @@ void main() {
     vec3 L = reflect(-V, H);
     float pdf = get_pdf_value(sigma, xi);
 		float lod = compute_lod(pdf, N_SAMPLES, u_cubemap_size.x, u_cubemap_size.y);
-    vec3 light_color = textureLod(u_radiance_map, L, lod).rgb;
+    vec3 light_color;
+    vec2 dp_uv = dualp_world_to_tex(L, 1.2);
+    if (L.y > 0) {
+      light_color = textureLod(u_radiance_upper, dp_uv, lod).rgb;
+    } else {
+      light_color = textureLod(u_radiance_lower, dp_uv, lod).rgb;
+    }
     specular += compute_irradiance(N, L, light_color) *
       aittala_spec_is(N, V, L, rho_s, S, u_alpha, pdf);
   }

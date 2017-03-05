@@ -91,7 +91,7 @@ def cubemap_to_dual_paraboloid(cube_faces):
         program['u_cubemap_size'] = (width, height)
 
         results = []
-        for i in range(2):
+        for i in [0, 1]:
             with framebuffer:
                 gloo.set_viewport(0, 0, width, height)
                 program['u_hemisphere'] = i
@@ -197,6 +197,8 @@ class RadianceMap():
         self._radiance_tex = None
         self._irradiance_faces = None
         self._irradiance_tex = None
+        self._radiance_upper_tex = None
+        self._radiance_lower_tex = None
 
         self.radiance_faces = cube_faces * scale
         logger.info("Prefiltering irradiance map.")
@@ -209,8 +211,14 @@ class RadianceMap():
     @radiance_faces.setter
     def radiance_faces(self, radiance_faces):
         self._radiance_faces = radiance_faces
-        self._radiance_tex = gloo.TextureCubeMap(
-            self.radiance_faces,
+        upper_map, lower_map = cubemap_to_dual_paraboloid(self.radiance_faces)
+        self._radiance_upper_tex = gloo.Texture2D(
+            upper_map,
+            interpolation='linear_mipmap_linear',
+            internalformat='rgb32f',
+            mipmap_levels=8)
+        self._radiance_lower_tex = gloo.Texture2D(
+            lower_map,
             interpolation='linear_mipmap_linear',
             internalformat='rgb32f',
             mipmap_levels=8)
@@ -228,8 +236,12 @@ class RadianceMap():
             internalformat='rgb32f')
 
     @property
-    def radiance_tex(self):
-        return self._radiance_tex
+    def radiance_upper_tex(self):
+        return self._radiance_upper_tex
+
+    @property
+    def radiance_lower_tex(self):
+        return self._radiance_lower_tex
 
     @property
     def irradiance_tex(self):

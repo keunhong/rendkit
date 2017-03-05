@@ -1,6 +1,7 @@
 #version 150
 #include "utils/math.glsl"
 #include "utils/sampling.glsl"
+#include "cubemap/dual_paraboloid.glsl"
 
 #define LIGHT_POINT 0
 #define LIGHT_DIRECTIONAL 1
@@ -22,7 +23,8 @@ uniform int u_light_type[TPL.num_lights];
 
 #if TPL.use_radiance_map
 uniform samplerCube u_irradiance_map;
-uniform samplerCube u_radiance_map;
+uniform sampler2D u_radiance_upper;
+uniform sampler2D u_radiance_lower;
 uniform vec2 u_cubemap_size;
 #endif
 
@@ -31,7 +33,7 @@ const float NUM_LIGHTS = TPL.num_lights;
 
 vec3 importance_sample(vec2 xi, float shininess) {
   float phi = 2.0f * M_PI * xi.x;
-  float cos_theta = pow(xi.y, 1.0/(shininess + 1.0));
+  float cos_theta = pow(1 - xi.y, 1.0/(shininess + 1.0));
   float sin_theta = sqrt(1.0 - cos_theta * cos_theta);
 
   vec3 H;
@@ -66,7 +68,13 @@ void main() {
 		float lod = compute_lod(pdf, N_SAMPLES, u_cubemap_size.x, u_cubemap_size.y);
 
     vec3 L = reflect(-V, H);
-    vec3 light_color = textureLod(u_radiance_map, L, lod).rgb;
+    vec2 dp_uv = dualp_world_to_tex(L, 1.2);
+    vec3 light_color;
+    if (L.y > 0) {
+      light_color = textureLod(u_radiance_upper, dp_uv, lod).rgb;
+    } else {
+      light_color = textureLod(u_radiance_lower, dp_uv, lod).rgb;
+    }
     specular += u_spec / float(N_SAMPLES) * light_color;
   }
   total_radiance += specular;
