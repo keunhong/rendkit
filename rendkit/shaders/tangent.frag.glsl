@@ -1,8 +1,9 @@
-#version 120
+#version 450 core
 
-varying vec3 v_tangent;
-varying vec3 v_position;
+in vec3 v_tangent;
+in vec3 v_position;
+out out_color;
 
 void main(void) {
-    gl_FragColor = vec4(normalize(v_tangent), 1.0);
+    out_color = vec4(normalize(v_tangent), 1.0);
 }

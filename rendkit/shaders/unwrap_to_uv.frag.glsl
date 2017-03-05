@@ -1,14 +1,17 @@
-#version 120
+#version 450 core
 uniform sampler2D input_tex;
 uniform sampler2D input_depth;
 uniform vec3 u_cam_pos;
-varying vec3 v_position;
-varying vec3 v_normal;
-varying vec3 v_tangent;
-varying vec3 v_bitangent;
-varying vec2 v_uv;
-varying vec3 v_pos_clip_space;
-varying float v_depth;
+
+in vec3 v_position;
+in vec3 v_normal;
+in vec3 v_tangent;
+in vec3 v_bitangent;
+in vec2 v_uv;
+in vec3 v_pos_clip_space;
+in float v_depth;
+
+out vec4 out_color;
 
 
 void main() {
@@ -17,8 +20,8 @@ void main() {
 	pos_as_uv.y = 1.0 - pos_as_uv.y;
 	float input_depth = texture2D(input_depth, pos_as_uv).x;
 	if (normal_faces_camera && abs(input_depth - v_depth) < 20.0/255) {
-		gl_FragColor = texture2D(input_tex, pos_as_uv);
+		out_color = texture2D(input_tex, pos_as_uv);
 	} else {
-		gl_FragColor = vec4(1.0, 0.0, 1.0, 0.0);
+		out_color = vec4(1.0, 0.0, 1.0, 0.0);
 	}
 }

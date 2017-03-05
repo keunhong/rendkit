@@ -1,14 +1,13 @@
-#version 150
+#version 450 core
 #include "utils/math.glsl"
 #include "utils/sampling.glsl"
-
-#define M_PI 3.1415926535897932384626433832795
-
 
 uniform samplerCube u_radiance_map;
 uniform vec2 u_cubemap_size;
 uniform int u_cube_face;
+
 in vec2 v_uv;
+out vec4 out_color;
 
 
 vec3 importance_sample(vec2 xi) {
@@ -56,5 +55,5 @@ vec4 samp(vec2 pos, int cube_face) {
 
 
 void main() {
-  gl_FragColor = vec4(samp(v_uv, u_cube_face));
+  out_color = vec4(samp(v_uv, u_cube_face));
 }

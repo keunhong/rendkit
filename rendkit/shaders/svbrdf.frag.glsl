@@ -1,4 +1,4 @@
-#version 150
+#version 450 core
 #include "utils/math.glsl"
 #include "utils/sampling.glsl"
 #include "brdf/aittala.glsl"
@@ -16,11 +16,6 @@ uniform vec2 u_sigma_range;
 uniform sampler2D u_cdf_sampler;
 uniform sampler2D u_pdf_sampler; // Normalization factor for PDF.
 uniform vec3 u_cam_pos;
-in vec3 v_position;
-in vec3 v_normal;
-in vec3 v_tangent;
-in vec3 v_bitangent;
-in vec2 v_uv;
 
 uniform float u_alpha;
 #if TPL.num_lights > 0
@@ -38,6 +33,14 @@ uniform vec2 u_cubemap_size;
 #endif
 
 const float NUM_LIGHTS = TPL.num_lights;
+
+in vec3 v_position;
+in vec3 v_normal;
+in vec3 v_tangent;
+in vec3 v_bitangent;
+in vec2 v_uv;
+
+out vec4 out_color;
 
 
 vec3 compute_irradiance(vec3 N, vec3 L, vec3 light_color) {
@@ -138,5 +141,5 @@ void main() {
   }
   #endif
 
-  gl_FragColor = vec4(max(vec3(.0), total_radiance), 1.0);    // rough gamma
+  out_color = vec4(max(vec3(.0), total_radiance), 1.0);    // rough gamma
 }

@@ -1,21 +1,23 @@
-#version 120
+#version 450 core
 uniform mat4 u_view;
 uniform mat4 u_model;
 uniform mat4 u_projection;
 uniform float u_near;
 uniform float u_far;
-attribute vec3 a_position;
-attribute vec2 a_uv;
-attribute vec3 a_normal;
-attribute vec3 a_tangent;
-attribute vec3 a_bitangent;
-varying vec3 v_position;
-varying vec3 v_normal;
-varying vec3 v_tangent;
-varying vec3 v_bitangent;
-varying vec2 v_uv;
-varying vec3 v_pos_clip_space;
-varying float v_depth;
+
+in vec3 a_position;
+in vec2 a_uv;
+in vec3 a_normal;
+in vec3 a_tangent;
+in vec3 a_bitangent;
+
+out vec3 v_position;
+out vec3 v_normal;
+out vec3 v_tangent;
+out vec3 v_bitangent;
+out vec2 v_uv;
+out vec3 v_pos_clip_space;
+out float v_depth;
 
 
 void main() {

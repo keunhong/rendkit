@@ -1,7 +1,8 @@
-#version 120
+#version 450 core
 
-varying float v_depth;
+in float v_depth;
+out vec4 out_color;
 
 void main(void) {
-    gl_FragColor = vec4(vec3(v_depth), 1.0);
+    out_color = vec4(vec3(v_depth), 1.0);
 }

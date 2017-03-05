@@ -1,9 +1,11 @@
-#version 120
+#version 450 core
 
 uniform sampler2D u_rendtex;
 uniform vec2 u_texture_shape;
 uniform vec4 u_aa_kernel;
-varying vec2 v_uv;
+
+in vec2 v_uv;
+out vec4 out_color;
 
 
 void main() {
@@ -25,5 +27,5 @@ void main() {
     }
 
     // Determine final color
-    gl_FragColor = vec4(color, 1.0);
+    out_color = vec4(color, 1.0);
 }

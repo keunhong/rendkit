@@ -1,8 +1,10 @@
-#version 120
+#version 450 core
 
-varying vec3 v_normal;
-varying vec3 v_position;
+in vec3 v_normal;
+in vec3 v_position;
+
+out vec4 out_color;
 
 void main(void) {
-    gl_FragColor = vec4(normalize(v_normal), 1.0);
+    out_color = vec4(normalize(v_normal), 1.0);
 }

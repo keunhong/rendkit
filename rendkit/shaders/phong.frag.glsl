@@ -1,10 +1,12 @@
-#version 150
+#version 450 core
 #include "utils/math.glsl"
 #include "utils/sampling.glsl"
 #include "cubemap/dual_paraboloid.glsl"
 
 #define LIGHT_POINT 0
 #define LIGHT_DIRECTIONAL 1
+
+out vec4 out_color;
 
 in vec3 v_position;
 in vec3 v_normal;
@@ -103,5 +105,5 @@ void main() {
 		total_radiance += radiance;
 	}
 	#endif
-	gl_FragColor = vec4(total_radiance, 1.0);
+	out_color = vec4(total_radiance, 1.0);
 }
