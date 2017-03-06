@@ -97,19 +97,19 @@ class PostprocessPipeline:
     def __init__(self, size):
         self.programs = []
         self.compiled = []
-        self.render_textures = []
-        self.render_framebuffers = []
+        self.rend_colortex_list = []
+        self.rend_fb_list = []
         self.size = size
 
     def add_program(self, program):
         self.programs.append(program)
         self.compiled.append(program.compile())
-        tex, fb = create_rend_target(self.size)
-        self.render_textures.append(tex)
-        self.render_framebuffers.append(fb)
+        fb, colortex, _ = create_rend_target(self.size)
+        self.rend_fb_list.append(fb)
+        self.rend_colortex_list.append(colortex)
 
-    def draw(self, input_tex, output_size):
-        current_tex = input_tex
+    def draw(self, input_colortex, input_depthtex, output_size):
+        current_tex = input_colortex
         for i, program in enumerate(self.programs):
             is_last = i == (len(self.programs) - 1)
             compiled = self.compiled[i]
@@ -121,9 +121,9 @@ class PostprocessPipeline:
                 compiled.draw(gl.GL_TRIANGLE_STRIP)
             else:
                 gloo.set_viewport(0, 0, *self.size)
-                with self.render_framebuffers[i]:
+                with self.rend_fb_list[i]:
                     compiled.draw(gl.GL_TRIANGLE_STRIP)
-            current_tex = self.render_textures[i]
+            current_tex = self.rend_colortex_list[i]
 
 
 def create_rend_target(size):
@@ -131,5 +131,6 @@ def create_rend_target(size):
     rendtex = gloo.Texture2D((*shape, 4),
                              interpolation='linear',
                              internalformat='rgba32f')
-    fb = gloo.FrameBuffer(rendtex, gloo.RenderBuffer(shape))
-    return rendtex, fb
+    depthtex = gloo.Texture2D((*shape, 1), format='depth_component')
+    framebuffer = gloo.FrameBuffer(rendtex, depthtex)
+    return framebuffer, rendtex, depthtex

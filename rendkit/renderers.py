@@ -54,13 +54,13 @@ class BaseRenderer(app.Canvas):
         """
         raise NotImplementedError
 
-    def render_to_image(self, camera=None) -> np.ndarray:
+    def render_to_image(self, camera=None, out_size=None) -> np.ndarray:
         """
         Renders to an image.
         :return: image of rendered scene.
         """
         with self._fbo:
-            self.draw(camera)
+            self.draw(camera, out_size)
             pixels: np.ndarray = gloo.util.read_pixels(
                 out_type=np.float32, alpha=False)
         return pixels
@@ -177,30 +177,32 @@ class SceneRenderer(BaseRenderer):
             self.pp_pipeline.add_program(pp.IdentityProgram())
 
     def draw_scene(self, camera):
-        rend_tex, rend_fb = self.rend_target_by_cam[camera]
+        rend_fb, rend_colortex, _ = self.rend_target_by_cam[camera]
 
         gloo.clear(color=camera.clear_color)
         gloo.set_state(depth_test=True)
-        gloo.set_viewport(0, 0, rend_tex.shape[1], rend_tex.shape[0])
+        gloo.set_viewport(0, 0, rend_colortex.shape[1], rend_colortex.shape[0])
         for renderable in self.scene.renderables:
             program = renderable.activate(self.scene, camera)
             with self.conservative_raster:
                 program.draw(gl.GL_TRIANGLES)
 
-    def draw(self, camera=None):
+    def draw(self, camera=None, out_size=None):
         if camera is None:
             camera = self.camera
 
-        if camera not in self.rend_target_by_cam:
-            rend_tex, rend_fb = pp.create_rend_target(
-                tuple(s * self.ssaa_scale for s in camera.size))
-            self.rend_target_by_cam[camera] = (rend_tex, rend_fb)
+        if out_size is None:
+            out_size = (self.physical_size
+                        if camera == self.camera else camera.size)
 
-        rend_tex, rend_fb = self.rend_target_by_cam[camera]
+        if camera not in self.rend_target_by_cam:
+            rend_fb, rend_colortex, rend_depthtex = pp.create_rend_target(
+                tuple(s * self.ssaa_scale for s in out_size))
+            self.rend_target_by_cam[camera] = (rend_fb, rend_colortex)
+
+        rend_fb, rend_colortex, rend_depthtex = self.rend_target_by_cam[camera]
 
         with rend_fb:
             self.draw_scene(camera)
 
-        output_size = (self.physical_size
-                       if camera == self.camera else camera.size)
-        self.pp_pipeline.draw(rend_tex, output_size)
+        self.pp_pipeline.draw(rend_colortex, rend_depthtex, out_size)
