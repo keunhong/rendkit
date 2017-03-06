@@ -235,3 +235,12 @@ def export_mesh_to_jsd(mesh: Mesh, size=100):
         "materials": list(mesh.materials),
         "faces": copy.copy(mesh.faces),
     }
+
+
+def cache_inline(jsd_dict):
+    new_dict = copy.deepcopy(jsd_dict)
+    for mat_name, jsd_mat in new_dict['materials'].items():
+        if jsd_mat['type'] == 'svbrdf':
+            brdf = SVBRDF(jsd_mat['path'])
+            new_dict['materials'][mat_name] = brdf.to_jsd()
+    return new_dict
