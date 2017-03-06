@@ -115,5 +115,6 @@ if __name__ == '__main__':
                             ssaa=args.ssaa,
                             tonemap=args.tonemap,
                             exposure=args.exposure,
-                            reinhard_thres=args.reinhard_thres)
+                            reinhard_thres=args.reinhard_thres,
+                            show_floor=True)
     app.run()

@@ -25,17 +25,21 @@ logger = logging.getLogger(__name__)
 
 
 class JSDRenderer(SceneRenderer):
-    def __init__(self, jsd_dict_or_scene, camera=None, *args, **kwargs):
+    def __init__(self, jsd_dict_or_scene, camera=None, show_floor=False,
+                 *args, **kwargs):
         if camera is None:
             camera = import_jsd_camera(jsd_dict_or_scene)
         scene = jsd_dict_or_scene
         if isinstance(scene, dict):
             scene = import_jsd_scene(jsd_dict_or_scene)
-        floor_pos = scene.meshes[0].vertices[:, 1].min()
-        floor_mesh = make_plane(10000, 10000)
-        scene.add_mesh(floor_mesh, (0, floor_pos, 0))
-        scene.put_material(
-            'floor', PhongMaterial((0.05, 0.05, 0.05), (0.05, 0.05, 0.05), 1000.0))
+
+        if show_floor:
+            floor_pos = scene.meshes[0].vertices[:, 1].min()
+            floor_mesh = make_plane(10000, 10000)
+            scene.add_mesh(floor_mesh, (0, floor_pos, 0))
+            scene.put_material(
+                'floor', PhongMaterial((0.05, 0.05, 0.05), (0.05, 0.05, 0.05), 1000.0))
+
         super().__init__(scene=scene, camera=camera, *args, **kwargs)
 
 
