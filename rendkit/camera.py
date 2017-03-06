@@ -13,6 +13,9 @@ class BaseCamera:
         self.near = near
         self.far = far
         self.clear_color = clear_color
+        self.position = None
+        self.up = None
+        self.lookat = None
 
     @property
     def left(self):
@@ -30,20 +33,33 @@ class BaseCamera:
     def bottom(self):
         return -self.size[1] / 2
 
+    @property
+    def forward(self):
+        return vector_utils.normalized(np.subtract(self.lookat, self.position))
+
     def projection_mat(self):
         raise NotImplementedError
 
     def view_mat(self):
-        raise NotImplementedError
+        rotation_mat = np.eye(3)
+        rotation_mat[0, :] = vector_utils.normalized(
+            np.cross(self.forward, self.up))
+        rotation_mat[2, :] = -self.forward
+        # We recompute the 'up' vector portion of the matrix as the cross
+        # product of the forward and sideways vector so that we have an ortho-
+        # normal basis.
+        rotation_mat[1, :] = np.cross(rotation_mat[2, :], rotation_mat[0, :])
+
+        position = rotation_mat.dot(self.position)
+
+        view_mat = np.eye(4)
+        view_mat[:3, :3] = rotation_mat
+        view_mat[:3, 3] = -position
+
+        return view_mat
 
     def handle_mouse(self, last_pos, cur_pos):
         pass
-
-    def unproject(self, x: np.ndarray, y: np.ndarray, depth: np.ndarray):
-        return graphics_utils.unproject(*self.size,
-                                        self.projection_mat(),
-                                        self.view_mat(),
-                                        x, y, depth, self.near, self.far)
 
     def apply_projection(self, points):
         homo = graphics_utils.euclidean_to_homogeneous(points)
@@ -100,32 +116,22 @@ class PerspectiveCamera(BaseCamera):
         self.lookat = np.array(lookat, dtype=np.float32)
         self.up = vector_utils.normalized(np.array(up))
 
-    def forward(self):
-        return vector_utils.normalized(self.lookat - self.position)
-
     def projection_mat(self):
         mat = util.transforms.perspective(
             self.fov, self.size[0] / self.size[1], self.near, self.far).T
         return mat
 
-    def view_mat(self):
-        forward = self.forward()
-        rotation_mat = np.eye(3)
-        rotation_mat[0, :] = vector_utils.normalized(
-            np.cross(forward, self.up))
-        rotation_mat[2, :] = -forward
-        # We recompute the 'up' vector portion of the matrix as the cross
-        # product of the forward and sideways vector so that we have an ortho-
-        # normal basis.
-        rotation_mat[1, :] = np.cross(rotation_mat[2, :], rotation_mat[0, :])
 
-        position = rotation_mat.dot(self.position)
+class OrthographicCamera(BaseCamera):
+    def __init__(self, size, near, far, position, lookat, up, *args, **kwargs):
+        super().__init__(size, near, far, *args, **kwargs)
+        self.lookat = lookat
+        self.position = position
+        self.up = up
 
-        view_mat = np.eye(4)
-        view_mat[:3, :3] = rotation_mat
-        view_mat[:3, 3] = -position
-
-        return view_mat
+    def projection_mat(self):
+        return util.transforms.ortho(self.left, self.right, self.bottom,
+                                     self.top, self.near, self.far).T
 
 
 def _get_arcball_vector(x, y, w, h, r=100.0):
