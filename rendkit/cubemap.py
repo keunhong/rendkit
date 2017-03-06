@@ -88,7 +88,6 @@ def cubemap_to_dual_paraboloid(cube_faces):
         program = CubemapToDualParaboloidProgram().compile()
         program['u_cubemap'] = gloo.TextureCubeMap(
             cube_faces, internalformat=internal_format, mipmap_levels=8)
-        program['u_cubemap_size'] = (width, height)
 
         results = []
         for i in [0, 1]:
@@ -195,7 +194,6 @@ class RadianceMap():
     def __init__(self, cube_faces: np.ndarray, scale=1.0):
         if cube_faces.shape[0] != 6:
             raise RuntimeError('Cubemap must have exactly 6 faces.')
-        face_height, face_width = cube_faces.shape[1:3]
         self._radiance_faces = None
         self._radiance_tex = None
         self._irradiance_faces = None

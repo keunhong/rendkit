@@ -2,7 +2,6 @@
 #include "cubemap/dual_paraboloid.glsl"
 
 uniform samplerCube u_cubemap;
-uniform vec2 u_cubemap_size;
 uniform int u_hemisphere;
 
 in vec2 v_uv;
