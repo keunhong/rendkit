@@ -173,14 +173,16 @@ class SceneRenderer(BaseRenderer):
         else:
             self.pp_pipeline.add_program(pp.IdentityProgram())
 
+    def draw_scene(self, camera):
+        gloo.clear(color=camera.clear_color)
+        gloo.set_state(depth_test=True)
+        gloo.set_viewport(0, 0, *self.render_size)
+        for renderable in self.scene.renderables:
+            program = renderable.activate(self.scene, camera)
+            with self.conservative_raster:
+                program.draw(gl.GL_TRIANGLES)
+
     def draw(self):
         with self.render_fb:
-            gloo.clear(color=self.camera.clear_color)
-            gloo.set_state(depth_test=True)
-            gloo.set_viewport(0, 0, *self.render_size)
-            for renderable in self.scene.renderables:
-                program = renderable.activate(self.scene, self.camera)
-                with self.conservative_raster:
-                    program.draw(gl.GL_TRIANGLES)
-
+            self.draw_scene(self.camera)
         self.pp_pipeline.draw(self.render_tex)
