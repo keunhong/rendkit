@@ -200,4 +200,7 @@ class SceneRenderer(BaseRenderer):
 
         with rend_fb:
             self.draw_scene(camera)
-        self.pp_pipeline.draw(rend_tex, self.physical_size)
+
+        output_size = (self.physical_size
+                       if camera == self.camera else camera.size)
+        self.pp_pipeline.draw(rend_tex, output_size)
