@@ -94,13 +94,12 @@ class ExposureProgram(GLSLProgram, RendtexInputMixin):
 
 
 class PostprocessPipeline:
-    def __init__(self, size, renderer):
+    def __init__(self, size):
         self.programs = []
         self.compiled = []
         self.render_textures = []
         self.render_framebuffers = []
         self.size = size
-        self.renderer = renderer
 
     def add_program(self, program):
         self.programs.append(program)
@@ -109,7 +108,7 @@ class PostprocessPipeline:
         self.render_textures.append(tex)
         self.render_framebuffers.append(fb)
 
-    def draw(self, input_tex):
+    def draw(self, input_tex, output_size):
         current_tex = input_tex
         for i, program in enumerate(self.programs):
             is_last = i == (len(self.programs) - 1)
@@ -118,7 +117,7 @@ class PostprocessPipeline:
             gloo.clear(color=True)
             gloo.set_state(depth_test=False)
             if is_last:
-                gloo.set_viewport(0, 0, *self.renderer.physical_size)
+                gloo.set_viewport(0, 0, *output_size)
                 compiled.draw(gl.GL_TRIANGLE_STRIP)
             else:
                 gloo.set_viewport(0, 0, *self.size)

@@ -48,27 +48,28 @@ class BaseRenderer(app.Canvas):
     def set_program(self, vertex_shader, fragment_shader):
         self.active_program = gloo.Program(vertex_shader, fragment_shader)
 
-    def draw(self):
+    def draw(self, camera=None):
         """
         Override and implement drawing logic here. e.g. gloo.clear_color
         """
         raise NotImplementedError
 
-    def render_to_image(self) -> np.ndarray:
+    def render_to_image(self, camera=None) -> np.ndarray:
         """
         Renders to an image.
         :return: image of rendered scene.
         """
         with self._fbo:
-            self.draw()
-            pixels = gloo.util.read_pixels(out_type=np.float32,
-                                           alpha=False)
+            self.draw(camera)
+            pixels: np.ndarray = gloo.util.read_pixels(
+                out_type=np.float32, alpha=False)
         return pixels
 
     def on_resize(self, event):
         vp = (0, 0, self.physical_size[0], self.physical_size[1])
         self.context.set_viewport(*vp)
         self.camera.size = self.size
+        self.update()
 
     def on_draw(self, event):
         self.draw()
@@ -145,14 +146,16 @@ class SceneRenderer(BaseRenderer):
         self.gamma = gamma
         self.ssaa_scale = min(max(1, ssaa),pp.DownsampleProgram.MAX_SCALE)
 
+        # Initialize main camera.
         self.render_size = (self.size[0] * self.ssaa_scale,
                             self.size[1] * self.ssaa_scale)
-        self.render_tex, self.render_fb = \
-            pp.create_rend_target(self.render_size)
+        self.rend_target_by_cam = {
+            self.camera: pp.create_rend_target(self.render_size)
+        }
         logger.info("Render size: {} --SSAAx{}--> {}".format(
             self.size, self.ssaa_scale, self.render_size))
 
-        self.pp_pipeline = pp.PostprocessPipeline(self.size, self)
+        self.pp_pipeline = pp.PostprocessPipeline(self.size)
 
         if self.ssaa_scale >= 2:
             self.pp_pipeline.add_program(pp.DownsampleProgram(ssaa))
@@ -174,15 +177,27 @@ class SceneRenderer(BaseRenderer):
             self.pp_pipeline.add_program(pp.IdentityProgram())
 
     def draw_scene(self, camera):
+        rend_tex, rend_fb = self.rend_target_by_cam[camera]
+
         gloo.clear(color=camera.clear_color)
         gloo.set_state(depth_test=True)
-        gloo.set_viewport(0, 0, *self.render_size)
+        gloo.set_viewport(0, 0, rend_tex.shape[1], rend_tex.shape[0])
         for renderable in self.scene.renderables:
             program = renderable.activate(self.scene, camera)
             with self.conservative_raster:
                 program.draw(gl.GL_TRIANGLES)
 
-    def draw(self):
-        with self.render_fb:
-            self.draw_scene(self.camera)
-        self.pp_pipeline.draw(self.render_tex)
+    def draw(self, camera=None):
+        if camera is None:
+            camera = self.camera
+
+        if camera not in self.rend_target_by_cam:
+            rend_tex, rend_fb = pp.create_rend_target(
+                tuple(s * self.ssaa_scale for s in camera.size))
+            self.rend_target_by_cam[camera] = (rend_tex, rend_fb)
+
+        rend_tex, rend_fb = self.rend_target_by_cam[camera]
+
+        with rend_fb:
+            self.draw_scene(camera)
+        self.pp_pipeline.draw(rend_tex, self.physical_size)
