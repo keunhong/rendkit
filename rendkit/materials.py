@@ -1,3 +1,4 @@
+import logging
 import numpy as np
 from numpy import linalg
 from scipy.special import gammaincinv, gamma
@@ -6,6 +7,9 @@ from svbrdf import SVBRDF
 from vispy.gloo import Texture2D
 
 from rendkit.glsl import GLSLProgram, GLSLTemplate
+
+
+logger = logging.getLogger(__name__)
 
 
 class BasicMaterial(GLSLProgram):
@@ -165,6 +169,7 @@ class SVBRDFMaterial(GLSLProgram):
         xi_samps = np.linspace(0.0, 1, 256, endpoint=True)
         sigma_samps = np.linspace(self.sigma.min(), self.sigma.max(), 256)
 
+        logger.info("Precomputing material CDF and PDF.")
         p = self.alpha / 2
         gamma_inv_xi_theta = gammaincinv(1 / p, xi_samps) ** p
         self.cdf_sampler = np.apply_along_axis(
