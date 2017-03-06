@@ -1,8 +1,8 @@
 import numpy as np
 from numpy import linalg
 from scipy.special import gammaincinv, gamma
-from matplotlib import pyplot as plt
 
+from svbrdf import SVBRDF
 from vispy.gloo import Texture2D
 
 from rendkit.glsl import GLSLProgram, GLSLTemplate
@@ -126,18 +126,17 @@ class BitangentMaterial(GLSLProgram):
 class SVBRDFMaterial(GLSLProgram):
 
     @classmethod
-    def compute_cdf(cls, sigma, alpha, xi_theta: np.ndarray):
-        p = alpha / 2
-        return np.arctan(sigma * gammaincinv(1 / p, xi_theta) ** p)
+    def compute_cdf(cls, sigma, gamma_inv_xi_theta: np.ndarray):
+        return np.arctan(sigma * gamma_inv_xi_theta)
 
     @classmethod
-    def compute_pdf(cls, sigma, alpha, xi_theta):
+    def compute_pdf(cls, sigma, alpha, gamma_inv_xi_theta):
         p = alpha / 2
-        theta = cls.compute_cdf(sigma, alpha, xi_theta)
+        theta = cls.compute_cdf(sigma, gamma_inv_xi_theta)
         norm = p / ((sigma ** 2) * np.pi * gamma(1 / p))
         return norm * np.exp(-((np.tan(theta) ** 2) / (sigma ** 2)) ** p)
 
-    def __init__(self, svbrdf):
+    def __init__(self, svbrdf: SVBRDF):
         super().__init__(GLSLTemplate.fromfile('default.vert.glsl'),
                          GLSLTemplate.fromfile('svbrdf.frag.glsl'),
                          use_uvs=True,
@@ -163,14 +162,17 @@ class SVBRDFMaterial(GLSLProgram):
 
         # Create 2D sample texture for sampling the CDF since we need different
         # CDFs for difference roughness values.
-        xi_samps = np.linspace(0.0, 1, 1024, endpoint=True)
-        sigma_samps = np.linspace(self.sigma.min(), self.sigma.max(), 1024)
+        xi_samps = np.linspace(0.0, 1, 256, endpoint=True)
+        sigma_samps = np.linspace(self.sigma.min(), self.sigma.max(), 256)
+
+        p = self.alpha / 2
+        gamma_inv_xi_theta = gammaincinv(1 / p, xi_samps) ** p
         self.cdf_sampler = np.apply_along_axis(
             self.compute_cdf, 1, sigma_samps[:, None],
-            alpha=self.alpha, xi_theta=xi_samps)
+            gamma_inv_xi_theta=gamma_inv_xi_theta)
         self.pdf_sampler = np.apply_along_axis(
             self.compute_pdf, 1, sigma_samps[:, None],
-            alpha=self.alpha, xi_theta=xi_samps)
+            alpha=self.alpha, gamma_inv_xi_theta=gamma_inv_xi_theta)
 
     def update_uniforms(self, program):
         program['u_alpha'] = self.alpha
