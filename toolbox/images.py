@@ -150,3 +150,14 @@ def imsave(path, array):
         array /= 255.0
     array = np.clip(array, 0.0, 1.0)
     misc.toimage(array, cmin=0, cmax=1.0).save(path)
+
+
+def reinhard(image_hdr, thres):
+    return image_hdr * (1 + image_hdr / thres ** 2) / (1 + image_hdr)
+
+
+def reinhard_inverse(image_ldr, thres):
+    Lw = thres
+    Ld = image_ldr
+    rt = np.sqrt(Lw) * np.sqrt(Lw * (Ld - 1)**2 + 4 * Ld)
+    return Lw * (Ld - 1) + rt
