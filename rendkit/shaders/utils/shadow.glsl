@@ -18,7 +18,7 @@ float compute_shadow(vec3 world_pos, vec4 shadow_pos, sampler2DShadow depth) {
     for(int y = -1; y <= 1; ++y) {
       for (int i = 0; i < 16; i++) {
         int index = int(16.0*random(floor(world_pos.xyz*1000.0), i))%16;
-        vec2 perturb = (vec2(x, y)) * texel_size + poisson_disk[index] / 700.0;
+        vec2 perturb = (vec2(x, y)) * texel_size + poisson_disk[index] / 200.0;
         float pcf_depth = texture(depth, vec3(shadow_proj.xy + perturb, (shadow_pos.z - bias)/shadow_pos.w)).r;
         shadow += current_depth - bias > pcf_depth ? 1.0 : 0.0;
       }

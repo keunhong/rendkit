@@ -87,6 +87,10 @@ class DepthRenderer(app.Canvas):
                 self.program.draw(gl.GL_TRIANGLES)
             gl.glCullFace(gl.GL_BACK)
 
+    def __enter__(self):
+        self._backend._vispy_warmup()
+        return self
+
 
 class Scene:
     def __init__(self,
@@ -155,9 +159,11 @@ class Scene:
 
     @property
     def renderables(self):
+        result = []
         for mesh_renderables in self.renderables_by_mesh.values():
             for renderable in mesh_renderables:
-                yield renderable
+                result.append(renderable)
+        return result
 
     @property
     def version(self):

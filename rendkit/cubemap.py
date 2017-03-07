@@ -56,7 +56,6 @@ def find_shadow_sources(cubemap, num_shadows=8):
                 intensity = cubemap[i][shadow_source_labels[i] == p.label].mean()
                 shadow_positions.append((shadow_pos, p.area, intensity))
     shadow_positions.sort(key=lambda v: -v[1] * v[2])
-    print(shadow_positions[:num_shadows])
     return [p[0] for p in shadow_positions[:num_shadows]]
 
 
