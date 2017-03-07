@@ -130,8 +130,8 @@ def cubemap_to_dual_paraboloid(cube_faces):
                 gloo.set_viewport(0, 0, width, height)
                 program['u_hemisphere'] = i
                 program.draw(gl.GL_TRIANGLE_STRIP)
-                results.append(gloo.read_pixels(out_type=np.float32,
-                                                format='rgb'))
+                results.append(np.flipud(gloo.read_pixels(out_type=np.float32,
+                                                          format='rgb')))
 
     return results[0], results[1]
 
