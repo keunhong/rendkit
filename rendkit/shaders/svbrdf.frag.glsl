@@ -32,6 +32,12 @@ uniform sampler2D u_radiance_lower;
 uniform vec2 u_cubemap_size;
 #endif
 
+#if TPL.num_shadow_sources > 0
+#include "utils/shadow.glsl"
+uniform sampler2D u_shadow_depth[TPL.num_shadow_sources];
+in vec4 v_position_shadow[TPL.num_shadow_sources];
+#endif
+
 const float NUM_LIGHTS = TPL.num_lights;
 
 in vec3 v_position;
@@ -76,6 +82,16 @@ void main() {
 //  if (is_back_facing) {
 //    N *= -1;
 //  }
+
+
+  float shadowness = 0.0;
+	#if TPL.num_shadow_sources > 0
+	for (int i = 0; i < TPL.num_shadow_sources; i++) {
+    shadowness += compute_shadow(v_position_shadow[i], u_shadow_depth[i]);
+	}
+  shadowness /= TPL.num_shadow_sources * 2.0;
+	#endif
+
 
   mat2 S = mat2(specv.x, specv.z,
       specv.z, specv.y);
@@ -141,5 +157,6 @@ void main() {
   }
   #endif
 
+	total_radiance *= (1.0 - shadowness);
   out_color = vec4(max(vec3(.0), total_radiance), 1.0);    // rough gamma
 }

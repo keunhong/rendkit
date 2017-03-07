@@ -1,8 +1,7 @@
-from vispy.gloo import gl
-
-from vispy import gloo
-
 from rendkit.glsl import GLSLTemplate, GLSLProgram
+from rendkit.util import create_rend_target
+from vispy import gloo
+from vispy.gloo import gl
 
 
 class RendtexInputMixin:
@@ -124,13 +123,3 @@ class PostprocessPipeline:
                 with self.rend_fb_list[i]:
                     compiled.draw(gl.GL_TRIANGLE_STRIP)
             current_tex = self.rend_colortex_list[i]
-
-
-def create_rend_target(size):
-    shape = (size[1], size[0])
-    rendtex = gloo.Texture2D((*shape, 4),
-                             interpolation='linear',
-                             internalformat='rgba32f')
-    depthtex = gloo.Texture2D((*shape, 1), format='depth_component')
-    framebuffer = gloo.FrameBuffer(rendtex, depthtex)
-    return framebuffer, rendtex, depthtex

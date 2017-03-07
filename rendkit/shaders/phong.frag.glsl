@@ -23,6 +23,12 @@ uniform vec3 u_light_color[TPL.num_lights];
 uniform int u_light_type[TPL.num_lights];
 #endif
 
+#if TPL.num_shadow_sources > 0
+#include "utils/shadow.glsl"
+uniform sampler2D u_shadow_depth[TPL.num_shadow_sources];
+in vec4 v_position_shadow[TPL.num_shadow_sources];
+#endif
+
 #if TPL.use_radiance_map
 uniform samplerCube u_irradiance_map;
 uniform sampler2D u_radiance_upper;
@@ -57,6 +63,14 @@ void main() {
   vec3 V = normalize(u_cam_pos - v_position);
 
 	vec3 total_radiance = vec3(0.0);
+
+  float shadowness = 0.0;
+	#if TPL.num_shadow_sources > 0
+	for (int i = 0; i < TPL.num_shadow_sources; i++) {
+    shadowness += compute_shadow(v_position_shadow[i], u_shadow_depth[i]);
+	}
+  shadowness /= TPL.num_shadow_sources * 2.0;
+	#endif
 
   #if TPL.use_radiance_map
   total_radiance += u_diff * texture(u_irradiance_map, v_normal).rgb;
@@ -105,5 +119,6 @@ void main() {
 		total_radiance += radiance;
 	}
 	#endif
+	total_radiance *= (1.0 - shadowness);
 	out_color = vec4(total_radiance, 1.0);
 }

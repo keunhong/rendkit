@@ -243,4 +243,16 @@ class UnwrapToUVMaterial(GLSLProgram):
         return program
 
 
+class DummyMaterial(GLSLProgram):
+    def __init__(self):
+        super().__init__(GLSLTemplate.fromfile('default.vert.glsl'),
+                         GLSLTemplate.fromfile('dummy.frag.glsl'),
+                         use_lights=False,
+                         use_radiance_map=False)
+
+    def update_uniforms(self, program):
+        pass
+
+
+
 PLACEHOLDER_MATERIAL = PhongMaterial([1.0, 0.0, 1.0], [0.1, 0.1, 0.1], 1.0)

@@ -31,14 +31,19 @@ class JSDRenderer(SceneRenderer):
             camera = import_jsd_camera(jsd_dict_or_scene)
         scene = jsd_dict_or_scene
         if isinstance(scene, dict):
-            scene = import_jsd_scene(jsd_dict_or_scene)
+            jsd_dict = jsd_dict_or_scene
+            scene = Scene(lights=import_jsd_lights(jsd_dict),
+                          materials=import_jsd_materials(jsd_dict))
+            scene.add_mesh(import_jsd_mesh(jsd_dict["mesh"]))
 
-        if show_floor:
-            floor_pos = scene.meshes[0].vertices[:, 1].min()
-            floor_mesh = make_plane(10000, 10000)
-            scene.add_mesh(floor_mesh, (0, floor_pos, 0))
-            scene.put_material(
-                'floor', PhongMaterial((0.05, 0.05, 0.05), (0.05, 0.05, 0.05), 1000.0))
+            if show_floor:
+                floor_pos = scene.meshes[0].vertices[:, 1].min()
+                floor_mesh = make_plane(10000, 10000)
+                scene.add_mesh(floor_mesh, (0, floor_pos, 0))
+                scene.put_material(
+                    'floor', PhongMaterial((0.1, 0.1, 0.1), (0.01, 0.01, 0.01), 1000.0))
+
+            scene.set_radiance_map(import_radiance_map(jsd_dict))
 
         super().__init__(scene=scene, camera=camera, *args, **kwargs)
 

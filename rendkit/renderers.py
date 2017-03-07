@@ -3,11 +3,15 @@ from typing import Tuple
 import logging
 import numpy as np
 from numpy import linalg
+
+import rendkit.util
+from rendkit import cubemap
+from rendkit.materials import DummyMaterial
 from vispy import app, gloo
 from vispy.gloo import gl
 
 from rendkit import vector_utils
-from rendkit.camera import BaseCamera
+from rendkit.camera import BaseCamera, OrthographicCamera
 from rendkit.core import Scene
 from rendkit import postprocessing as pp
 
@@ -36,7 +40,7 @@ class BaseRenderer(app.Canvas):
         gloo.set_state(depth_test=True)
         gloo.set_viewport(0, 0, *self.size)
 
-        self.size = size
+        self.size = tuple(size.tolist())
 
         # Buffer shapes are HxW, not WxH...
         self._rendertex = gloo.Texture2D(
@@ -62,7 +66,7 @@ class BaseRenderer(app.Canvas):
         with self._fbo:
             self.draw(camera, out_size)
             pixels: np.ndarray = gloo.util.read_pixels(
-                out_type=np.float32, alpha=False)
+                out_type=np.float32, format='rgb')
         return pixels
 
     def on_resize(self, event):
@@ -150,7 +154,7 @@ class SceneRenderer(BaseRenderer):
         self.render_size = (self.size[0] * self.ssaa_scale,
                             self.size[1] * self.ssaa_scale)
         self.rend_target_by_cam = {
-            self.camera: pp.create_rend_target(self.render_size)
+            self.camera: rendkit.util.create_rend_target(self.render_size)
         }
         logger.info("Render size: {} --SSAAx{}--> {}".format(
             self.size, self.ssaa_scale, self.render_size))
@@ -176,16 +180,18 @@ class SceneRenderer(BaseRenderer):
         else:
             self.pp_pipeline.add_program(pp.IdentityProgram())
 
-    def draw_scene(self, camera):
-        rend_fb, rend_colortex, _ = self.rend_target_by_cam[camera]
 
-        gloo.clear(color=camera.clear_color)
-        gloo.set_state(depth_test=True)
-        gloo.set_viewport(0, 0, rend_colortex.shape[1], rend_colortex.shape[0])
-        for renderable in self.scene.renderables:
-            program = renderable.activate(self.scene, camera)
-            with self.conservative_raster:
-                program.draw(gl.GL_TRIANGLES)
+    def draw_scene(self, camera, rend_target):
+        rend_fb, rend_colortex, _ = rend_target
+
+        with rend_fb:
+            gloo.clear(color=camera.clear_color)
+            gloo.set_state(depth_test=True)
+            gloo.set_viewport(0, 0, rend_colortex.shape[1], rend_colortex.shape[0])
+            for renderable in self.scene.renderables:
+                program = renderable.activate(self.scene, camera)
+                with self.conservative_raster:
+                    program.draw(gl.GL_TRIANGLES)
 
     def draw(self, camera=None, out_size=None):
         if camera is None:
@@ -196,13 +202,13 @@ class SceneRenderer(BaseRenderer):
                         if camera == self.camera else camera.size)
 
         if camera not in self.rend_target_by_cam:
-            rend_fb, rend_colortex, rend_depthtex = pp.create_rend_target(
+            rend_fb, rend_colortex, rend_depthtex = rendkit.util.create_rend_target(
                 tuple(s * self.ssaa_scale for s in out_size))
             self.rend_target_by_cam[camera] = (rend_fb, rend_colortex)
 
         rend_fb, rend_colortex, rend_depthtex = self.rend_target_by_cam[camera]
 
         with rend_fb:
-            self.draw_scene(camera)
+            self.draw_scene(camera, (rend_fb, rend_colortex, rend_depthtex))
 
         self.pp_pipeline.draw(rend_colortex, rend_depthtex, out_size)

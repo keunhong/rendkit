@@ -4,11 +4,20 @@ from typing import List, Dict
 
 import numpy as np
 from numpy import linalg
+from scipy import misc
+
+from rendkit import cubemap
+from rendkit import util
+from rendkit import vector_utils
+from rendkit.camera import OrthographicCamera
+from vispy import gloo, app
+from vispy.gloo import gl
 from vispy.util import transforms
 
 from meshkit import Mesh
 from rendkit.lights import Light, PointLight, DirectionalLight
-from rendkit.materials import PLACEHOLDER_MATERIAL, GLSLProgram
+from rendkit.materials import PLACEHOLDER_MATERIAL, GLSLProgram, DummyMaterial, \
+    DepthMaterial
 
 logger = logging.getLogger(__name__)
 
@@ -25,25 +34,7 @@ class Renderable:
 
         self._current_scene = None
         self._program = None
-
-    def compile(self, scene):
-        material = scene.get_material(self.material_name)
-        program = material.compile(
-            len(scene.lights), scene.radiance_map is not None)
-
-        used_attributes = {'a_position'}
-        if material.use_normals:
-            used_attributes.add('a_normal')
-        if material.use_tangents:
-            used_attributes.add('a_tangent')
-            used_attributes.add('a_bitangent')
-        if material.use_uvs:
-            used_attributes.add('a_uv')
-
-        for a_name in used_attributes:
-            program[a_name] = self._attributes[a_name].astype(np.float32)
-
-        return program
+        self._scene_version = -1
 
     def scale_uvs(self, scale):
         if 'a_uv' in self._attributes:
@@ -56,32 +47,45 @@ class Renderable:
         material = scene.get_material(self.material_name)
         if self._program is None or scene != self._current_scene:
             self._current_scene = scene
-            self._program = self.compile(scene)
-        program = self._program
-        if material.use_lights:
-            for i, light in enumerate(scene.lights):
-                program['u_light_type[{}]'.format(i)] = light.type
-                if (light.type == PointLight.type
-                    or light.type == DirectionalLight.type):
-                    program['u_light_position[{}]'.format(i)] = light.position
-                    program['u_light_intensity[{}]'.format(i)] = light.intensity
-                    program['u_light_color[{}]'.format(i)] = light.color
+            self._scene_version = -1
+        if self._scene_version != scene.version:
+            self._scene_version = scene.version
+            self._program = material.compile(
+                num_lights=len(scene.lights),
+                num_shadow_sources=len(scene.shadow_sources),
+                use_radiance_map=scene.radiance_map is not None)
+            material.set_attributes(self._program, self._attributes)
+            material.set_radmap(self._program, scene.radiance_map)
+            material.set_shadow_sources(self._program, scene.shadow_sources)
+            material.set_lights(self._program, scene.lights)
 
-        if scene.radiance_map is not None and material.use_radiance_map:
-            program['u_irradiance_map'] = scene.radiance_map.irradiance_tex
-            program['u_cubemap_size'] = scene.radiance_map.size
-            program['u_radiance_upper'] = scene.radiance_map.radiance_upper_tex
-            program['u_radiance_lower'] = scene.radiance_map.radiance_lower_tex
+        material.set_camera(self._program, camera)
+        self._program['u_model'] = self.model_mat.T
 
-        if material.use_cam_pos:
-            program['u_cam_pos'] = linalg.inv(camera.view_mat())[:3, 3]
-        program['u_view'] = camera.view_mat().T
-        program['u_model'] = self.model_mat.T
-        program['u_projection'] = camera.projection_mat().T
-        if material.use_near_far:
-            program['u_near'] = -camera.near
-            program['u_far'] = -camera.far
-        return program
+        return self._program
+
+
+class DepthRenderer(app.Canvas):
+    def __init__(self):
+        super().__init__()
+        self.material = DepthMaterial()
+        self.program = DepthMaterial().compile()
+
+    def draw(self, camera, renderables, rend_target):
+        rendfb, rendtex, _ = rend_target
+
+        with rendfb:
+            gloo.clear(color=camera.clear_color)
+            gloo.set_state(depth_test=True)
+            gloo.set_viewport(0, 0, rendtex.shape[1], rendtex.shape[0])
+            gl.glEnable(gl.GL_CULL_FACE)
+            gl.glCullFace(gl.GL_FRONT)
+            for renderable in renderables:
+                self.material.set_camera(self.program, camera)
+                self.material.set_attributes(self.program, renderable._attributes)
+                self.program['u_model'] = renderable.model_mat.T
+                self.program.draw(gl.GL_TRIANGLES)
+            gl.glCullFace(gl.GL_BACK)
 
 
 class Scene:
@@ -93,6 +97,7 @@ class Scene:
         self.materials = {} if materials is None else materials
         self.meshes = []
         self.renderables_by_mesh = OrderedDict()
+        self.shadow_sources = []
         self._version = 0
 
     def get_material(self, name):
@@ -113,7 +118,34 @@ class Scene:
         self._version += 1
 
     def set_radiance_map(self, radiance_map):
+        if radiance_map is None:
+            return
         self.radiance_map = radiance_map
+
+        shadow_dirs = cubemap.find_shadow_sources(
+            self.radiance_map.radiance_faces)
+        logger.info("Rendering {} shadow maps.".format(len(shadow_dirs)))
+
+        with DepthRenderer() as r:
+            for i, shadow_dir in enumerate(shadow_dirs):
+                position = vector_utils.normalized(shadow_dir)
+                up = np.roll(position, 1) * (1, 1, -1)
+                camera = OrthographicCamera(
+                    (200, 200), -150, 150, position=position,
+                    lookat=(0, 0, 0), up=up)
+                rend_target = util.create_rend_target((1024, 1024))
+                r.draw(camera, self.renderables, rend_target)
+                with rend_target[0]:
+                    # gloo.read_pixels flips the output.
+                    depth = np.flipud(np.copy(gloo.read_pixels(
+                        format='depth', out_type=np.float32)))
+                    # Opengl ES doesn't support border clamp value
+                    # specification so hack it like this.
+                    depth[[0, -1], :] = 1.0
+                    depth[:, [0, -1]] = 1.0
+                self.shadow_sources.append((camera, depth))
+                misc.imsave('/srv/www/out/__{}.png'.format(i), depth)
+
         self._version += 1
 
     def add_mesh(self, mesh: Mesh, position=(0, 0, 0)):
@@ -126,6 +158,10 @@ class Scene:
         for mesh_renderables in self.renderables_by_mesh.values():
             for renderable in mesh_renderables:
                 yield renderable
+
+    @property
+    def version(self):
+        return self._version
 
 
 def mesh_to_renderables(mesh: Mesh, model_mat):
