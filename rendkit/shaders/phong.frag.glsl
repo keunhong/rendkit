@@ -25,7 +25,7 @@ uniform int u_light_type[TPL.num_lights];
 
 #if TPL.num_shadow_sources > 0
 #include "utils/shadow.glsl"
-uniform sampler2D u_shadow_depth[TPL.num_shadow_sources];
+uniform sampler2DShadow u_shadow_depth[TPL.num_shadow_sources];
 in vec4 v_position_shadow[TPL.num_shadow_sources];
 #endif
 
@@ -67,7 +67,7 @@ void main() {
   float shadowness = 0.0;
 	#if TPL.num_shadow_sources > 0
 	for (int i = 0; i < TPL.num_shadow_sources; i++) {
-    shadowness += compute_shadow(v_position_shadow[i], u_shadow_depth[i]);
+    shadowness += compute_shadow(v_position, v_position_shadow[i], u_shadow_depth[i]);
 	}
   shadowness /= TPL.num_shadow_sources * 2.0;
 	#endif
