@@ -27,7 +27,10 @@ def find_outliers(data, thres=3.5):
     """
     data = np.array(data)
     median = np.median(data, axis=0)
-    diff = linalg.norm(data - median, axis=-1)
+    if data.ndim >= 2:
+        diff = linalg.norm(data - median, axis=-1)
+    else:
+        diff = np.abs(data - median)
     med_abs_dev = np.median(diff)
     mean_abs_dev = np.mean(diff)
     if abs(med_abs_dev) > EPS:
