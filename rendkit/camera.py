@@ -9,7 +9,7 @@ from . import vector_utils
 
 class BaseCamera:
     def __init__(self, size, near, far, clear_color=(1.0, 1.0, 1.0)):
-        self.size = np.array(size)
+        self.size = size
         self.near = near
         self.far = far
         self.clear_color = clear_color

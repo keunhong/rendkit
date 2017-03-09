@@ -2,6 +2,7 @@ import copy
 
 import numpy as np
 
+from rendkit import jsd
 from .camera import ArcballCamera
 from .jsd import JSDRenderer
 
@@ -98,51 +99,49 @@ def svbrdf_plane_renderer(svbrdf, size=None, lights=list(), radmap=None,
                        **kwargs)
 
 
-def radmap_scale_plane(size=50):
-    jsd = {
-        "mesh": {
-            "scale": 1,
-            "type": "inline",
-            "vertices": [
-                [size, 0.0, -size],
-                [size, 0.0, size],
-                [-size, 0.0, size],
-                [-size, 0.0, -size]
-            ],
-            "uvs": [
-                [1.0, 0.0],
-                [1.0, 1.0],
-                [0.0, 1.0],
-                [0.0, 0.0]
-            ],
-            "normals": [
-                [0.0, 1.0, 0.0]
-            ],
-            "materials": ["plane"],
-            "faces": [
-                {
-                    "vertices": [0, 1, 2],
-                    "uvs": [0, 1, 2],
-                    "normals": [0, 0, 0],
-                    "material": 0
-                },
-                {
-                    "vertices": [0, 2, 3],
-                    "uvs": [0, 2, 3],
-                    "normals": [0, 0, 0],
-                    "material": 0
-                }
-            ]
-        },
-        "lights": lights,
-        "materials": {
-            "plane": {
-                "type": "svbrdf_inline",
-                "diffuse_map": svbrdf.diffuse_map,
-                "specular_map": svbrdf.specular_map,
-                "spec_shape_map": svbrdf.spec_shape_map,
-                "normal_map": svbrdf.normal_map,
-                "alpha": svbrdf.alpha,
-            }
-        }
-    }
+def render_full(jsd_dict, uv_scale=6.0):
+    with jsd.JSDRenderer(jsd_dict, ssaa=3, gamma=None) as r:
+        r.camera.clear_color = (0.0, 0.0, 0.0)
+        for renderable in r.scene.renderables:
+            renderable.scale_uvs(uv_scale)
+        return r.render_to_image()
+
+
+def render_lambert_map(jsd_dict, uv_scale=6.0):
+    jsd_dict = copy.deepcopy(jsd_dict)
+    for mat_name in jsd_dict['materials']:
+        mat_jsd = jsd_dict['materials'][mat_name]
+        if mat_jsd['type'] == 'svbrdf_inline':
+            mat_jsd['diffuse_map'][:] = 1.0
+            mat_jsd['specular_map'][:] = 0.0
+    with jsd.JSDRenderer(jsd_dict, ssaa=3, gamma=None) as r:
+        r.camera.clear_color = (0.0, 0.0, 0.0)
+        for renderable in r.scene.renderables:
+            renderable.scale_uvs(uv_scale)
+        return r.render_to_image()
+
+
+def render_diff_component(jsd_dict, uv_scale=6.0):
+    jsd_dict = copy.deepcopy(jsd_dict)
+    for mat_name in jsd_dict['materials']:
+        mat_jsd = jsd_dict['materials'][mat_name]
+        if mat_jsd['type'] == 'svbrdf_inline':
+            mat_jsd['specular_map'][:] = 0.0
+    with jsd.JSDRenderer(jsd_dict, ssaa=3, gamma=None) as r:
+        r.camera.clear_color = (0.0, 0.0, 0.0)
+        for renderable in r.scene.renderables:
+            renderable.scale_uvs(uv_scale)
+        return r.render_to_image()
+
+
+def render_spec_component(jsd_dict, uv_scale=6.0):
+    jsd_dict = copy.deepcopy(jsd_dict)
+    for mat_name in jsd_dict['materials']:
+        mat_jsd = jsd_dict['materials'][mat_name]
+        if mat_jsd['type'] == 'svbrdf_inline':
+            mat_jsd['diffuse_map'][:] = 0.0
+    with jsd.JSDRenderer(jsd_dict, ssaa=3, gamma=None) as r:
+        r.camera.clear_color = (0.0, 0.0, 0.0)
+        for renderable in r.scene.renderables:
+            renderable.scale_uvs(uv_scale)
+        return r.render_to_image()

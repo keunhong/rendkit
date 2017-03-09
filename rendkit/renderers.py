@@ -40,7 +40,7 @@ class BaseRenderer(app.Canvas):
         gloo.set_state(depth_test=True)
         gloo.set_viewport(0, 0, *self.size)
 
-        self.size = tuple(size.tolist())
+        self.size = size
 
         # Buffer shapes are HxW, not WxH...
         self._rendertex = gloo.Texture2D(

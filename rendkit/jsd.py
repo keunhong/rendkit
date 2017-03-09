@@ -102,18 +102,12 @@ def import_jsd_camera(jsd_dict):
 
 
 def import_jsd_lights(jsd_dict) -> List[Light]:
-    lights = []
     jsd_lights = jsd_dict.get('lights', None)
     if jsd_lights is None:
-        logger.warning("No lights defined, using default lights")
-        jsd_lights = [
-            {
-                "type": "directional",
-                "position": [50, 100, -50],
-                "intensity": 1.0
-            },
-        ]
+        logger.warning("No lights defined.")
+        return []
 
+    lights = []
     for jsd_light in jsd_lights:
         lights.append(import_jsd_light(jsd_light))
 
