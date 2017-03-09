@@ -1,3 +1,4 @@
+import logging
 from copy import copy
 
 import numpy as np
@@ -7,6 +8,9 @@ from sklearn.mixture import GaussianMixture
 
 from rendkit.shortcuts import svbrdf_plane_renderer
 from toolbox.images import apply_mask
+
+
+logger = logging.getLogger(__name__)
 
 
 def _gmm_coerce_distribution(reference_gmm, target_gmm, target_lab):
@@ -32,7 +36,8 @@ def _gmm_coerce_distribution(reference_gmm, target_gmm, target_lab):
         target_mask = target_pred == target_idx
         target_vals = target_lab[target_mask]
         target_vals = (target_vals - target_mean) / target_std
-        recolored_lab[target_mask] = target_vals * reference_std + reference_mean
+        new_std = 0.5 * target_std + 0.5 * reference_std
+        recolored_lab[target_mask] = target_vals * new_std + reference_mean
 
     return recolored_lab
 
@@ -68,20 +73,23 @@ def match_color(reference_im,
                 n_components=2):
     if reference_mask is None:
         reference_mask = np.ones(reference_im.shape[:2], dtype=bool)
-    print(reference_im.min(), reference_im.max(), target_im.min(), target_im.max())
-
-    print('Computing reference GMM')
+    if target_mask is None:
+        target_mask = np.ones(target_im.shape[:2], dtype=bool)
+    logger.info("Matching color (n_components={}, ref_size={}, tar_size={})"
+                .format(n_components, np.sum(reference_mask), np.sum(target_mask)))
     reference_lab = rgb2lab(np.clip(reference_im, 0, 1))
     reference_gmm = _compute_image_gmm(reference_lab, reference_mask, n_components)
+
     target_lab = rgb2lab(np.clip(target_im, 0, 1))
     target_gmm = _compute_image_gmm(target_lab, target_mask, n_components)
 
-
-    # TODO: return mean colors.
-    result = lab2rgb(_gmm_coerce_distribution(reference_gmm, target_gmm, target_lab))
-    reference_means = lab2rgb(reference_gmm.means_.reshape((1, 2, 3)))[0]
-    target_means = lab2rgb(target_gmm.means_.reshape((1, 2, 3)))[0]
-    return result, reference_means, target_means
+    result_rgb = lab2rgb(
+        _gmm_coerce_distribution(reference_gmm, target_gmm, target_lab))
+    reference_means = lab2rgb(
+        reference_gmm.means_.reshape((1, n_components, 3)))[0]
+    target_means = lab2rgb(
+        target_gmm.means_.reshape((1, n_components, 3)))[0]
+    return result_rgb, reference_means, target_means
 
 
 def compute_color_gmm_iter(image, mask, n_iters=10):
