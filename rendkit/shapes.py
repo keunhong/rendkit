@@ -46,12 +46,12 @@ def make_plane(height, width, material_name='plane'):
 def make_random(size=100, material_name='plane'):
     t = np.linspace(0, np.pi, size)
     sig1 = (np.exp(-t * random.uniform(-1, 1))
-            * np.cos(t * random.gauss(0, 1)))
-    sig2 = (np.exp(-t * random.uniform(-1, 1))
-            * np.cos(t * random.gauss(0, 1)))
+            * np.cos(t * np.clip(random.gauss(0, 2), -2, 2)))
+    sig2 = (np.exp(-t * random.uniform(-1, 0.5))
+            * np.cos(t * np.clip(random.gauss(0, 2), -2, 2)))
     y = np.outer(sig1, sig2)
-    y /= np.abs(y).max()
     y -= y.min()
+    y = y / y.max() * 0.5
     xx = np.linspace(-1, 1, 100)
     x, z = np.meshgrid(xx, xx)
     x, y, z = x.flatten(), y.flatten(), z.flatten()
@@ -77,7 +77,6 @@ def make_random(size=100, material_name='plane'):
             "uvs": inds,
             "material": 0,
         })
-    vertices[:, [0, 2]] *= size/2
     normals = normals / linalg.norm(normals, axis=1)[:, None]
     return jsd.import_jsd_mesh({
         "scale": 1,
