@@ -14,7 +14,7 @@ from rendkit.materials import (GLSLProgram, SVBRDFMaterial, PhongMaterial,
                                BasicMaterial, NormalMaterial, WorldCoordMaterial,
                                DepthMaterial, UVMaterial, UnwrapToUVMaterial,
                                TangentMaterial, BitangentMaterial)
-from rendkit.shapes import make_plane
+from rendkit import shapes
 from svbrdf import SVBRDF
 from .camera import CalibratedCamera, PerspectiveCamera, ArcballCamera
 from .core import Scene
@@ -38,7 +38,7 @@ class JSDRenderer(SceneRenderer):
 
             if show_floor:
                 floor_pos = scene.meshes[0].vertices[:, 1].min()
-                floor_mesh = make_plane(10000, 10000, 'floor')
+                floor_mesh = shapes.make_plane(10000, 10000, 'floor')
                 scene.add_mesh(floor_mesh, (0, floor_pos, 0))
                 scene.put_material(
                     'floor', PhongMaterial((0.1, 0.1, 0.1),

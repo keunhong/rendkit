@@ -266,6 +266,7 @@ class RadianceMap():
 
     @irradiance_faces.setter
     def irradiance_faces(self, irradiance_faces):
+        print('asdf')
         self._irradiance_faces = irradiance_faces
         self._irradiance_tex = gloo.TextureCubeMap(
             self._irradiance_faces,
@@ -287,3 +288,7 @@ class RadianceMap():
     @property
     def size(self):
         return (self.radiance_faces.shape[2], self.radiance_faces.shape[1])
+
+    def reset(self):
+        self.irradiance_faces = self._irradiance_faces
+        self.radiance_faces = self._radiance_faces

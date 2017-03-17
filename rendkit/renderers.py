@@ -182,7 +182,6 @@ class SceneRenderer(BaseRenderer):
         else:
             self.pp_pipeline.add_program(pp.IdentityProgram())
 
-
     def draw_scene(self, camera, rend_target):
         rend_fb, rend_colortex, _ = rend_target
 
@@ -214,3 +213,8 @@ class SceneRenderer(BaseRenderer):
             self.draw_scene(camera, (rend_fb, rend_colortex, rend_depthtex))
 
         self.pp_pipeline.draw(rend_colortex, rend_depthtex, out_size)
+
+    def __enter__(self):
+        super().__enter__()
+        self.scene.reset()
+        return self

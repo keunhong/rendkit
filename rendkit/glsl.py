@@ -75,6 +75,13 @@ class GLSLProgram:
         self._instances.append(program)
         return program
 
+    def update_instances(self):
+        for program in self._instances:
+            self.upload_uniforms(program)
+
+    def init_uniforms(self):
+        pass
+
     def upload_uniforms(self, program):
         """
         Uploads uniforms to the program instance.

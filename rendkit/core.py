@@ -104,6 +104,15 @@ class Scene:
         self.shadow_sources = []
         self._version = 0
 
+    def reset(self):
+        for material in self.materials.values():
+            del material._instances[:]
+            material.init_uniforms()
+        for renderable in self.renderables:
+            renderable._program = None
+        if self.radiance_map:
+            self.radiance_map.reset()
+
     def get_material(self, name):
         if name in self.materials:
             return self.materials[name]
@@ -157,6 +166,16 @@ class Scene:
         model_mat = transforms.translate(position).T
         self.meshes.append(mesh)
         self.renderables_by_mesh[mesh] = mesh_to_renderables(mesh, model_mat)
+
+    def set_mesh_transform(self, mesh: Mesh, transform_mat: np.ndarray,
+                           apply_to_existing=False):
+        if transform_mat.shape != (4, 4):
+            raise ValueError("Invalid transformation matrix (must be 4x4).")
+        for renderable in self.renderables_by_mesh[mesh]:
+            if apply_to_existing:
+                renderable.model_mat = transform_mat @ renderable.model_mat
+            else:
+                renderable.model_mat = transform_mat
 
     @property
     def renderables(self):

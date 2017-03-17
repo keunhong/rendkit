@@ -146,7 +146,7 @@ class SVBRDFMaterial(GLSLProgram):
         self.diff_new_std = None
 
         self.uniforms = {}
-        self._update_uniforms()
+        self.init_uniforms()
 
     def change_color(self, new_mean, new_std=None):
         self.frag_tpl_vars['change_color'] = glsl_bool(True)
@@ -163,8 +163,7 @@ class SVBRDFMaterial(GLSLProgram):
             self.uniforms['u_std_new'] = self.diff_new_std
         else:
             self.uniforms['u_std_new'] = self.diff_old_std
-        for program in self._instances:
-            self.upload_uniforms(program)
+        self.update_instances()
 
     def init_importance_sampling(self):
         S = self.spec_shape_map.reshape((-1, 3))
@@ -193,7 +192,7 @@ class SVBRDFMaterial(GLSLProgram):
 
         return sigma, pdf_sampler, cdf_sampler
 
-    def _update_uniforms(self):
+    def init_uniforms(self):
         self.uniforms['u_alpha'] = self.alpha
         self.uniforms['u_diff_map'] = Texture2D(
             self.diff_map,
