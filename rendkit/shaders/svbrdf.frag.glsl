@@ -18,6 +18,7 @@ uniform sampler2D u_pdf_sampler; // Normalization factor for PDF.
 uniform vec3 u_cam_pos;
 
 uniform float u_alpha;
+
 #if TPL.num_lights > 0
 uniform float u_light_intensity[TPL.num_lights];
 uniform vec3 u_light_position[TPL.num_lights];
