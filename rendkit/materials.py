@@ -155,14 +155,18 @@ class SVBRDFMaterial(GLSLProgram):
         self.spec_shape_map = svbrdf.spec_shape_map.astype(np.float32)
         self.normal_map = svbrdf.normal_map.astype(np.float32)
 
+        self.sigma, self.pdf_sampler, self.cdf_sampler = \
+            self.compute_is_params()
+
+    def compute_is_params(self):
         S = self.spec_shape_map.reshape((-1, 3))
         S = S[:, [0, 2, 2, 1]].reshape((-1, 2, 2))
 
-        # Approximate isotropic roughness with smallest eigenvalue of S.
+        # printf "\e[0m"; Approximate isotropic roughness with smallest eigenvalue of S.
         trace = S[:, 0, 0] + S[:, 1, 1]
         root = np.sqrt(np.clip(trace*trace - 4 * linalg.det(S), 0, None))
         beta = (trace + root) / 2
-        self.sigma: np.ndarray = 1.0 / np.sqrt(beta)
+        sigma: np.ndarray = 1.0 / np.sqrt(beta)
 
         # Create 2D sample texture for sampling the CDF since we need different
         # CDFs for difference roughness values.
@@ -172,12 +176,14 @@ class SVBRDFMaterial(GLSLProgram):
         logger.info("Precomputing material CDF and PDF.")
         p = self.alpha / 2
         gamma_inv_xi_theta = gammaincinv(1 / p, xi_samps) ** p
-        self.cdf_sampler = np.apply_along_axis(
+        cdf_sampler = np.apply_along_axis(
             self.compute_cdf, 1, sigma_samps[:, None],
             gamma_inv_xi_theta=gamma_inv_xi_theta)
-        self.pdf_sampler = np.apply_along_axis(
+        pdf_sampler = np.apply_along_axis(
             self.compute_pdf, 1, sigma_samps[:, None],
             alpha=self.alpha, gamma_inv_xi_theta=gamma_inv_xi_theta)
+
+        return sigma, pdf_sampler, cdf_sampler
 
     def update_uniforms(self, program):
         program['u_alpha'] = self.alpha

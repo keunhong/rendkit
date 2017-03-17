@@ -38,23 +38,16 @@ class JSDRenderer(SceneRenderer):
 
             if show_floor:
                 floor_pos = scene.meshes[0].vertices[:, 1].min()
-                floor_mesh = make_plane(10000, 10000)
+                floor_mesh = make_plane(10000, 10000, 'floor')
                 scene.add_mesh(floor_mesh, (0, floor_pos, 0))
                 scene.put_material(
                     'floor', PhongMaterial((0.1, 0.1, 0.1),
                                            (0.03, 0.03, 0.03), 500.0))
 
-            scene.set_radiance_map(import_radiance_map(jsd_dict))
+            if 'radiance_map' in jsd_dict:
+                scene.set_radiance_map(import_radiance_map(jsd_dict['radiance_map']))
 
         super().__init__(scene=scene, camera=camera, *args, **kwargs)
-
-
-def import_jsd_scene(jsd_dict):
-    scene = Scene(lights=import_jsd_lights(jsd_dict),
-                  materials=import_jsd_materials(jsd_dict))
-    scene.add_mesh(import_jsd_mesh(jsd_dict["mesh"]))
-    scene.set_radiance_map(import_radiance_map(jsd_dict))
-    return scene
 
 
 def import_jsd_camera(jsd_dict):
@@ -114,10 +107,7 @@ def import_jsd_lights(jsd_dict) -> List[Light]:
     return lights
 
 
-def import_radiance_map(jsd_dict) -> Union[RadianceMap, None]:
-    if 'radiance_map' not in jsd_dict:
-        return None
-    jsd_radmap = jsd_dict['radiance_map']
+def import_radiance_map(jsd_radmap) -> Union[RadianceMap, None]:
     scale = jsd_radmap['scale'] if ('scale' in jsd_radmap) else 1.0
 
     if 'path' in jsd_radmap:
