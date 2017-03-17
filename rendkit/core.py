@@ -3,10 +3,9 @@ from collections import OrderedDict
 from typing import List, Dict
 
 import numpy as np
-from numpy import linalg
 from scipy import misc
 
-from rendkit import cubemap
+import rendkit.envmap.prefilter
 from rendkit import util
 from rendkit import vector_utils
 from rendkit.camera import OrthographicCamera
@@ -136,7 +135,7 @@ class Scene:
         self.radiance_map = radiance_map
 
         if add_shadows:
-            shadow_dirs = cubemap.find_shadow_sources(
+            shadow_dirs = rendkit.envmap.prefilter.find_shadow_sources(
                 self.radiance_map.radiance_faces)
             logger.info("Rendering {} shadow maps.".format(len(shadow_dirs)))
 

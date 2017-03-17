@@ -5,8 +5,6 @@ import numpy as np
 from numpy import linalg
 
 import rendkit.util
-from rendkit import cubemap
-from rendkit.materials import DummyMaterial
 from vispy import app, gloo
 from vispy.gloo import gl
 

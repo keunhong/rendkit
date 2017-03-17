@@ -1,8 +1,8 @@
 import argparse
 import os
-import numpy as np
+
+from rendkit.envmap.io import stack_cross, unstack_cross, load_envmap
 from vispy import app
-from rendkit import cubemap as cm
 from matplotlib import pyplot as plt
 
 
@@ -20,12 +20,11 @@ app.use_app('glfw')
 
 def main():
     app.Canvas(show=False)
-    cross = cm.stack_cross(
-        cm.load_cubemap(os.path.join(_cubemap_dir, 'yokohama')),
-        format=args.format)
+    cross = stack_cross(load_envmap(os.path.join(_cubemap_dir, 'yokohama')),
+                        format=args.format)
     plt.imshow(cross)
     plt.show()
-    plt.imshow(cm.stack_cross(cm.unstack_cross(cross), format='horizontal'))
+    plt.imshow(stack_cross(unstack_cross(cross), format='horizontal'))
     plt.show()
 
 

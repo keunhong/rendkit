@@ -1,7 +1,9 @@
 import os
 import numpy as np
+
+from rendkit.envmap.io import unstack_cross, load_envmap, stack_cross
+from rendkit.envmap.prefilter import prefilter_irradiance
 from vispy import app
-from rendkit import cubemap as cm
 from matplotlib import pyplot as plt
 
 
@@ -14,12 +16,11 @@ app.use_app('glfw')
 
 def main():
     app.Canvas(show=False)
-    cube_faces = cm.unstack_cross(cm.stack_cross(
-        cm.load_cubemap(os.path.join(_cubemap_dir, 'yokohama'))))
-    irradiance_map = cm.prefilter_irradiance(cube_faces)
-    plt.imshow(np.vstack((
-        cm.stack_cross(cube_faces),
-        cm.stack_cross(irradiance_map))))
+    cube_faces = unstack_cross(stack_cross(
+        load_envmap(os.path.join(_cubemap_dir, 'yokohama'))))
+    irradiance_map = prefilter_irradiance(cube_faces)
+    plt.imshow(np.vstack((stack_cross(cube_faces),
+                          stack_cross(irradiance_map))))
     plt.show()
 
 
