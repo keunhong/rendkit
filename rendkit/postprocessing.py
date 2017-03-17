@@ -16,7 +16,7 @@ class IdentityProgram(GLSLProgram, RendtexInputMixin):
             GLSLTemplate.fromfile('postprocessing/quad.vert.glsl'),
             GLSLTemplate.fromfile('postprocessing/identity.frag.glsl'))
 
-    def update_uniforms(self, program):
+    def upload_uniforms(self, program):
         program['a_uv'] = [(0, 0), (0, 1), (1, 0), (1, 1)]
         program['a_position'] = [(-1, -1), (-1, +1), (+1, -1), (+1, +1)]
         return program
@@ -38,7 +38,7 @@ class DownsampleProgram(GLSLProgram, RendtexInputMixin):
         assert scale == 2 or scale == 3
         self.scale = scale
 
-    def update_uniforms(self, program):
+    def upload_uniforms(self, program):
         program['u_aa_kernel'] = self.LANCZOS_KERNELS[self.scale - 2]
         program['a_uv'] = [(0, 0), (0, 1), (1, 0), (1, 1)]
         program['a_position'] = [(-1, -1), (-1, +1), (+1, -1), (+1, +1)]
@@ -57,7 +57,7 @@ class GammaCorrectionProgram(GLSLProgram, RendtexInputMixin):
             GLSLTemplate.fromfile('postprocessing/gamma_correction.frag.glsl'))
         self.gamma = gamma
 
-    def update_uniforms(self, program):
+    def upload_uniforms(self, program):
         program['a_uv'] = [(0, 0), (0, 1), (1, 0), (1, 1)]
         program['a_position'] = [(-1, -1), (-1, +1), (+1, -1), (+1, +1)]
         program['u_gamma'] = self.gamma
@@ -71,7 +71,7 @@ class ReinhardProgram(GLSLProgram, RendtexInputMixin):
             GLSLTemplate.fromfile('postprocessing/reinhard_tonemap.frag.glsl'))
         self.thres = thres
 
-    def update_uniforms(self, program):
+    def upload_uniforms(self, program):
         program['a_uv'] = [(0, 0), (0, 1), (1, 0), (1, 1)]
         program['a_position'] = [(-1, -1), (-1, +1), (+1, -1), (+1, +1)]
         program['u_thres'] = self.thres
@@ -85,7 +85,7 @@ class ExposureProgram(GLSLProgram, RendtexInputMixin):
             GLSLTemplate.fromfile('postprocessing/exposure_tonemap.frag.glsl'))
         self.exposure = exposure
 
-    def update_uniforms(self, program):
+    def upload_uniforms(self, program):
         program['a_uv'] = [(0, 0), (0, 1), (1, 0), (1, 1)]
         program['a_position'] = [(-1, -1), (-1, +1), (+1, -1), (+1, +1)]
         program['u_exposure'] = self.exposure

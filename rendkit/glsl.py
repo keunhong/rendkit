@@ -25,7 +25,7 @@ class GLSLTemplate(Template):
             return GLSLTemplate(f.read())
 
 
-def _glsl_bool(val: bool) -> int:
+def glsl_bool(val: bool) -> int:
     return 1 if val else 0
 
 
@@ -50,25 +50,37 @@ class GLSLProgram:
 
         self._vert_shader = vert_shader
         self._frag_shader = frag_shader
+        self.uniforms = {}
+
+        self.vert_tpl_vars = {}
+        self.frag_tpl_vars = {}
+        self._instances = []
 
     def compile(self, num_lights=0, num_shadow_sources=0,
                 use_radiance_map=False):
         use_radiance_map = use_radiance_map and self.use_radiance_map
         vs = self._vert_shader.substitute(
-            use_normals=_glsl_bool(self.use_normals),
-            use_tangents=_glsl_bool(self.use_tangents),
+            use_normals=glsl_bool(self.use_normals),
+            use_tangents=glsl_bool(self.use_tangents),
             num_shadow_sources=num_shadow_sources,
-            use_radiance_map=_glsl_bool(use_radiance_map))
+            use_radiance_map=glsl_bool(use_radiance_map),
+            **self.vert_tpl_vars)
         fs = self._frag_shader.substitute(
             num_lights=num_lights,
             num_shadow_sources=num_shadow_sources,
-            use_radiance_map=_glsl_bool(use_radiance_map))
+            use_radiance_map=glsl_bool(use_radiance_map),
+            **self.frag_tpl_vars)
         program = gloo.Program(vs, fs)
-        self.update_uniforms(program)
+        self.upload_uniforms(program)
+        self._instances.append(program)
         return program
 
-    def update_uniforms(self, program):
-        raise NotImplementedError
+    def upload_uniforms(self, program):
+        """
+        Uploads uniforms to the program instance.
+        """
+        for k, v in self.uniforms.items():
+            program[k] = v
 
     def set_attributes(self, program, attributes):
         used_attributes = {'a_position'}

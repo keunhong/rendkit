@@ -65,7 +65,7 @@ class LambertPrefilterProgram(GLSLProgram):
             GLSLTemplate.fromfile('cubemap/lambert.vert.glsl'),
             GLSLTemplate.fromfile('cubemap/lambert.frag.glsl'))
 
-    def update_uniforms(self, program):
+    def upload_uniforms(self, program):
         program['a_position'] = [(-1, -1), (-1, +1), (+1, -1), (+1, +1)]
         program['a_uv'] = [(0, 0), (0, 1), (1, 0), (1, 1)]
         return program
@@ -101,7 +101,7 @@ class CubemapToDualParaboloidProgram(GLSLProgram):
             GLSLTemplate.fromfile('postprocessing/quad.vert.glsl'),
             GLSLTemplate.fromfile('cubemap/cubemap_to_dual_paraboloid.frag.glsl'))
 
-    def update_uniforms(self, program):
+    def upload_uniforms(self, program):
         program['a_position'] = [(-1, -1), (-1, +1), (+1, -1), (+1, +1)]
         program['a_uv'] = [(0, 0), (0, 1), (1, 0), (1, 1)]
         return program

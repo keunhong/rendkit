@@ -2,12 +2,12 @@ import logging
 import numpy as np
 from numpy import linalg
 from scipy.special import gammaincinv, gamma
+from skimage.color import rgb2lab
 
 from svbrdf import SVBRDF
 from vispy.gloo import Texture2D
 
-from rendkit.glsl import GLSLProgram, GLSLTemplate
-
+from rendkit.glsl import GLSLProgram, GLSLTemplate, glsl_bool
 
 logger = logging.getLogger(__name__)
 
@@ -22,10 +22,9 @@ class BasicMaterial(GLSLProgram):
                          use_normals=False,
                          use_tangents=False)
         self.color = color
-
-    def update_uniforms(self, program):
-        program['u_color'] = self.color
-        return program
+        self.uniforms = {
+            'u_color': self.color
+        }
 
 
 class PhongMaterial(GLSLProgram):
@@ -40,12 +39,11 @@ class PhongMaterial(GLSLProgram):
         self.diff_color = diff_color
         self.spec_color = spec_color
         self.shininess = shininess
-
-    def update_uniforms(self, program):
-        program['u_diff'] = self.diff_color
-        program['u_spec'] = self.spec_color
-        program['u_shininess'] = self.shininess
-        return program
+        self.uniforms = {
+            'u_diff': self.diff_color,
+            'u_spec': self.spec_color,
+            'u_shininess': self.shininess,
+        }
 
 
 class UVMaterial(GLSLProgram):
@@ -56,9 +54,6 @@ class UVMaterial(GLSLProgram):
                          use_cam_pos=False,
                          use_lights=False,
                          use_normals=False)
-
-    def update_uniforms(self, program):
-        return program
 
 
 class DepthMaterial(GLSLProgram):
@@ -71,9 +66,6 @@ class DepthMaterial(GLSLProgram):
                          use_normals=False,
                          use_near_far=True)
 
-    def update_uniforms(self, program):
-        return program
-
 
 class WorldCoordMaterial(GLSLProgram):
     def __init__(self):
@@ -83,9 +75,6 @@ class WorldCoordMaterial(GLSLProgram):
                          use_cam_pos=False,
                          use_lights=False,
                          use_normals=False)
-
-    def update_uniforms(self, program):
-        return program
 
 
 class NormalMaterial(GLSLProgram):
@@ -97,9 +86,6 @@ class NormalMaterial(GLSLProgram):
                          use_lights=False,
                          use_normals=True)
 
-    def update_uniforms(self, program):
-        return program
-
 
 class TangentMaterial(GLSLProgram):
     def __init__(self):
@@ -110,9 +96,6 @@ class TangentMaterial(GLSLProgram):
                          use_lights=False,
                          use_tangents=True)
 
-    def update_uniforms(self, program):
-        return program
-
 
 class BitangentMaterial(GLSLProgram):
     def __init__(self):
@@ -122,9 +105,6 @@ class BitangentMaterial(GLSLProgram):
                          use_cam_pos=False,
                          use_lights=False,
                          use_tangents=True)
-
-    def update_uniforms(self, program):
-        return program
 
 
 class SVBRDFMaterial(GLSLProgram):
@@ -156,9 +136,37 @@ class SVBRDFMaterial(GLSLProgram):
         self.normal_map = svbrdf.normal_map.astype(np.float32)
 
         self.sigma, self.pdf_sampler, self.cdf_sampler = \
-            self.compute_is_params()
+            self.init_importance_sampling()
 
-    def compute_is_params(self):
+        self.frag_tpl_vars['change_color'] = glsl_bool(False)
+        self.diff_map_lab = None
+        self.diff_old_mean = None
+        self.diff_old_std = None
+        self.diff_new_mean = None
+        self.diff_new_std = None
+
+        self.uniforms = {}
+        self._update_uniforms()
+
+    def change_color(self, new_mean, new_std=None):
+        self.frag_tpl_vars['change_color'] = glsl_bool(True)
+        if self.diff_map_lab is None:
+            self.diff_map_lab = rgb2lab(self.diff_map)
+            self.diff_old_mean = self.diff_map_lab.mean(axis=2)
+            self.diff_old_std = self.diff_map_lab.std(axis=2)
+        self.diff_new_mean = new_mean
+        self.diff_new_std = new_std
+        self.uniforms['u_mean_old'] = self.diff_old_mean
+        self.uniforms['u_std_old'] = self.diff_old_std
+        self.uniforms['u_mean_new'] = self.diff_new_mean
+        if new_std:
+            self.uniforms['u_std_new'] = self.diff_new_std
+        else:
+            self.uniforms['u_std_new'] = self.diff_old_std
+        for program in self._instances:
+            self.upload_uniforms(program)
+
+    def init_importance_sampling(self):
         S = self.spec_shape_map.reshape((-1, 3))
         S = S[:, [0, 2, 2, 1]].reshape((-1, 2, 2))
 
@@ -171,7 +179,7 @@ class SVBRDFMaterial(GLSLProgram):
         # Create 2D sample texture for sampling the CDF since we need different
         # CDFs for difference roughness values.
         xi_samps = np.linspace(0.0, 1, 256, endpoint=True)
-        sigma_samps = np.linspace(self.sigma.min(), self.sigma.max(), 256)
+        sigma_samps = np.linspace(sigma.min(), sigma.max(), 256)
 
         logger.info("Precomputing material CDF and PDF.")
         p = self.alpha / 2
@@ -185,44 +193,43 @@ class SVBRDFMaterial(GLSLProgram):
 
         return sigma, pdf_sampler, cdf_sampler
 
-    def update_uniforms(self, program):
-        program['u_alpha'] = self.alpha
-        program['u_diff_map'] = Texture2D(
+    def _update_uniforms(self):
+        self.uniforms['u_alpha'] = self.alpha
+        self.uniforms['u_diff_map'] = Texture2D(
             self.diff_map,
             interpolation=('linear_mipmap_linear', 'linear'),
             wrapping='repeat',
             mipmap_levels=10,
             internalformat='rgb32f')
-        program['u_spec_map'] = Texture2D(
+        self.uniforms['u_spec_map'] = Texture2D(
             self.spec_map,
             interpolation=('linear_mipmap_linear', 'linear'),
             wrapping='repeat',
             mipmap_levels=10,
             internalformat='rgb32f')
-        program['u_spec_shape_map'] = Texture2D(
+        self.uniforms['u_spec_shape_map'] = Texture2D(
             self.spec_shape_map,
             interpolation=('linear', 'linear'),
             wrapping='repeat',
             mipmap_levels=10,
             internalformat='rgb32f')
-        program['u_normal_map'] = Texture2D(
+        self.uniforms['u_normal_map'] = Texture2D(
             self.normal_map,
             interpolation=('linear', 'linear'),
             wrapping='repeat',
             mipmap_levels=10,
             internalformat='rgb32f')
-        program['u_cdf_sampler'] = Texture2D(
+        self.uniforms['u_cdf_sampler'] = Texture2D(
             self.cdf_sampler.astype(np.float32),
             interpolation='linear',
             wrapping='clamp_to_edge',
             internalformat='r32f')
-        program['u_pdf_sampler'] = Texture2D(
+        self.uniforms['u_pdf_sampler'] = Texture2D(
             self.pdf_sampler.astype(np.float32),
             interpolation='linear',
             wrapping='clamp_to_edge',
             internalformat='r32f')
-        program['u_sigma_range'] = (self.sigma.min(), self.sigma.max())
-        return program
+        self.uniforms['u_sigma_range'] = (self.sigma.min(), self.sigma.max())
 
 
 class UnwrapToUVMaterial(GLSLProgram):
@@ -242,11 +249,10 @@ class UnwrapToUVMaterial(GLSLProgram):
                                      interpolation='linear',
                                      wrapping='clamp_to_edge',
                                      internalformat='r32f')
-
-    def update_uniforms(self, program):
-        program['input_tex'] = self.input_tex
-        program['input_depth'] = self.input_depth
-        return program
+        self.uniforms = {
+            'input_tex': self.input_tex,
+            'input_depth': self.input_depth,
+        }
 
 
 class DummyMaterial(GLSLProgram):
@@ -255,10 +261,6 @@ class DummyMaterial(GLSLProgram):
                          GLSLTemplate.fromfile('dummy.frag.glsl'),
                          use_lights=False,
                          use_radiance_map=False)
-
-    def update_uniforms(self, program):
-        pass
-
 
 
 PLACEHOLDER_MATERIAL = PhongMaterial([1.0, 0.0, 1.0], [0.1, 0.1, 0.1], 1.0)

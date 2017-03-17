@@ -12,12 +12,20 @@ uniform sampler2D u_diff_map;
 uniform sampler2D u_spec_map;
 uniform sampler2D u_spec_shape_map;
 uniform sampler2D u_normal_map;
+uniform float u_alpha;
+
 uniform vec2 u_sigma_range;
 uniform sampler2D u_cdf_sampler;
 uniform sampler2D u_pdf_sampler; // Normalization factor for PDF.
 uniform vec3 u_cam_pos;
 
-uniform float u_alpha;
+#if TPL.change_color
+#include "utils/colors.glsl"
+uniform vec3 u_mean_old;
+uniform vec3 u_mean_new;
+uniform vec3 u_std_old;
+uniform vec3 u_std_new;
+#endif
 
 #if TPL.num_lights > 0
 uniform float u_light_intensity[TPL.num_lights];
@@ -72,6 +80,11 @@ void main() {
   vec3 V = normalize(u_cam_pos - v_position);
 
   vec3 rho_d = texture2D(u_diff_map, v_uv).rgb;
+  #if TPL.change_color
+  rho_d = rgb2lab(rho_d) - u_mean_old;
+  rho_d = rho_d / u_std_old * u_std_new + u_mean_new;
+  rho_d = lab2rgb(rho_d);
+  #endif
   vec3 rho_s = texture2D(u_spec_map, v_uv).rgb;
   vec3 specv = texture2D(u_spec_shape_map, v_uv).rgb;
 
