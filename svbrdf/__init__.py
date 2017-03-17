@@ -55,7 +55,7 @@ class SVBRDF:
             self.alpha = alpha
 
         if suppress_outliers:
-            logger.info("Suppressing outliers in diffuse and specular maps.")
+            logger.debug("Suppressing outliers in diffuse and specular maps.")
             self.diffuse_map = images.suppress_outliers(self.diffuse_map)
             self.specular_map = images.suppress_outliers(self.specular_map)
 

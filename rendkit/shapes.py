@@ -1,7 +1,7 @@
 from rendkit import jsd
 
 
-def make_plane(height, width):
+def make_plane(height, width, material_name='plane'):
     return jsd.import_jsd_mesh({
         "scale": 1,
         "type": "inline",
@@ -20,7 +20,7 @@ def make_plane(height, width):
         "normals": [
             [0.0, 1.0, 0.0]
         ],
-        "materials": ["floor"],
+        "materials": [material_name],
         "faces": [
             {
                 "vertices": [0, 1, 2],

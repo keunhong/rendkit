@@ -52,7 +52,7 @@ class BaseRenderer(app.Canvas):
     def set_program(self, vertex_shader, fragment_shader):
         self.active_program = gloo.Program(vertex_shader, fragment_shader)
 
-    def draw(self, camera=None):
+    def draw(self, camera=None, out_size=None):
         """
         Override and implement drawing logic here. e.g. gloo.clear_color
         """
@@ -130,7 +130,7 @@ class ContextProvider:
 
 
 class SceneRenderer(BaseRenderer):
-    def __init__(self, scene, camera, size=None,
+    def __init__(self, scene, camera=None, size=None,
                  gamma=None,
                  ssaa=0,
                  tonemap=None,
@@ -140,6 +140,8 @@ class SceneRenderer(BaseRenderer):
                  *args, **kwargs):
         if size is None:
             size = camera.size
+        if camera is None:
+            camera = BaseCamera((100, 100), 0.1, 100)
         super().__init__(size, camera, scene, *args, **kwargs)
         gloo.set_state(depth_test=True)
         if conservative_raster:
@@ -156,7 +158,7 @@ class SceneRenderer(BaseRenderer):
         self.rend_target_by_cam = {
             self.camera: rendkit.util.create_rend_target(self.render_size)
         }
-        logger.info("Render size: {} --SSAAx{}--> {}".format(
+        logger.debug("Render size: {} --SSAAx{}--> {}".format(
             self.size, self.ssaa_scale, self.render_size))
 
         self.pp_pipeline = pp.PostprocessPipeline(self.size)
@@ -165,11 +167,11 @@ class SceneRenderer(BaseRenderer):
             self.pp_pipeline.add_program(pp.DownsampleProgram(ssaa))
 
         if tonemap == 'reinhard':
-            logger.info("Tonemapping mode reinhard with threshold={}"
+            logger.info("Tonemapping mode REINHARD with threshold={}"
                         .format(reinhard_thres))
             self.pp_pipeline.add_program(pp.ReinhardProgram(reinhard_thres))
         elif tonemap == 'exposure':
-            logger.info("Tonemapping mode exposure with exposure={}"
+            logger.info("Tonemapping mode EXPOSURE with exposure={}"
                         .format(exposure))
             self.pp_pipeline.add_program(pp.ExposureProgram(exposure))
 
@@ -204,7 +206,7 @@ class SceneRenderer(BaseRenderer):
         if camera not in self.rend_target_by_cam:
             rend_fb, rend_colortex, rend_depthtex = rendkit.util.create_rend_target(
                 tuple(s * self.ssaa_scale for s in out_size))
-            self.rend_target_by_cam[camera] = (rend_fb, rend_colortex)
+            self.rend_target_by_cam[camera] = (rend_fb, rend_colortex, rend_depthtex)
 
         rend_fb, rend_colortex, rend_depthtex = self.rend_target_by_cam[camera]
 

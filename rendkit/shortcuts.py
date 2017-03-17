@@ -9,7 +9,8 @@ from .jsd import JSDRenderer
 
 def svbrdf_plane_renderer(svbrdf, size=None, lights=list(), radmap=None,
                           mode='all', gamma=2.2, uv_scale=1.0, shape=None,
-                          transpose=False, cam_lookat=(0.0, 0.0), cam_fov=90,
+                          transpose=False, camera=None,
+                          cam_lookat=(0.0, 0.0), cam_fov=90,
                           cam_dist=1.0, cam_up=(1.0, 0.0, 0.0), **kwargs):
     if shape is None:
         height, width, _ = svbrdf.diffuse_map.shape
@@ -37,10 +38,13 @@ def svbrdf_plane_renderer(svbrdf, size=None, lights=list(), radmap=None,
         size = (width, height)
         cam_dist = cam_dist * min(width, height)/max(width, height)
 
-    camera = ArcballCamera(
-        size=size, fov=cam_fov, near=0.1, far=1000.0,
-        position=[0, cam_dist, 0],
-        lookat=(cam_lookat[0], 0.0, -cam_lookat[1]), up=cam_up)
+    if camera is None:
+        camera = ArcballCamera(
+            size=size, fov=cam_fov, near=0.1, far=1000.0,
+            position=[0, cam_dist, 0],
+            lookat=(cam_lookat[0], 0.0, -cam_lookat[1]), up=cam_up)
+    else:
+        camera = camera
 
     plane_size = 100
 
