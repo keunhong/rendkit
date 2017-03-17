@@ -82,7 +82,7 @@ class GLSLProgram:
         for k, v in self.uniforms.items():
             program[k] = v
 
-    def set_attributes(self, program, attributes):
+    def upload_attributes(self, program, attributes):
         used_attributes = {'a_position'}
         if self.use_normals:
             used_attributes.add('a_normal')
@@ -95,7 +95,7 @@ class GLSLProgram:
         for a_name in used_attributes:
             program[a_name] = attributes[a_name].astype(np.float32)
 
-    def set_lights(self, program, lights):
+    def upload_lights(self, program, lights):
         if self.use_lights:
             for i, light in enumerate(lights):
                 program['u_light_type[{}]'.format(i)] = light.type
@@ -105,14 +105,14 @@ class GLSLProgram:
                     program['u_light_intensity[{}]'.format(i)] = light.intensity
                     program['u_light_color[{}]'.format(i)] = light.color
 
-    def set_radmap(self, program, radmap):
+    def upload_radmap(self, program, radmap):
         if radmap is not None and self.use_radiance_map:
             program['u_irradiance_map'] = radmap.irradiance_tex
             program['u_cubemap_size'] = radmap.size
             program['u_radiance_upper'] = radmap.radiance_upper_tex
             program['u_radiance_lower'] = radmap.radiance_lower_tex
 
-    def set_shadow_sources(self, program, shadow_sources):
+    def upload_shadow_sources(self, program, shadow_sources):
         if self.use_radiance_map:
             for i, (shadow_cam, shadow_depth) in enumerate(shadow_sources):
                 program['u_shadow_depth[{}]'.format(i)] = \
@@ -122,7 +122,7 @@ class GLSLProgram:
                 program['u_shadow_proj[{}]'.format(i)] = shadow_cam.projection_mat().T
                 program['u_shadow_view[{}]'.format(i)] = shadow_cam.view_mat().T
 
-    def set_camera(self, program, camera):
+    def upload_camera(self, program, camera):
         if self.use_cam_pos:
             program['u_cam_pos'] = linalg.inv(camera.view_mat())[:3, 3]
         program['u_view'] = camera.view_mat().T

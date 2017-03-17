@@ -54,12 +54,12 @@ class Renderable:
                 num_lights=len(scene.lights),
                 num_shadow_sources=len(scene.shadow_sources),
                 use_radiance_map=scene.radiance_map is not None)
-            material.set_attributes(self._program, self._attributes)
-            material.set_radmap(self._program, scene.radiance_map)
-            material.set_shadow_sources(self._program, scene.shadow_sources)
-            material.set_lights(self._program, scene.lights)
+            material.upload_attributes(self._program, self._attributes)
+            material.upload_radmap(self._program, scene.radiance_map)
+            material.upload_shadow_sources(self._program, scene.shadow_sources)
+            material.upload_lights(self._program, scene.lights)
 
-        material.set_camera(self._program, camera)
+        material.upload_camera(self._program, camera)
         self._program['u_model'] = self.model_mat.T
 
         return self._program
@@ -81,8 +81,8 @@ class DepthRenderer(app.Canvas):
             gl.glEnable(gl.GL_CULL_FACE)
             gl.glCullFace(gl.GL_FRONT)
             for renderable in renderables:
-                self.material.set_camera(self.program, camera)
-                self.material.set_attributes(self.program, renderable._attributes)
+                self.material.upload_camera(self.program, camera)
+                self.material.upload_attributes(self.program, renderable._attributes)
                 self.program['u_model'] = renderable.model_mat.T
                 self.program.draw(gl.GL_TRIANGLES)
             gl.glCullFace(gl.GL_BACK)
