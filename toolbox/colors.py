@@ -131,3 +131,11 @@ def svbrdf_match_color(reference_im, svbrdf, mask=None, radmap=None):
     recolored_svbrdf.diffuse_map = recolored_map.astype(dtype=np.float32)
 
     return recolored_svbrdf
+
+
+def normalize_lab(lab_values):
+    return (lab_values - (50, 0, 0)) / (50, 128, 128)
+
+
+def denormalize_lab(norm_lab_values):
+    return norm_lab_values * (50, 128, 128) + (50, 0, 0)
