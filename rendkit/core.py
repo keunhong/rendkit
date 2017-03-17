@@ -121,34 +121,35 @@ class Scene:
         self.lights.append(light)
         self._version += 1
 
-    def set_radiance_map(self, radiance_map):
+    def set_radiance_map(self, radiance_map, add_shadows=False):
         if radiance_map is None:
             return
         self.radiance_map = radiance_map
 
-        shadow_dirs = cubemap.find_shadow_sources(
-            self.radiance_map.radiance_faces)
-        logger.info("Rendering {} shadow maps.".format(len(shadow_dirs)))
+        if add_shadows:
+            shadow_dirs = cubemap.find_shadow_sources(
+                self.radiance_map.radiance_faces)
+            logger.info("Rendering {} shadow maps.".format(len(shadow_dirs)))
 
-        with DepthRenderer() as r:
-            for i, shadow_dir in enumerate(shadow_dirs):
-                position = vector_utils.normalized(shadow_dir)
-                up = np.roll(position, 1) * (1, 1, -1)
-                camera = OrthographicCamera(
-                    (200, 200), -150, 150, position=position,
-                    lookat=(0, 0, 0), up=up)
-                rend_target = util.create_rend_target((1024, 1024))
-                r.draw(camera, self.renderables, rend_target)
-                with rend_target[0]:
-                    # gloo.read_pixels flips the output.
-                    depth = np.flipud(np.copy(gloo.read_pixels(
-                        format='depth', out_type=np.float32)))
-                    # Opengl ES doesn't support border clamp value
-                    # specification so hack it like this.
-                    depth[[0, -1], :] = 1.0
-                    depth[:, [0, -1]] = 1.0
-                self.shadow_sources.append((camera, depth))
-                misc.imsave('/srv/www/out/__{}.png'.format(i), depth)
+            with DepthRenderer() as r:
+                for i, shadow_dir in enumerate(shadow_dirs):
+                    position = vector_utils.normalized(shadow_dir)
+                    up = np.roll(position, 1) * (1, 1, -1)
+                    camera = OrthographicCamera(
+                        (200, 200), -150, 150, position=position,
+                        lookat=(0, 0, 0), up=up)
+                    rend_target = util.create_rend_target((1024, 1024))
+                    r.draw(camera, self.renderables, rend_target)
+                    with rend_target[0]:
+                        # gloo.read_pixels flips the output.
+                        depth = np.flipud(np.copy(gloo.read_pixels(
+                            format='depth', out_type=np.float32)))
+                        # Opengl ES doesn't support border clamp value
+                        # specification so hack it like this.
+                        depth[[0, -1], :] = 1.0
+                        depth[:, [0, -1]] = 1.0
+                    self.shadow_sources.append((camera, depth))
+                    misc.imsave('/srv/www/out/__{}.png'.format(i), depth)
 
         self._version += 1
 
