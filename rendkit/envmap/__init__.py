@@ -1,7 +1,7 @@
 import numpy as np
 
-from rendkit.envmap.prefilter import prefilter_irradiance, \
-    cubemap_to_dual_paraboloid
+from rendkit.envmap.prefilter import prefilter_irradiance
+from rendkit.envmap.conversion import cubemap_to_dual_paraboloid
 from rendkit.lights import logger
 from vispy import gloo
 
