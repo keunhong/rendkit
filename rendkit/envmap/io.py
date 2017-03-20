@@ -1,4 +1,5 @@
 import os
+import logging
 from functools import partial
 
 import numpy as np
@@ -7,6 +8,9 @@ from scipy.misc import imread
 
 from rendkit import pfm
 from toolbox.images import resize
+
+
+logger = logging.getLogger(__name__)
 
 
 _FACE_NAMES = {
@@ -69,6 +73,10 @@ def unstack_cross(cross):
     faces = np.zeros(faces_shape, dtype=np.float32)
     gridf = partial(_get_grid, cross, height, width)
 
+    if np.sum(gridf(1, 0)) == 0:
+        logger.info("Cubemap cross is flipped, flipping.")
+        cross = np.flipud(cross)
+
     if format == 'vertical':
         faces[0] = gridf(1, 2)
         faces[1] = gridf(1, 0)
@@ -97,7 +105,7 @@ def load_envmap(path, size=(512, 512)):
             image = misc.imresize(image, size).astype(np.float32) / 255.0
             cube_faces[_FACE_NAMES[name]] = image
     elif ext == '.pfm':
-        array = np.flipud(pfm.pfm_read(path))
+        array = pfm.pfm_read(path)
         for i, face in enumerate(unstack_cross(array)):
             cube_faces[i] = resize(face, size)[:, :, :3]
     elif ext == '.jpg' or ext == '.png' or ext == '.tiff':

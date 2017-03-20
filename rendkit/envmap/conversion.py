@@ -73,7 +73,8 @@ def panorama_to_cubemap(panorama, cube_size=256):
             rendtex, gloo.RenderBuffer((width, height, n_channels)))
         gloo.set_viewport(0, 0, width, height)
         program['u_panorama'] = gloo.Texture2D(
-            panorama, internalformat=internal_format)
+            panorama.transpose((1, 0, 2)),
+            internalformat=internal_format)
         results = np.zeros((6, height, width, n_channels), dtype=np.float32)
         for i in range(6):
             program['u_cube_face'] = i

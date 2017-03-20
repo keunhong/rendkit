@@ -10,7 +10,7 @@ out vec4 out_color;
 
 void main() {
   vec2 pos = v_uv * 2.0 - 1.0;
-  vec3 normal = cubemap_face_to_world(pos, cube_face);
+  vec3 normal = cubemap_face_to_world(pos, u_cube_face);
   vec2 pano_uv = sphere_world_to_tex(normal);
   vec3 color = texture(u_panorama, pano_uv).xyz;
   out_color = vec4(color, 1.0);
