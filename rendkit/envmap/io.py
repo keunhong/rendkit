@@ -97,7 +97,7 @@ def load_envmap(path, size=(512, 512)):
             image = misc.imresize(image, size).astype(np.float32) / 255.0
             cube_faces[_FACE_NAMES[name]] = image
     elif ext == '.pfm':
-        array = np.flipud(pfm.load_pfm_texture(path))
+        array = np.flipud(pfm.pfm_read(path))
         for i, face in enumerate(unstack_cross(array)):
             cube_faces[i] = resize(face, size)[:, :, :3]
     elif ext == '.jpg' or ext == '.png' or ext == '.tiff':

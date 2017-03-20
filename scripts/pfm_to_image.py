@@ -16,7 +16,7 @@ def main():
         print("File does not exist.")
         return
 
-    im = pfm.load_pfm_texture(args.path)
+    im = pfm.pfm_read(args.path)
 
     if args.out_path:
         print("Saving image to {}".format(args.out_path))

@@ -1,7 +1,7 @@
 import os
 import argparse
 import cv2
-from rendkit.pfm import save_pfm_texture
+from rendkit.pfm import pfm_write
 
 
 parser = argparse.ArgumentParser()
@@ -21,7 +21,7 @@ def main():
 
     im = cv2.imread(args.in_path, -1)
     print("Saving to {}".format(args.out_path))
-    save_pfm_texture(args.out_path, im)
+    pfm_write(args.out_path, im)
 
 
 if __name__ == '__main__':

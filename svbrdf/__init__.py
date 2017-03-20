@@ -35,14 +35,14 @@ class SVBRDF:
                 line = f.readline()
                 self.alpha, _ = [float(i) for i in line.split(' ')]
 
-            self.diffuse_map = pfm.load_pfm_texture(
+            self.diffuse_map = pfm.pfm_read(
                 os.path.join(data_path, MAP_DIFF_FNAME), transposed=transposed)
 
-            self.specular_map = pfm.load_pfm_texture(
+            self.specular_map = pfm.pfm_read(
                 os.path.join(data_path, MAP_SPEC_FNAME), transposed=transposed)
-            self.normal_map = pfm.load_pfm_texture(
+            self.normal_map = pfm.pfm_read(
                 os.path.join(data_path, MAP_NORMAL_FNAME), transposed=transposed)
-            self.spec_shape_map = pfm.load_pfm_texture(
+            self.spec_shape_map = pfm.pfm_read(
                 os.path.join(data_path, MAP_SPEC_SHAPE_FNAME), transposed=transposed)
 
             logger.info("Loaded \'{}\', shape={}, alpha={}"
@@ -67,14 +67,14 @@ class SVBRDF:
         reverse_path = os.path.join(path, 'out', 'reverse')
         if not os.path.exists(reverse_path):
             os.makedirs(reverse_path)
-        pfm.save_pfm_texture(os.path.join(reverse_path, MAP_DIFF_FNAME),
-                             self.diffuse_map)
-        pfm.save_pfm_texture(os.path.join(reverse_path, MAP_SPEC_FNAME),
-                             self.specular_map)
-        pfm.save_pfm_texture(os.path.join(reverse_path, MAP_SPEC_SHAPE_FNAME),
-                             self.spec_shape_map)
-        pfm.save_pfm_texture(os.path.join(reverse_path, MAP_NORMAL_FNAME),
-                             self.normal_map)
+        pfm.pfm_write(os.path.join(reverse_path, MAP_DIFF_FNAME),
+                      self.diffuse_map)
+        pfm.pfm_write(os.path.join(reverse_path, MAP_SPEC_FNAME),
+                      self.specular_map)
+        pfm.pfm_write(os.path.join(reverse_path, MAP_SPEC_SHAPE_FNAME),
+                      self.spec_shape_map)
+        pfm.pfm_write(os.path.join(reverse_path, MAP_NORMAL_FNAME),
+                      self.normal_map)
         with open(os.path.join(reverse_path, MAP_PARAMS_FNAME), 'w') as f:
             f.write("{} {}".format(self.alpha, 0.0))
 

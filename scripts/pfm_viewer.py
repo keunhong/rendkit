@@ -18,7 +18,7 @@ def main():
         print("File does not exist.")
         return
 
-    im = pfm.load_pfm_texture(args.path)
+    im = pfm.pfm_read(args.path)
     print("min={}, max={}, median={}"
           .format(im.min(axis=(0,1)), im.max(axis=(0,1)), np.median(im, axis=(0,1))))
 

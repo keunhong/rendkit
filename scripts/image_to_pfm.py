@@ -24,7 +24,7 @@ def main():
         im = im.astype(np.float32) / 255.0
 
     print("Saving PFM to {}".format(args.out_path))
-    pfm.save_pfm_texture(args.out_path, im)
+    pfm.pfm_write(args.out_path, im)
 
 
 if __name__ == '__main__':

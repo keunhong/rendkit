@@ -20,7 +20,7 @@ def _print_debug(header_magic, width, height, tex):
     )
 
 
-def load_pfm_texture(filename: str, transposed=False):
+def pfm_read(filename: str, transposed=False):
     with open(filename, 'rb') as f:
         header_magic = f.readline().decode().strip()
         header_dims = f.readline().decode().strip()
@@ -35,7 +35,7 @@ def load_pfm_texture(filename: str, transposed=False):
     return tex
 
 
-def save_pfm_texture(filename: str, tex: np.ndarray):
+def pfm_write(filename: str, tex: np.ndarray):
     if tex.dtype != np.float32:
         logger.debug('Input is not 32 bit precision: converting to 32 bits.')
         tex = tex.astype(np.float32)
