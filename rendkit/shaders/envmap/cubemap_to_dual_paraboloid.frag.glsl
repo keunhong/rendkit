@@ -1,5 +1,5 @@
 #version 450 core
-#include "cubemap/dual_paraboloid.glsl"
+#include "envmap/dual_paraboloid.glsl"
 
 uniform samplerCube u_cubemap;
 uniform int u_hemisphere;

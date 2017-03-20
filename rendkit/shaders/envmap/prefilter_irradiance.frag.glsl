@@ -1,6 +1,7 @@
 #version 450 core
 #include "utils/math.glsl"
 #include "utils/sampling.glsl"
+#include "envmap/cubemap.glsl"
 
 uniform samplerCube u_radiance_map;
 uniform vec2 u_cubemap_size;
@@ -25,16 +26,7 @@ vec3 importance_sample(vec2 xi) {
 
 // Adapted from http://www.codinglabs.net/article_physically_based_rendering.aspx
 vec4 samp(vec2 pos, int cube_face) {
-  vec3 normal = normalize(vec3(pos.xy, 1) );
-  switch(cube_face) {
-    case 0: normal = normalize(vec3(1, pos.y, -pos.x)); break;
-    case 1: normal = normalize(vec3(-1, pos.y, pos.x)); break;
-    case 2: normal = normalize(vec3(pos.x, 1, -pos.y)); break;
-    case 3: normal = normalize(vec3(pos.x, -1, pos.y)); break;
-    case 4: normal = normalize(vec3(pos.xy, 1)); break;
-    case 5: normal = normalize(vec3(-pos.x, pos.y, -1)); break;
-  }
-
+  vec3 normal = cubemap_face_to_world(pos, cube_face);
   vec3 up = vec3(0, 1, 0);
   vec3 right = normalize(cross(up, normal));
   up = cross(normal, right);

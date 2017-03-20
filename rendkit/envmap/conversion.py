@@ -10,7 +10,7 @@ class CubemapToDualParaboloidProgram(GLSLProgram):
     def __init__(self):
         super().__init__(
             GLSLTemplate.fromfile('postprocessing/quad.vert.glsl'),
-            GLSLTemplate.fromfile('cubemap/cubemap_to_dual_paraboloid.frag.glsl'))
+            GLSLTemplate.fromfile('envmap/cubemap_to_dual_paraboloid.frag.glsl'))
 
     def upload_uniforms(self, program):
         program['a_position'] = [(-1, -1), (-1, +1), (+1, -1), (+1, +1)]
@@ -51,7 +51,7 @@ class PanoramaToCubemapProgram(GLSLProgram):
     def __init__(self):
         super().__init__(
             GLSLTemplate.fromfile('postprocessing/quad.vert.glsl'),
-            GLSLTemplate.fromfile('cubemap/panorama_to_cubemap.frag.glsl'))
+            GLSLTemplate.fromfile('envmap/panorama_to_cubemap.frag.glsl'))
 
     def upload_uniforms(self, program):
         program['a_position'] = [(-1, -1), (-1, +1), (+1, -1), (+1, +1)]

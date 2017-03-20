@@ -18,11 +18,8 @@ vec2 sphere_world_to_spherical(vec3 world) {
   return vec2(theta, phi);
 }
 
-vec2 sphere_world_to_tex(vec3 world) {
-//  float u = (1.0 + atan(world.x, -world.z)) / M_PI / 2.0;
-//  float v = acos(world.y) / M_PI;
-//  return vec2(u, v);
 
+vec2 sphere_world_to_tex(vec3 world) {
   vec2 theta_phi = sphere_world_to_spherical(world);
   theta_phi.s = ((theta_phi.s / M_PI) + 1.0)/2.0;
   theta_phi.t = (theta_phi.t / M_PI);

@@ -1,7 +1,7 @@
 #version 450 core
 #include "utils/math.glsl"
 #include "utils/sampling.glsl"
-#include "cubemap/dual_paraboloid.glsl"
+#include "envmap/dual_paraboloid.glsl"
 
 #define LIGHT_POINT 0
 #define LIGHT_DIRECTIONAL 1

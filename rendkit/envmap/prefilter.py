@@ -47,8 +47,8 @@ def find_shadow_sources(cubemap, num_shadows=8):
 class LambertPrefilterProgram(GLSLProgram):
     def __init__(self):
         super().__init__(
-            GLSLTemplate.fromfile('cubemap/lambert.vert.glsl'),
-            GLSLTemplate.fromfile('cubemap/lambert.frag.glsl'))
+            GLSLTemplate.fromfile('envmap/prefilter_irradiance.vert.glsl'),
+            GLSLTemplate.fromfile('envmap/prefilter_irradiance.frag.glsl'))
 
     def upload_uniforms(self, program):
         program['a_position'] = [(-1, -1), (-1, +1), (+1, -1), (+1, +1)]
