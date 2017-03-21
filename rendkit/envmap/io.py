@@ -67,15 +67,17 @@ def unstack_cross(cross):
     else:
         raise RuntimeError("Unknown cross format.")
 
+    gridf = partial(_get_grid, cross, height, width)
+
+    if format == 'vertical' and np.all(gridf(1, 0) == 0):
+        logger.info("Cubemap cross is flipped, flipping.")
+        cross = np.flipud(cross)
+        gridf = partial(_get_grid, cross, height, width)
+
     n_channels = cross.shape[2] if len(cross.shape) == 3 else 1
     faces_shape = ((6, height, width, n_channels)
                    if n_channels > 1 else (6, height, width))
     faces = np.zeros(faces_shape, dtype=np.float32)
-    gridf = partial(_get_grid, cross, height, width)
-
-    if np.sum(gridf(1, 0)) == 0:
-        logger.info("Cubemap cross is flipped, flipping.")
-        cross = np.flipud(cross)
 
     if format == 'vertical':
         faces[0] = gridf(1, 2)
