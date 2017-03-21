@@ -109,17 +109,6 @@ class BitangentMaterial(GLSLProgram):
 
 class SVBRDFMaterial(GLSLProgram):
 
-    @classmethod
-    def compute_cdf(cls, sigma, gamma_inv_xi_theta: np.ndarray):
-        return np.arctan(sigma * gamma_inv_xi_theta)
-
-    @classmethod
-    def compute_pdf(cls, sigma, alpha, gamma_inv_xi_theta):
-        p = alpha / 2
-        theta = cls.compute_cdf(sigma, gamma_inv_xi_theta)
-        norm = p / ((sigma ** 2) * np.pi * gamma(1 / p))
-        return norm * np.exp(-((np.tan(theta) ** 2) / (sigma ** 2)) ** p)
-
     def __init__(self, svbrdf: SVBRDF):
         super().__init__(GLSLTemplate.fromfile('default.vert.glsl'),
                          GLSLTemplate.fromfile('svbrdf.frag.glsl'),
@@ -135,8 +124,10 @@ class SVBRDFMaterial(GLSLProgram):
         self.spec_shape_map = svbrdf.spec_shape_map.astype(np.float32)
         self.normal_map = svbrdf.normal_map.astype(np.float32)
 
-        self.sigma, self.pdf_sampler, self.cdf_sampler = \
-            self.init_importance_sampling()
+        self.sigma_min = svbrdf.sigma_min
+        self.sigma_max = svbrdf.sigma_max
+        self.cdf_sampler = svbrdf.cdf_sampler
+        self.pdf_sampler = svbrdf.pdf_sampler
 
         self.frag_tpl_vars['change_color'] = glsl_bool(False)
         self.diff_map_lab = None
@@ -164,33 +155,6 @@ class SVBRDFMaterial(GLSLProgram):
         else:
             self.uniforms['u_std_new'] = self.diff_old_std
         self.update_instances()
-
-    def init_importance_sampling(self):
-        S = self.spec_shape_map.reshape((-1, 3))
-        S = S[:, [0, 2, 2, 1]].reshape((-1, 2, 2))
-
-        # printf "\e[0m"; Approximate isotropic roughness with smallest eigenvalue of S.
-        trace = S[:, 0, 0] + S[:, 1, 1]
-        root = np.sqrt(np.clip(trace*trace - 4 * linalg.det(S), 0, None))
-        beta = (trace + root) / 2
-        sigma: np.ndarray = 1.0 / np.sqrt(beta)
-
-        # Create 2D sample texture for sampling the CDF since we need different
-        # CDFs for difference roughness values.
-        xi_samps = np.linspace(0.0, 1, 256, endpoint=True)
-        sigma_samps = np.linspace(sigma.min(), sigma.max(), 256)
-
-        logger.info("Precomputing material CDF and PDF.")
-        p = self.alpha / 2
-        gamma_inv_xi_theta = gammaincinv(1 / p, xi_samps) ** p
-        cdf_sampler = np.apply_along_axis(
-            self.compute_cdf, 1, sigma_samps[:, None],
-            gamma_inv_xi_theta=gamma_inv_xi_theta)
-        pdf_sampler = np.apply_along_axis(
-            self.compute_pdf, 1, sigma_samps[:, None],
-            alpha=self.alpha, gamma_inv_xi_theta=gamma_inv_xi_theta)
-
-        return sigma, pdf_sampler, cdf_sampler
 
     def init_uniforms(self):
         self.uniforms['u_alpha'] = self.alpha
@@ -228,7 +192,7 @@ class SVBRDFMaterial(GLSLProgram):
             interpolation='linear',
             wrapping='clamp_to_edge',
             internalformat='r32f')
-        self.uniforms['u_sigma_range'] = (self.sigma.min(), self.sigma.max())
+        self.uniforms['u_sigma_range'] = (self.sigma_min, self.sigma_max)
 
 
 class UnwrapToUVMaterial(GLSLProgram):

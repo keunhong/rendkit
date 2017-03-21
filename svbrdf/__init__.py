@@ -1,6 +1,10 @@
 import logging
 import os
 
+import numpy as np
+from numpy import linalg
+from scipy.special import gammaincinv, gamma
+
 from rendkit import pfm
 from toolbox import images
 
@@ -9,6 +13,10 @@ MAP_SPEC_FNAME = 'map_spec.pfm'
 MAP_NORMAL_FNAME = 'map_normal.pfm'
 MAP_SPEC_SHAPE_FNAME = 'map_spec_shape.pfm'
 MAP_PARAMS_FNAME = 'map_params.dat'
+
+IS_SIGMA_RANGE_FNAME = 'is_sigma_range.dat'
+IS_CDF_FNAME = 'is_cdf_sampler.pfm'
+IS_PDF_FNAME = 'is_pdf_sampler.pfm'
 
 
 logger = logging.getLogger(__name__)
@@ -47,6 +55,31 @@ class SVBRDF:
 
             logger.info("Loaded \'{}\', shape={}, alpha={}"
                 .format(self.name, self.diffuse_map.shape, self.alpha))
+
+            is_cdf_path = os.path.join(data_path, IS_CDF_FNAME)
+            is_pdf_path = os.path.join(data_path, IS_PDF_FNAME)
+            is_sigma_range_path = os.path.join(data_path, IS_SIGMA_RANGE_FNAME)
+            if os.path.exists(is_cdf_path):
+                logger.info("Loading existing importance sampling params.")
+                self.cdf_sampler = pfm.pfm_read(is_cdf_path)
+                self.pdf_sampler = pfm.pfm_read(is_pdf_path)
+                with open(is_sigma_range_path, 'r') as f:
+                    line = f.readline()
+                    self.sigma_min, self.sigma_max = [
+                        float(i) for i in line.split(' ')]
+            else:
+                logger.info("Computing importance sampling params.")
+                sigma, self.pdf_sampler, self.cdf_sampler = \
+                    self.compute_is_params()
+                self.sigma_min = sigma.min()
+                self.sigma_max = sigma.max()
+                logger.info("Saving CDF sampler to {}".format(is_cdf_path))
+                pfm.pfm_write(is_cdf_path, self.cdf_sampler)
+                logger.info("Saving PDF sampler to {}".format(is_pdf_path))
+                pfm.pfm_write(is_pdf_path, self.pdf_sampler)
+                with open(is_sigma_range_path, 'w') as f:
+                    f.write("{} {}".format(self.sigma_min, self.sigma_max))
+
         else:
             self.diffuse_map = diffuse_map
             self.specular_map = specular_map
@@ -58,6 +91,32 @@ class SVBRDF:
             logger.debug("Suppressing outliers in diffuse and specular maps.")
             self.diffuse_map = images.suppress_outliers(self.diffuse_map)
             self.specular_map = images.suppress_outliers(self.specular_map)
+
+    def compute_is_params(self):
+        S = self.spec_shape_map.reshape((-1, 3))
+        S = S[:, [0, 2, 2, 1]].reshape((-1, 2, 2))
+
+        # Approximate isotropic roughness with smallest eigenvalue of S.
+        trace = S[:, 0, 0] + S[:, 1, 1]
+        root = np.sqrt(np.clip(trace*trace - 4 * linalg.det(S), 0, None))
+        beta = (trace + root) / 2
+        sigma: np.ndarray = 1.0 / np.sqrt(beta)
+
+        # Create 2D sample texture for sampling the CDF since we need different
+        # CDFs for difference roughness values.
+        xi_samps = np.linspace(0.0, 1, 256, endpoint=True)
+        sigma_samps = np.linspace(sigma.min(), sigma.max(), 256)
+
+        p = self.alpha / 2
+        gamma_inv_xi_theta = gammaincinv(1 / p, xi_samps) ** p
+        cdf_sampler = np.apply_along_axis(
+            compute_cdf, 1, sigma_samps[:, None],
+            gamma_inv_xi_theta=gamma_inv_xi_theta)
+        pdf_sampler = np.apply_along_axis(
+            compute_pdf, 1, sigma_samps[:, None],
+            alpha=self.alpha, gamma_inv_xi_theta=gamma_inv_xi_theta)
+
+        return sigma, pdf_sampler, cdf_sampler
 
     @property
     def name(self):
@@ -86,3 +145,14 @@ class SVBRDF:
             spec_shape_map=self.spec_shape_map,
             normal_map=self.normal_map,
             alpha=self.alpha)
+
+
+def compute_cdf(sigma, gamma_inv_xi_theta: np.ndarray):
+    return np.arctan(sigma * gamma_inv_xi_theta)
+
+
+def compute_pdf(sigma, alpha, gamma_inv_xi_theta):
+    p = alpha / 2
+    theta = compute_cdf(sigma, gamma_inv_xi_theta)
+    norm = p / ((sigma ** 2) * np.pi * gamma(1 / p))
+    return norm * np.exp(-((np.tan(theta) ** 2) / (sigma ** 2)) ** p)
