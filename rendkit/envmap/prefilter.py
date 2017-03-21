@@ -56,7 +56,7 @@ class LambertPrefilterProgram(GLSLProgram):
         return program
 
 
-def prefilter_irradiance(cube_faces):
+def prefilter_irradiance(cube_faces, radiance_upper, radiance_lower):
     program = LambertPrefilterProgram().compile()
     _, height, width, n_channels = cube_faces.shape
     internal_format = 'rgba32f' if n_channels == 4 else 'rgb32f'
@@ -68,8 +68,8 @@ def prefilter_irradiance(cube_faces):
         framebuffer = gloo.FrameBuffer(
             rendtex, gloo.RenderBuffer((width, height, n_channels)))
         gloo.set_viewport(0, 0, width, height)
-        program['u_radiance_map'] = gloo.TextureCubeMap(
-            cube_faces, internalformat=internal_format, mipmap_levels=8)
+        program['u_radiance_upper'] = radiance_upper
+        program['u_radiance_lower'] = radiance_lower
         program['u_cubemap_size'] = (width, height)
         results = np.zeros(cube_faces.shape, dtype=np.float32)
         for i in range(6):
@@ -77,11 +77,4 @@ def prefilter_irradiance(cube_faces):
             with framebuffer:
                 program.draw(gl.GL_TRIANGLE_STRIP)
                 results[i] = gloo.read_pixels(out_type=np.float32, format='rgb')
-
-    from matplotlib import pyplot as plt
-    plt.subplot(121)
-    plt.imshow(np.clip(stack_cross(results), 0, 1))
-    plt.subplot(122)
-    plt.imshow(np.clip(stack_cross(cube_faces), 0, 1))
-    plt.show()
     return results

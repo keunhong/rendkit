@@ -2,8 +2,11 @@
 #include "utils/math.glsl"
 #include "utils/sampling.glsl"
 #include "envmap/cubemap.glsl"
+#include "envmap/dual_paraboloid.glsl"
 
-uniform samplerCube u_radiance_map;
+//uniform samplerCube u_radiance_map;
+uniform sampler2D u_radiance_upper;
+uniform sampler2D u_radiance_lower;
 uniform vec2 u_cubemap_size;
 uniform int u_cube_face;
 
@@ -24,7 +27,6 @@ vec3 importance_sample(vec2 xi) {
 }
 
 
-// Adapted from http://www.codinglabs.net/article_physically_based_rendering.aspx
 vec4 samp(vec2 pos, int cube_face) {
   vec3 normal = cubemap_face_to_world(pos, cube_face);
   vec3 up = vec3(0, 1, 0);
@@ -39,7 +41,13 @@ vec4 samp(vec2 pos, int cube_face) {
     L = sample_to_world(L, normal);
     float pdf = L.z;
 		float lod = compute_lod(pdf, N_SAMPLES, u_cubemap_size.x, u_cubemap_size.y);
-    vec3 light_color = textureLod(u_radiance_map, L, lod).rgb;
+    vec3 light_color;
+    vec2 dp_uv = dualp_world_to_tex(L, 1.2);
+    if (L.y > 0) {
+      light_color = textureLod(u_radiance_upper, dp_uv, lod).rgb;
+    } else {
+      light_color = textureLod(u_radiance_lower, dp_uv, lod).rgb;
+    }
     total_color += 1.0 / float(N_SAMPLES) * light_color;
   }
   return vec4(total_color, 1.0);

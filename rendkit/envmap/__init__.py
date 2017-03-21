@@ -15,12 +15,13 @@ class EnvironmentMap():
         self._radiance_tex = None
         self._irradiance_faces = None
         self._irradiance_tex = None
+        self._radiance_upper_map = None
+        self._radiance_lower_map = None
         self._radiance_upper_tex = None
         self._radiance_lower_tex = None
 
         self.radiance_faces = cube_faces * scale
         tic = time.time()
-        self.irradiance_faces = prefilter_irradiance(self.radiance_faces)
         logger.info("Prefiltered irradiance map ({:.04f}s)."
                     .format(time.time() - tic))
 
@@ -31,17 +32,22 @@ class EnvironmentMap():
     @radiance_faces.setter
     def radiance_faces(self, radiance_faces):
         self._radiance_faces = radiance_faces
-        upper_map, lower_map = cubemap_to_dual_paraboloid(self.radiance_faces)
+        self._radiance_upper_map, self._radiance_lower_map = \
+            cubemap_to_dual_paraboloid(self.radiance_faces)
         self._radiance_upper_tex = gloo.Texture2D(
-            upper_map,
+            self._radiance_upper_map,
             interpolation='linear_mipmap_linear',
             internalformat='rgb32f',
             mipmap_levels=8)
         self._radiance_lower_tex = gloo.Texture2D(
-            lower_map,
+            self._radiance_lower_map,
             interpolation='linear_mipmap_linear',
             internalformat='rgb32f',
             mipmap_levels=8)
+        self.irradiance_faces = prefilter_irradiance(
+            self._radiance_faces,
+            self._radiance_upper_map,
+            self._radiance_lower_map)
 
     @property
     def irradiance_faces(self):
@@ -49,7 +55,6 @@ class EnvironmentMap():
 
     @irradiance_faces.setter
     def irradiance_faces(self, irradiance_faces):
-        print('asdf')
         self._irradiance_faces = irradiance_faces
         self._irradiance_tex = gloo.TextureCubeMap(
             self._irradiance_faces,
