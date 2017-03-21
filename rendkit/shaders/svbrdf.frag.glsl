@@ -97,7 +97,6 @@ void main() {
 //    N *= -1;
 //  }
 
-
   float shadowness = 0.0;
 	#if TPL.num_shadow_sources > 0
 	for (int i = 0; i < TPL.num_shadow_sources; i++) {
@@ -105,7 +104,6 @@ void main() {
 	}
   shadowness /= TPL.num_shadow_sources * 2.0;
 	#endif
-
 
   mat2 S = mat2(specv.x, specv.z,
       specv.z, specv.y);
@@ -118,7 +116,7 @@ void main() {
   vec3 specular = vec3(0);
   vec2 e = eig(S);
   float sigma = pow(min(e.x, e.y), -1.0/4.0);
-  uint N_SAMPLES = 256u;
+  uint N_SAMPLES = 200u;
   for (uint i = 0u; i < N_SAMPLES; i++) {
     vec2 xi = hammersley(i, N_SAMPLES); // Use psuedo-random point set.
     vec2 sample_angle = compute_sample_angles(sigma, xi);
@@ -136,10 +134,9 @@ void main() {
     } else {
       light_color = textureLod(u_radiance_lower, dp_uv, lod).rgb;
     }
-    specular += compute_irradiance(N, L, light_color) *
-      aittala_spec_is(N, V, L, rho_s, S, u_alpha, pdf);
+    specular += compute_irradiance(N, L, light_color)
+        * aittala_spec_is(N, V, L, rho_s, S, u_alpha, pdf) / N_SAMPLES;
   }
-  specular /= N_SAMPLES;
   total_radiance += specular;
   #endif
 
