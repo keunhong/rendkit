@@ -111,13 +111,27 @@ def render_full(jsd_dict, uv_scale=6.0):
         return r.render_to_image()
 
 
-def render_lambert_map(jsd_dict, uv_scale=6.0):
+def render_diffuse_lightmap(jsd_dict, uv_scale=6.0):
     jsd_dict = copy.deepcopy(jsd_dict)
     for mat_name in jsd_dict['materials']:
         mat_jsd = jsd_dict['materials'][mat_name]
         if mat_jsd['type'] == 'svbrdf_inline':
             mat_jsd['diffuse_map'][:] = 1.0
             mat_jsd['specular_map'][:] = 0.0
+    with jsd.JSDRenderer(jsd_dict, ssaa=3, gamma=None) as r:
+        r.camera.clear_color = (0.0, 0.0, 0.0)
+        for renderable in r.scene.renderables:
+            renderable.scale_uvs(uv_scale)
+        return r.render_to_image()
+
+
+def render_specular_lightmap(jsd_dict, uv_scale=6.0):
+    jsd_dict = copy.deepcopy(jsd_dict)
+    for mat_name in jsd_dict['materials']:
+        mat_jsd = jsd_dict['materials'][mat_name]
+        if mat_jsd['type'] == 'svbrdf_inline':
+            mat_jsd['diffuse_map'][:] = 0.0
+            mat_jsd['specular_map'][:] = 1.0
     with jsd.JSDRenderer(jsd_dict, ssaa=3, gamma=None) as r:
         r.camera.clear_color = (0.0, 0.0, 0.0)
         for renderable in r.scene.renderables:

@@ -30,6 +30,10 @@ class SVBRDF:
                  spec_shape_map=None,
                  normal_map=None,
                  alpha=None,
+                 cdf_sampler=None,
+                 pdf_sampler=None,
+                 sigma_min=None,
+                 sigma_max=None,
                  suppress_outliers=True,
                  transposed=False):
         if path is not None:
@@ -90,6 +94,14 @@ class SVBRDF:
             self.spec_shape_map = spec_shape_map
             self.normal_map = normal_map
             self.alpha = alpha
+            if pdf_sampler is not None and cdf_sampler is not None:
+                self.cdf_sampler = cdf_sampler
+                self.pdf_sampler = pdf_sampler
+                self.sigma_min, self.sigma_max = sigma_min, sigma_max
+            else:
+                sigma, self.pdf_sampler, self.cdf_sampler = \
+                    self.compute_is_params()
+                self.sigma_min, self.sigma_max = sigma.min(), sigma.max()
 
         if suppress_outliers:
             tic = time()
@@ -150,7 +162,11 @@ class SVBRDF:
             specular_map=self.specular_map,
             spec_shape_map=self.spec_shape_map,
             normal_map=self.normal_map,
-            alpha=self.alpha)
+            alpha=self.alpha,
+            pdf_sampler=self.pdf_sampler,
+            cdf_sampler=self.cdf_sampler,
+            sigma_min=self.sigma_min,
+            sigma_max=self.sigma_max)
 
 
 def compute_cdf(sigma, gamma_inv_xi_theta: np.ndarray):

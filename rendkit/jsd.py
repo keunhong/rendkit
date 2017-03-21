@@ -166,7 +166,11 @@ def import_jsd_material(jsd_material) -> rendkit.materials.GLSLProgram:
             specular_map=jsd_material['specular_map'],
             spec_shape_map=jsd_material['spec_shape_map'],
             normal_map=jsd_material['normal_map'],
-            alpha=jsd_material['alpha']))
+            alpha=jsd_material['alpha'],
+            cdf_sampler=jsd_material.get('cdf_sampler', None),
+            pdf_sampler=jsd_material.get('pdf_sampler', None),
+            sigma_min=jsd_material.get('sigma_min', None),
+            sigma_max=jsd_material.get('sigma_max', None)))
     elif jsd_material['type'] == 'phong':
         return PhongMaterial(
             jsd_material['diffuse'],
