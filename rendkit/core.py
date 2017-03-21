@@ -105,7 +105,7 @@ class Scene:
 
     def reset(self):
         for material in self.materials.values():
-            del material._instances[:]
+            material._instances = []
             material.init_uniforms()
         for renderable in self.renderables:
             renderable._program = None

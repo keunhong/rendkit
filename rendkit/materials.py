@@ -27,6 +27,28 @@ class BasicMaterial(GLSLProgram):
         }
 
 
+class BasicTextureMaterial(GLSLProgram):
+    def __init__(self, texture: np.ndarray):
+        super().__init__(GLSLTemplate.fromfile('default.vert.glsl'),
+                         GLSLTemplate.fromfile('basic_texture.frag.glsl'),
+                         use_uvs=True,
+                         use_lights=False,
+                         use_cam_pos=False,
+                         use_normals=False,
+                         use_tangents=False)
+        self.texture = texture
+        self.uniforms = {}
+        self.init_uniforms()
+
+    def init_uniforms(self):
+        self.uniforms['u_texture'] = Texture2D(
+            self.texture,
+            interpolation=('linear_mipmap_linear', 'linear'),
+            wrapping='repeat',
+            mipmap_levels=10,
+            internalformat='rgb32f')
+
+
 class PhongMaterial(GLSLProgram):
     def __init__(self, diff_color, spec_color, shininess):
         super().__init__(GLSLTemplate.fromfile('default.vert.glsl'),

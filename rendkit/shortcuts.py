@@ -139,6 +139,50 @@ def render_specular_lightmap(jsd_dict, uv_scale=6.0):
         return r.render_to_image()
 
 
+def render_diffuse_albedo(jsd_dict, uv_scale=6.0):
+    jsd_dict = copy.deepcopy(jsd_dict)
+    new_mat_jsd = {}
+    del jsd_dict['radiance_map']
+    for mat_name, mat_jsd in jsd_dict['materials'].items():
+        if mat_jsd['type'] == 'svbrdf_inline':
+            new_mat_jsd[mat_name] = dict(type='basic_texture',
+                                         texture=mat_jsd['diffuse_map'])
+        elif mat_jsd['type'] == 'phong':
+            new_mat_jsd[mat_name] = dict(type='basic',
+                                         color=mat_jsd['diffuse'])
+        else:
+            new_mat_jsd[mat_name] = dict(type='basic',
+                                         color=(0.0, 0.0, 0.0))
+    jsd_dict['materials'] = new_mat_jsd
+    with jsd.JSDRenderer(jsd_dict, ssaa=3, gamma=None) as r:
+        r.camera.clear_color = (0.0, 0.0, 0.0)
+        for renderable in r.scene.renderables:
+            renderable.scale_uvs(uv_scale)
+        return r.render_to_image()
+
+
+def render_specular_albedo(jsd_dict, uv_scale=6.0):
+    jsd_dict = copy.deepcopy(jsd_dict)
+    del jsd_dict['radiance_map']
+    new_mat_jsd = {}
+    for mat_name, mat_jsd in jsd_dict['materials'].items():
+        if mat_jsd['type'] == 'svbrdf_inline':
+            new_mat_jsd[mat_name] = dict(type='basic_texture',
+                                         texture=mat_jsd['specular_map'])
+        elif mat_jsd['type'] == 'phong':
+            new_mat_jsd[mat_name] = dict(type='basic',
+                                         color=mat_jsd['specular'])
+        else:
+            new_mat_jsd[mat_name] = dict(type='basic',
+                                         color=(0.0, 0.0, 0.0))
+    jsd_dict['materials'] = new_mat_jsd
+    with jsd.JSDRenderer(jsd_dict, ssaa=3, gamma=None) as r:
+        r.camera.clear_color = (0.0, 0.0, 0.0)
+        for renderable in r.scene.renderables:
+            renderable.scale_uvs(uv_scale)
+        return r.render_to_image()
+
+
 def render_diff_component(jsd_dict, uv_scale=6.0):
     jsd_dict = copy.deepcopy(jsd_dict)
     for mat_name in jsd_dict['materials']:

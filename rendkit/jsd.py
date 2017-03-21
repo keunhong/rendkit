@@ -13,7 +13,8 @@ from rendkit.envmap import EnvironmentMap
 from rendkit.materials import (GLSLProgram, SVBRDFMaterial, PhongMaterial,
                                BasicMaterial, NormalMaterial, WorldCoordMaterial,
                                DepthMaterial, UVMaterial, UnwrapToUVMaterial,
-                               TangentMaterial, BitangentMaterial)
+                               TangentMaterial, BitangentMaterial,
+                               BasicTextureMaterial)
 from rendkit import shapes
 from svbrdf import SVBRDF
 from .camera import CalibratedCamera, PerspectiveCamera, ArcballCamera
@@ -171,6 +172,8 @@ def import_jsd_material(jsd_material) -> rendkit.materials.GLSLProgram:
             pdf_sampler=jsd_material.get('pdf_sampler', None),
             sigma_min=jsd_material.get('sigma_min', None),
             sigma_max=jsd_material.get('sigma_max', None)))
+    elif jsd_material['type'] == 'basic_texture':
+        return BasicTextureMaterial(jsd_material['texture'])
     elif jsd_material['type'] == 'phong':
         return PhongMaterial(
             jsd_material['diffuse'],

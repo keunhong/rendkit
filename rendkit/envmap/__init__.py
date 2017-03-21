@@ -81,5 +81,4 @@ class EnvironmentMap():
         return (self.radiance_faces.shape[2], self.radiance_faces.shape[1])
 
     def reset(self):
-        self.irradiance_faces = self._irradiance_faces
         self.radiance_faces = self._radiance_faces
