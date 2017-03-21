@@ -1,4 +1,5 @@
 import numpy as np
+import time
 
 from rendkit.envmap.prefilter import prefilter_irradiance
 from rendkit.envmap.conversion import cubemap_to_dual_paraboloid
@@ -18,8 +19,10 @@ class EnvironmentMap():
         self._radiance_lower_tex = None
 
         self.radiance_faces = cube_faces * scale
-        logger.info("Prefiltering irradiance map.")
+        tic = time.time()
         self.irradiance_faces = prefilter_irradiance(self.radiance_faces)
+        logger.info("Prefiltered irradiance map ({:.04f}s)."
+                    .format(time.time() - tic))
 
     @property
     def radiance_faces(self):

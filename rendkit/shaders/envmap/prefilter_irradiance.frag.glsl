@@ -32,7 +32,7 @@ vec4 samp(vec2 pos, int cube_face) {
   up = cross(normal, right);
 
   vec3 total_color = vec3(0.0);
-  uint N_SAMPLES = 4096u;
+  uint N_SAMPLES = 10000u;
   for (uint i = 0u; i < N_SAMPLES; i++) {
     vec2 xi = hammersley(i, N_SAMPLES); // Use psuedo-random point set.
     vec3 L = importance_sample(xi);
@@ -47,5 +47,6 @@ vec4 samp(vec2 pos, int cube_face) {
 
 
 void main() {
-  out_color = vec4(samp(v_uv, u_cube_face));
+  vec2 pos = v_uv * 2.0 - 1.0;
+  out_color = vec4(samp(pos, u_cube_face));
 }

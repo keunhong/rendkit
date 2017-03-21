@@ -77,4 +77,11 @@ def prefilter_irradiance(cube_faces):
             with framebuffer:
                 program.draw(gl.GL_TRIANGLE_STRIP)
                 results[i] = gloo.read_pixels(out_type=np.float32, format='rgb')
+
+    from matplotlib import pyplot as plt
+    plt.subplot(121)
+    plt.imshow(np.clip(stack_cross(results), 0, 1))
+    plt.subplot(122)
+    plt.imshow(np.clip(stack_cross(cube_faces), 0, 1))
+    plt.show()
     return results

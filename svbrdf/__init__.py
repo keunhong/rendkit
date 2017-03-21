@@ -1,11 +1,12 @@
 import logging
 import os
+from time import time
 
 import numpy as np
 from numpy import linalg
 from scipy.special import gammaincinv, gamma
 
-from rendkit import pfm
+from rendkit.pfm import pfm_write, pfm_read
 from toolbox import images
 
 MAP_DIFF_FNAME = 'map_diff.pfm'
@@ -43,43 +44,46 @@ class SVBRDF:
                 line = f.readline()
                 self.alpha, _ = [float(i) for i in line.split(' ')]
 
-            self.diffuse_map = pfm.pfm_read(
+            tic = time()
+            self.diffuse_map = pfm_read(
                 os.path.join(data_path, MAP_DIFF_FNAME), transposed=transposed)
-
-            self.specular_map = pfm.pfm_read(
+            self.specular_map = pfm_read(
                 os.path.join(data_path, MAP_SPEC_FNAME), transposed=transposed)
-            self.normal_map = pfm.pfm_read(
+            self.normal_map = pfm_read(
                 os.path.join(data_path, MAP_NORMAL_FNAME), transposed=transposed)
-            self.spec_shape_map = pfm.pfm_read(
+            self.spec_shape_map = pfm_read(
                 os.path.join(data_path, MAP_SPEC_SHAPE_FNAME), transposed=transposed)
 
-            logger.info("Loaded \'{}\', shape={}, alpha={}"
-                .format(self.name, self.diffuse_map.shape, self.alpha))
+            logger.info("Loaded \'{}\', shape={}, alpha={} ({:.04f}s)"
+                .format(self.name, self.diffuse_map.shape, self.alpha,
+                        time() - tic))
 
+            tic = time()
             is_cdf_path = os.path.join(data_path, IS_CDF_FNAME)
             is_pdf_path = os.path.join(data_path, IS_PDF_FNAME)
             is_sigma_range_path = os.path.join(data_path, IS_SIGMA_RANGE_FNAME)
             if os.path.exists(is_cdf_path):
-                logger.info("Loading existing importance sampling params.")
-                self.cdf_sampler = pfm.pfm_read(is_cdf_path)
-                self.pdf_sampler = pfm.pfm_read(is_pdf_path)
+                self.cdf_sampler = pfm_read(is_cdf_path)
+                self.pdf_sampler = pfm_read(is_pdf_path)
                 with open(is_sigma_range_path, 'r') as f:
                     line = f.readline()
                     self.sigma_min, self.sigma_max = [
                         float(i) for i in line.split(' ')]
+                logger.info("Loaded existing importance sampling params. "
+                            "({:.04f}s)".format(time() - tic))
             else:
-                logger.info("Computing importance sampling params.")
                 sigma, self.pdf_sampler, self.cdf_sampler = \
                     self.compute_is_params()
                 self.sigma_min = sigma.min()
                 self.sigma_max = sigma.max()
                 logger.info("Saving CDF sampler to {}".format(is_cdf_path))
-                pfm.pfm_write(is_cdf_path, self.cdf_sampler)
+                pfm_write(is_cdf_path, self.cdf_sampler)
                 logger.info("Saving PDF sampler to {}".format(is_pdf_path))
-                pfm.pfm_write(is_pdf_path, self.pdf_sampler)
+                pfm_write(is_pdf_path, self.pdf_sampler)
                 with open(is_sigma_range_path, 'w') as f:
                     f.write("{} {}".format(self.sigma_min, self.sigma_max))
-
+                logger.info("Computed importance sampling params. "
+                            "({:.04f}s)".format(time() - tic))
         else:
             self.diffuse_map = diffuse_map
             self.specular_map = specular_map
@@ -88,9 +92,11 @@ class SVBRDF:
             self.alpha = alpha
 
         if suppress_outliers:
-            logger.debug("Suppressing outliers in diffuse and specular maps.")
+            tic = time()
             self.diffuse_map = images.suppress_outliers(self.diffuse_map)
             self.specular_map = images.suppress_outliers(self.specular_map)
+            logger.debug("Suppressing outliers in diffuse and specular maps. "
+                         "({:.04f}s)".format(time() - tic))
 
     def compute_is_params(self):
         S = self.spec_shape_map.reshape((-1, 3))
@@ -126,13 +132,13 @@ class SVBRDF:
         reverse_path = os.path.join(path, 'out', 'reverse')
         if not os.path.exists(reverse_path):
             os.makedirs(reverse_path)
-        pfm.pfm_write(os.path.join(reverse_path, MAP_DIFF_FNAME),
+        pfm_write(os.path.join(reverse_path, MAP_DIFF_FNAME),
                       self.diffuse_map)
-        pfm.pfm_write(os.path.join(reverse_path, MAP_SPEC_FNAME),
+        pfm_write(os.path.join(reverse_path, MAP_SPEC_FNAME),
                       self.specular_map)
-        pfm.pfm_write(os.path.join(reverse_path, MAP_SPEC_SHAPE_FNAME),
+        pfm_write(os.path.join(reverse_path, MAP_SPEC_SHAPE_FNAME),
                       self.spec_shape_map)
-        pfm.pfm_write(os.path.join(reverse_path, MAP_NORMAL_FNAME),
+        pfm_write(os.path.join(reverse_path, MAP_NORMAL_FNAME),
                       self.normal_map)
         with open(os.path.join(reverse_path, MAP_PARAMS_FNAME), 'w') as f:
             f.write("{} {}".format(self.alpha, 0.0))

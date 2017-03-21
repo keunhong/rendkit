@@ -1,6 +1,7 @@
 import os
 import logging
 from functools import partial
+from time import time
 
 import numpy as np
 from scipy import misc
@@ -97,6 +98,7 @@ def unstack_cross(cross):
 
 
 def load_envmap(path, size=(512, 512)):
+    tic = time()
     ext = os.path.splitext(path)[1]
     shape = (*size, 3)
     cube_faces = np.zeros((6, *shape), dtype=np.float32)
@@ -116,4 +118,5 @@ def load_envmap(path, size=(512, 512)):
             cube_faces[i] = resize(face, size)[:, :, :3]
     else:
         raise RuntimeError("Unknown cube map format.")
+    logger.info("Loaded envmap from {} ({:.04f}s)".format(path, time() - tic))
     return cube_faces
