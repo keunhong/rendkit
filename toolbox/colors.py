@@ -138,4 +138,4 @@ def normalize_lab(lab_values):
 
 
 def denormalize_lab(norm_lab_values):
-    return norm_lab_values * (50, 128, 128) + (50, 0, 0)
+    return np.array(norm_lab_values) * (50, 128, 128) + (50, 0, 0)

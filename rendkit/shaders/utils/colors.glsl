@@ -1,5 +1,3 @@
-#version 450 core
-
 /**
  * From https://gist.github.com/msbarry/cd98f928542f5152111a
  */
@@ -83,4 +81,14 @@ vec3 lab2xyz(vec3 c) {
   float ref_Z = 108.883;
 
   return vec3(ref_X * X, ref_Y * Y, ref_Z * Z);
+}
+
+
+vec3 lab2rgb(vec3 c) {
+  return xyz2rgb(lab2xyz(c));
+}
+
+
+vec3 rgb2lab(vec3 c) {
+  return xyz2lab(rgb2xyz(c));
 }

@@ -164,9 +164,9 @@ class SVBRDFMaterial(GLSLProgram):
     def change_color(self, new_mean, new_std=None):
         self.frag_tpl_vars['change_color'] = glsl_bool(True)
         if self.diff_map_lab is None:
-            self.diff_map_lab = rgb2lab(self.diff_map)
-            self.diff_old_mean = self.diff_map_lab.mean(axis=2)
-            self.diff_old_std = self.diff_map_lab.std(axis=2)
+            self.diff_map_lab = rgb2lab(np.clip(self.diff_map, 0, 1))
+            self.diff_old_mean = self.diff_map_lab.mean(axis=(0, 1))
+            self.diff_old_std = self.diff_map_lab.std(axis=(0, 1))
         self.diff_new_mean = new_mean
         self.diff_new_std = new_std
         self.uniforms['u_mean_old'] = self.diff_old_mean

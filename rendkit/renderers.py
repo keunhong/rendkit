@@ -203,9 +203,8 @@ class SceneRenderer(BaseRenderer):
         if camera not in self.rend_target_by_cam:
             rend_fb, rend_colortex, rend_depthtex = rendkit.util.create_rend_target(
                 tuple(s * self.ssaa_scale for s in out_size))
-            self.rend_target_by_cam[camera] = (rend_fb, rend_colortex, rend_depthtex)
-
-        rend_fb, rend_colortex, rend_depthtex = self.rend_target_by_cam[camera]
+        else:
+            rend_fb, rend_colortex, rend_depthtex = self.rend_target_by_cam[camera]
 
         with rend_fb:
             self.draw_scene(camera, (rend_fb, rend_colortex, rend_depthtex))

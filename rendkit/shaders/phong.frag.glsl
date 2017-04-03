@@ -33,6 +33,7 @@ in vec4 v_position_shadow[TPL.num_shadow_sources];
 uniform samplerCube u_irradiance_map;
 uniform sampler2D u_radiance_upper;
 uniform sampler2D u_radiance_lower;
+uniform float u_radiance_scale;
 uniform vec2 u_cubemap_size;
 #endif
 
@@ -94,6 +95,7 @@ void main() {
     specular += u_spec / float(N_SAMPLES) * light_color;
   }
   total_radiance += specular;
+  total_radiance *= u_radiance_scale;
   #endif
 
 	#if TPL.num_lights > 0

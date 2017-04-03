@@ -38,6 +38,7 @@ uniform int u_light_type[TPL.num_lights];
 uniform samplerCube u_irradiance_map;
 uniform sampler2D u_radiance_upper;
 uniform sampler2D u_radiance_lower;
+uniform float u_radiance_scale;
 uniform vec2 u_cubemap_size;
 #endif
 
@@ -135,9 +136,10 @@ void main() {
       light_color = textureLod(u_radiance_lower, dp_uv, lod).rgb;
     }
     specular += compute_irradiance(N, L, light_color)
-        * aittala_spec_is(N, V, L, rho_s, S, u_alpha, pdf) / N_SAMPLES;
+        * aittala_spec_is(N, V, L, rho_s, S, u_alpha, pdf) / float(N_SAMPLES);
   }
   total_radiance += specular;
+  total_radiance *= u_radiance_scale;
   #endif
 
   #if TPL.num_lights > 0

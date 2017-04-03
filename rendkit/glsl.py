@@ -75,6 +75,9 @@ class GLSLProgram:
         self._instances.append(program)
         return program
 
+    def clear(self):
+        del self._instances[:]
+
     def update_instances(self):
         for program in self._instances:
             self.upload_uniforms(program)
@@ -118,6 +121,7 @@ class GLSLProgram:
             program['u_cubemap_size'] = radmap.size
             program['u_radiance_upper'] = radmap.radiance_upper_tex
             program['u_radiance_lower'] = radmap.radiance_lower_tex
+            program['u_radiance_scale'] = radmap.radiance_scale
 
     def upload_shadow_sources(self, program, shadow_sources):
         if self.use_radiance_map:

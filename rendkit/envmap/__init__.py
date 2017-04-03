@@ -20,7 +20,8 @@ class EnvironmentMap():
         self._radiance_upper_tex = None
         self._radiance_lower_tex = None
 
-        self.radiance_faces = cube_faces * scale
+        self.radiance_scale = scale
+        self.radiance_faces = cube_faces
 
     @property
     def radiance_faces(self):

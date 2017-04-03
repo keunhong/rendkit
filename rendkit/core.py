@@ -48,6 +48,7 @@ class Renderable:
             self._current_scene = scene
             self._scene_version = -1
         if self._scene_version != scene.version:
+            self._current_scene = scene
             self._scene_version = scene.version
             self._program = material.compile(
                 num_lights=len(scene.lights),
@@ -127,7 +128,7 @@ class Scene:
 
     def add_light(self, light: Light):
         self.lights.append(light)
-        self._version += 1
+        self.mark_updated()
 
     def set_radiance_map(self, radiance_map, add_shadows=False):
         if radiance_map is None:
@@ -159,7 +160,7 @@ class Scene:
                     self.shadow_sources.append((camera, depth))
                     misc.imsave('/srv/www/out/__{}.png'.format(i), depth)
 
-        self._version += 1
+        self.mark_updated()
 
     def add_mesh(self, mesh: Mesh, position=(0, 0, 0)):
         model_mat = transforms.translate(position).T
@@ -187,6 +188,9 @@ class Scene:
     @property
     def version(self):
         return self._version
+
+    def mark_updated(self):
+        self._version += 1
 
 
 def mesh_to_renderables(mesh: Mesh, model_mat):

@@ -103,8 +103,8 @@ def svbrdf_plane_renderer(svbrdf, size=None, lights=list(), radmap=None,
                        **kwargs)
 
 
-def render_full(jsd_dict, uv_scale=6.0):
-    with jsd.JSDRenderer(jsd_dict, ssaa=3, gamma=None) as r:
+def render_full(jsd_dict, uv_scale=6.0, gamma=None, **kwargs):
+    with jsd.JSDRenderer(jsd_dict, ssaa=3, gamma=gamma, **kwargs) as r:
         r.camera.clear_color = (0.0, 0.0, 0.0)
         for renderable in r.scene.renderables:
             renderable.scale_uvs(uv_scale)
