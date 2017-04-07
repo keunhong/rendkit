@@ -9,7 +9,10 @@ from rendkit import jsd
 from rendkit.camera import ArcballCamera
 from rendkit.materials import SVBRDFMaterial
 
-LOG_FORMAT = '%(asctime)s\t%(levelname)s\t%(message)s\t[%(name)s]'
+LOG_FORMAT= "[%(asctime)s] [%(levelname)8s] %(message)s (%(name)s:%(lineno)s)"
+LOG_TIME_FORMAT = "%Y-%m-%d %H:%M:%S"
+LOG_LEVEL = logging.INFO
+LOG_FORMATTER = logging.Formatter(LOG_FORMAT, LOG_TIME_FORMAT)
 
 
 app.use_app('pyglet')
@@ -96,8 +99,7 @@ class MyJSDRenderer(jsd.JSDRenderer):
 
 if __name__ == '__main__':
     console = logging.StreamHandler()
-    formatter = logging.Formatter(LOG_FORMAT)
-    console.setFormatter(formatter)
+    console.setFormatter(LOG_FORMATTER)
     root_logger = logging.getLogger()
     root_logger.addHandler(console)
     root_logger.addHandler(console)
