@@ -221,7 +221,7 @@ def import_jsd_mesh(jsd_mesh):
         uv_scale = float(jsd_mesh['uv_scale'])
         logger.info("UV scale is set to {:.04f} for mesh"
                     .format(uv_scale))
-        mesh.uvs *= float(uv_scale)
+        mesh.uv_scale = uv_scale
 
     return mesh
 

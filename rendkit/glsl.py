@@ -92,7 +92,7 @@ class GLSLProgram:
         for k, v in self.uniforms.items():
             program[k] = v
 
-    def upload_attributes(self, program, attributes):
+    def upload_attributes(self, program, attributes, uv_scale=1.0):
         used_attributes = {'a_position'}
         if self.use_normals:
             used_attributes.add('a_normal')
@@ -103,7 +103,10 @@ class GLSLProgram:
             used_attributes.add('a_uv')
 
         for a_name in used_attributes:
-            program[a_name] = attributes[a_name].astype(np.float32)
+            values = attributes[a_name].astype(np.float32)
+            if a_name == 'a_uv':
+                values *= uv_scale
+            program[a_name] = values
 
     def upload_lights(self, program, lights):
         if self.use_lights:

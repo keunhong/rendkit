@@ -25,6 +25,7 @@ class Mesh:
         self.materials = list(materials)
         self.group_names = group_names
         self.object_names = object_names
+        self.uv_scale = 1.0
 
         max = self.vertices.max(axis=0)
         min = self.vertices.min(axis=0)

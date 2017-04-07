@@ -25,22 +25,22 @@ class Renderable:
     def __init__(self,
                  material_name: str,
                  attributes: Dict[str, np.ndarray],
-                 model_mat=np.eye(4)):
+                 model_mat=np.eye(4),
+                 uv_scale=1.0):
         self.model_mat = model_mat
         self.material_name = material_name
         self._attributes = attributes
-        self._uv_scale = 1.0
+        self._uv_scale = uv_scale
 
         self._current_scene = None
         self._program = None
         self._scene_version = -1
 
     def scale_uvs(self, scale):
-        if 'a_uv' in self._attributes:
-            self._attributes['a_uv'] *= scale / self._uv_scale
-            if self._program is not None:
-                self._program['a_uv'] = np.float32(self._attributes['a_uv'])
         self._uv_scale = scale
+        if 'a_uv' in self._attributes:
+            if self._program is not None:
+                self._program['a_uv'] = np.float32(self._attributes['a_uv']) * self._uv_scale
 
     def activate(self, scene, camera):
         material = scene.get_material(self.material_name)
@@ -54,7 +54,7 @@ class Renderable:
                 num_lights=len(scene.lights),
                 num_shadow_sources=len(scene.shadow_sources),
                 use_radiance_map=scene.radiance_map is not None)
-            material.upload_attributes(self._program, self._attributes)
+            material.upload_attributes(self._program, self._attributes, self._uv_scale)
             material.upload_radmap(self._program, scene.radiance_map)
             material.upload_shadow_sources(self._program, scene.shadow_sources)
             material.upload_lights(self._program, scene.lights)
@@ -213,5 +213,6 @@ def mesh_to_renderables(mesh: Mesh, model_mat):
             a_bitangent=vertex_bitangents,
             a_uv=vertex_uvs
         )
-        renderables.append(Renderable(material_name, attributes, model_mat))
+        renderables.append(Renderable(material_name, attributes, model_mat,
+                                      uv_scale=mesh.uv_scale))
     return renderables
