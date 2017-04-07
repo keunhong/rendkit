@@ -104,7 +104,7 @@ def svbrdf_plane_renderer(svbrdf, size=None, lights=list(), radmap=None,
 
 
 def render_full(jsd_dict, uv_scale=6.0, gamma=None, **kwargs):
-    with jsd.JSDRenderer(jsd_dict, ssaa=3, gamma=gamma, **kwargs) as r:
+    with jsd.JSDRenderer(jsd_dict, ssaa=0, gamma=gamma, **kwargs) as r:
         r.camera.clear_color = (0.0, 0.0, 0.0)
         for renderable in r.scene.renderables:
             renderable.scale_uvs(uv_scale)
@@ -118,7 +118,7 @@ def render_diffuse_lightmap(jsd_dict, uv_scale=6.0):
         if mat_jsd['type'] == 'svbrdf_inline':
             mat_jsd['diffuse_map'][:] = 1.0
             mat_jsd['specular_map'][:] = 0.0
-    with jsd.JSDRenderer(jsd_dict, ssaa=3, gamma=None) as r:
+    with jsd.JSDRenderer(jsd_dict, ssaa=0, gamma=None) as r:
         r.camera.clear_color = (0.0, 0.0, 0.0)
         for renderable in r.scene.renderables:
             renderable.scale_uvs(uv_scale)
@@ -132,7 +132,7 @@ def render_specular_lightmap(jsd_dict, uv_scale=6.0):
         if mat_jsd['type'] == 'svbrdf_inline':
             mat_jsd['diffuse_map'][:] = 0.0
             mat_jsd['specular_map'][:] = 1.0
-    with jsd.JSDRenderer(jsd_dict, ssaa=3, gamma=None) as r:
+    with jsd.JSDRenderer(jsd_dict, ssaa=0, gamma=None) as r:
         r.camera.clear_color = (0.0, 0.0, 0.0)
         for renderable in r.scene.renderables:
             renderable.scale_uvs(uv_scale)
@@ -142,7 +142,6 @@ def render_specular_lightmap(jsd_dict, uv_scale=6.0):
 def render_diffuse_albedo(jsd_dict, uv_scale=6.0):
     jsd_dict = copy.deepcopy(jsd_dict)
     new_mat_jsd = {}
-    del jsd_dict['radiance_map']
     for mat_name, mat_jsd in jsd_dict['materials'].items():
         if mat_jsd['type'] == 'svbrdf_inline':
             new_mat_jsd[mat_name] = dict(type='basic_texture',
@@ -154,7 +153,7 @@ def render_diffuse_albedo(jsd_dict, uv_scale=6.0):
             new_mat_jsd[mat_name] = dict(type='basic',
                                          color=(0.0, 0.0, 0.0))
     jsd_dict['materials'] = new_mat_jsd
-    with jsd.JSDRenderer(jsd_dict, ssaa=3, gamma=None) as r:
+    with jsd.JSDRenderer(jsd_dict, ssaa=0, gamma=None) as r:
         r.camera.clear_color = (0.0, 0.0, 0.0)
         for renderable in r.scene.renderables:
             renderable.scale_uvs(uv_scale)
@@ -163,7 +162,6 @@ def render_diffuse_albedo(jsd_dict, uv_scale=6.0):
 
 def render_specular_albedo(jsd_dict, uv_scale=6.0):
     jsd_dict = copy.deepcopy(jsd_dict)
-    del jsd_dict['radiance_map']
     new_mat_jsd = {}
     for mat_name, mat_jsd in jsd_dict['materials'].items():
         if mat_jsd['type'] == 'svbrdf_inline':
@@ -176,7 +174,7 @@ def render_specular_albedo(jsd_dict, uv_scale=6.0):
             new_mat_jsd[mat_name] = dict(type='basic',
                                          color=(0.0, 0.0, 0.0))
     jsd_dict['materials'] = new_mat_jsd
-    with jsd.JSDRenderer(jsd_dict, ssaa=3, gamma=None) as r:
+    with jsd.JSDRenderer(jsd_dict, ssaa=0, gamma=None) as r:
         r.camera.clear_color = (0.0, 0.0, 0.0)
         for renderable in r.scene.renderables:
             renderable.scale_uvs(uv_scale)
