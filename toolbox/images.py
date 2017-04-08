@@ -142,6 +142,7 @@ def resize(array, shape, order=2):
     if n_channels == 1:
         scales = scales[:2]
     output = zoom(array, scales, order=order)
+    output = output.astype(dtype=array.dtype)
     return output
 
 

@@ -29,9 +29,13 @@ class BaseRenderer(app.Canvas):
     def __init__(self, size: Tuple[int, int],
                  camera: BaseCamera,
                  scene: Scene,
+                 render_scale=1.0,
                  *args, **kwargs):
         if size is None:
             size = camera.size
+        logger.info("Render scale is {:.02f}".format(render_scale))
+        self.render_scale = render_scale
+        size = tuple(int(s * render_scale) for s in size)
         self.camera = camera
         self.scene = scene
         super().__init__(size=size, *args, **kwargs)
@@ -199,6 +203,7 @@ class SceneRenderer(BaseRenderer):
         if out_size is None:
             out_size = (self.physical_size
                         if camera == self.camera else camera.size)
+            # out_size = tuple(int(s * self.render_scale) for s in out_size)
 
         if camera not in self.rend_target_by_cam:
             rend_fb, rend_colortex, rend_depthtex = rendkit.util.create_rend_target(
