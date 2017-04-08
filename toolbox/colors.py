@@ -164,7 +164,6 @@ def hist_match(source, template, source_mask=None, template_mask=None):
     if template_mask is None:
         template_mask = np.ones(template.shape[:2], dtype=bool)
 
-    oldshape = source.shape
     result = source.copy()
     source = source[source_mask].ravel()
     template = template[template_mask].ravel()
