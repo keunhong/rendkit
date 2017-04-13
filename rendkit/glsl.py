@@ -64,6 +64,7 @@ class GLSLProgram:
             use_tangents=glsl_bool(self.use_tangents),
             num_shadow_sources=num_shadow_sources,
             use_radiance_map=glsl_bool(use_radiance_map),
+            use_uvs=glsl_bool(self.use_uvs),
             **self.vert_tpl_vars)
         fs = self._frag_shader.substitute(
             num_lights=num_lights,
@@ -101,11 +102,10 @@ class GLSLProgram:
             used_attributes.add('a_bitangent')
         if self.use_uvs:
             used_attributes.add('a_uv')
+            program['u_uv_scale'] = uv_scale
 
         for a_name in used_attributes:
             values = attributes[a_name].astype(np.float32)
-            if a_name == 'a_uv':
-                values *= uv_scale
             program[a_name] = values
 
     def upload_lights(self, program, lights):

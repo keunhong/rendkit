@@ -34,7 +34,6 @@ np.set_printoptions(suppress=True)
 class MyJSDRenderer(jsd.JSDRenderer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs, show=True)
-        self.uv_scale = 1.0
         self.current_mat_idx = 0
         self.current_mat = None
 
@@ -43,15 +42,12 @@ class MyJSDRenderer(jsd.JSDRenderer):
             self.app.quit()
             return
 
-        old_uv_scale = self.uv_scale
         if event.key == '=':
-            self.update_uv_scale(self.uv_scale * 2)
-            print('(+) UV scale {} -> {}'.format(old_uv_scale,
-                                                 self.uv_scale))
+            self.update_uv_scale(2)
+            print('(+) UV scale')
         elif event.key == '-':
-            self.update_uv_scale(self.uv_scale / 2)
-            print('(-) UV scale {} -> {}'.format(old_uv_scale,
-                                                 self.uv_scale))
+            self.update_uv_scale(0.5)
+            print('(-) UV scale')
         elif event.key == '1':
             mat_names, mats = zip(*list(self.scene.materials.items()))
             self.current_mat_idx  = (self.current_mat_idx + 1) % len(mats)
@@ -90,10 +86,9 @@ class MyJSDRenderer(jsd.JSDRenderer):
         for renderable in self.scene.renderables:
             renderable._program = renderable.compile(self.scene)
 
-    def update_uv_scale(self, scale):
+    def update_uv_scale(self, v):
         for renderable in self.scene.renderables:
-            renderable.scale_uvs(scale)
-        self.uv_scale = scale
+            renderable.scale_uv_scale(v)
         self.update()
 
 

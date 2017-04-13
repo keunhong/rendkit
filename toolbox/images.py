@@ -117,11 +117,13 @@ def trim_image(image, mask):
     return image[y.min():y.max(), x.min():x.max()]
 
 
-def suppress_outliers(image, thres=3.5):
+def suppress_outliers(image, thres=3.5, preserve_dark=True):
     new_map = image.copy()
     outliers = find_outliers(np.reshape(image, (-1, 3)), thres=thres)\
         .reshape(image.shape[:2])
     med = np.median(image, axis=(0, 1))
+    if preserve_dark:
+        outliers &= np.any(image > med, axis=2)
     new_map[outliers] = med
     return new_map
 

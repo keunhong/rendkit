@@ -168,6 +168,10 @@ def hist_match(source, template, source_mask=None, template_mask=None):
     source = source[source_mask].ravel()
     template = template[template_mask].ravel()
 
+    if len(source) < 1 or len(template) < 0:
+        logger.warning("Source and target are empty.")
+        return source
+
     # get the set of unique pixel values and their corresponding indices and
     # counts
     s_values, bin_idx, s_counts = np.unique(source, return_inverse=True,

@@ -4,7 +4,11 @@ uniform mat4 u_model;
 uniform mat4 u_projection;
 
 in vec3 a_position;
+
+#if TPL.use_uvs
 in vec2 a_uv;
+uniform float u_uv_scale;
+#endif
 
 #if TPL.use_normals
 in vec3 a_normal;
@@ -48,5 +52,7 @@ void main() {
     }
     #endif
 
-    v_uv  = a_uv;
+#if TPL.use_uvs
+    v_uv  = a_uv * u_uv_scale;
+#endif
 }

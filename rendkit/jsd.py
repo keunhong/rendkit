@@ -18,7 +18,7 @@ from rendkit.materials import (GLSLProgram, SVBRDFMaterial, PhongMaterial,
 from rendkit import shapes
 from svbrdf import SVBRDF
 from .camera import CalibratedCamera, PerspectiveCamera, ArcballCamera
-from .core import Scene
+from rendkit.scene import Scene
 from rendkit.renderers import SceneRenderer
 
 

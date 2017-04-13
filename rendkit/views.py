@@ -39,7 +39,7 @@ def render_jsd_post():
 
     with JSDRenderer(jsd_obj, gamma=2.2, ssaa=0) as renderer:
         for renderable in renderer.scene.renderables:
-            renderable.scale_uvs(uv_scale)
+            renderable.set_uv_scale(uv_scale)
         image = renderer.render_to_image()
 
     return image_to_png_response(np.clip(image, 0, 1))

@@ -80,17 +80,18 @@ float get_pdf_value(float sigma, vec2 xi) {
 void main() {
   vec3 V = normalize(u_cam_pos - v_position);
 
-  vec3 rho_d = texture2D(u_diff_map, v_uv).rgb;
+  float lod = textureQueryLod(u_diff_map, v_uv).x;
+  vec3 rho_d = textureLod(u_diff_map, v_uv, lod).rgb;
   #if TPL.change_color
   rho_d = rgb2lab(rho_d) - u_mean_old;
   rho_d = rho_d / u_std_old * u_std_new + u_mean_new;
   rho_d = lab2rgb(rho_d);
   #endif
-  vec3 rho_s = texture2D(u_spec_map, v_uv).rgb;
-  vec3 specv = texture2D(u_spec_shape_map, v_uv).rgb;
+  vec3 rho_s = textureLod(u_spec_map, v_uv, lod).rgb;
+  vec3 specv = textureLod(u_spec_shape_map, v_uv, lod).rgb;
 
   mat3 TBN = mat3(v_tangent, v_bitangent, v_normal);
-  vec3 N = normalize(TBN * texture2D(u_normal_map, v_uv).rgb);
+  vec3 N = normalize(TBN * textureLod(u_normal_map, v_uv, lod).rgb);
 
   // Flip normal if back facing.
 //  bool is_back_facing = dot(V, v_normal) < 0;

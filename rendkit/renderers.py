@@ -10,7 +10,7 @@ from vispy.gloo import gl
 
 from rendkit import vector_utils
 from rendkit.camera import BaseCamera, OrthographicCamera
-from rendkit.core import Scene
+from rendkit.scene import Scene
 from rendkit import postprocessing as pp
 
 
@@ -86,12 +86,11 @@ class BaseRenderer(app.Canvas):
             self.update()
 
     def on_mouse_wheel(self, event):
-        cur_dist = linalg.norm(self.camera.position)
-        zoom_amount = 5.0 * event.delta[1]
-        zoom_dir = vector_utils.normalized(self.camera.position)
-        if cur_dist - zoom_amount > 0:
-            self.camera.position -= zoom_amount * zoom_dir
-            self.update()
+        v = self.camera.position - self.camera.lookat
+        zoom_size = 1.05
+        factor = zoom_size if event.delta[1] < 0 else 1/zoom_size
+        self.camera.position = self.camera.lookat + v * factor
+        self.update()
 
     def __enter__(self):
         self._backend._vispy_warmup()

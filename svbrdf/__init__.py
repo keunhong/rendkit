@@ -34,7 +34,7 @@ class SVBRDF:
                  pdf_sampler=None,
                  sigma_min=None,
                  sigma_max=None,
-                 suppress_outliers=False,
+                 suppress_outliers=True,
                  transposed=False):
         if path is not None:
             if not os.path.exists(path):
@@ -106,9 +106,9 @@ class SVBRDF:
         if suppress_outliers:
             tic = time()
             self.diffuse_map = images.suppress_outliers(self.diffuse_map,
-                                                        thres=3.5)
+                                                        thres=4.5)
             self.specular_map = images.suppress_outliers(self.specular_map,
-                                                         thres=3.5)
+                                                         thres=4.5)
             logger.info("Suppressing outliers in diffuse and specular maps. "
                         "({:.04f}s)".format(time() - tic))
 
