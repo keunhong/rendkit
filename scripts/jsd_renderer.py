@@ -18,13 +18,13 @@ LOG_FORMATTER = logging.Formatter(LOG_FORMAT, LOG_TIME_FORMAT)
 app.use_app('pyglet')
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--jsd', dest='jsd_path', type=str, required=True)
 parser.add_argument('--ssaa', dest='ssaa', type=int, default=2)
 parser.add_argument('--gamma', dest='gamma', type=float, default=2.2)
 parser.add_argument('--tonemap', dest='tonemap', type=str, default=None)
 parser.add_argument(
     '--reinhard-thres', dest='reinhard_thres', type=float, default=3.0)
 parser.add_argument('--exposure', dest='exposure', type=float, default=1.0)
+parser.add_argument(dest='jsd_path', type=str)
 
 args = parser.parse_args()
 
