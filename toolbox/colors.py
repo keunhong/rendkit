@@ -170,7 +170,7 @@ def hist_match(source, template, source_mask=None, template_mask=None):
 
     if len(source) < 1 or len(template) < 0:
         logger.warning("Source and target are empty.")
-        return source
+        return np.zeros(source.shape)
 
     # get the set of unique pixel values and their corresponding indices and
     # counts
@@ -191,4 +191,5 @@ def hist_match(source, template, source_mask=None, template_mask=None):
     interp_t_values = np.interp(s_quantiles, t_quantiles, t_values)
 
     result[source_mask] = interp_t_values[bin_idx]
+    result[~source_mask] = np.median(result[source_mask], axis=-1)
     return result
