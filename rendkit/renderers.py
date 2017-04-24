@@ -1,18 +1,14 @@
+import logging
 from typing import Tuple
 
-import logging
 import numpy as np
-from numpy import linalg
 
 import rendkit.util
+from rendkit import postprocessing as pp
+from rendkit.camera import BaseCamera
+from rendkit.scene import Scene
 from vispy import app, gloo
 from vispy.gloo import gl
-
-from rendkit import vector_utils
-from rendkit.camera import BaseCamera, OrthographicCamera
-from rendkit.scene import Scene
-from rendkit import postprocessing as pp
-
 
 logger = logging.getLogger(__name__)
 
@@ -97,39 +93,6 @@ class BaseRenderer(app.Canvas):
         return self
 
 
-class DummyRenderer(app.Canvas):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        gloo.set_viewport(0, 0, *self.size)
-
-    def __enter__(self):
-        self._backend._vispy_warmup()
-        return self
-
-
-class ContextProvider:
-    def __init__(self, size):
-        self.size = size
-        canvas = gloo.get_current_canvas()
-        self.context_exists = canvas is not None and not canvas._closed
-        if self.context_exists:
-            logger.debug("Using existing OpenGL context.")
-            self.provider = gloo.get_current_canvas()
-            self.previous_size = self.provider.size
-        else:
-            logger.debug("Providing temporary context with DummyRenderer.")
-            self.provider = DummyRenderer(size=size)
-
-    def __enter__(self):
-        gloo.set_viewport(0, 0, *self.size)
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        if not self.context_exists:
-            self.provider.close()
-        else:
-            gloo.set_viewport(0, 0, *self.previous_size)
-
-
 class SceneRenderer(BaseRenderer):
     def __init__(self, scene, camera=None, size=None,
                  gamma=None,
@@ -183,11 +146,13 @@ class SceneRenderer(BaseRenderer):
         else:
             self.pp_pipeline.add_program(pp.IdentityProgram())
 
+        self.pp_pipeline.add_program(pp.ClearProgram())
+
     def draw_scene(self, camera, rend_target):
         rend_fb, rend_colortex, _ = rend_target
 
         with rend_fb:
-            gloo.clear(color=camera.clear_color)
+            gloo.clear(color=(0, 0, 0, 0))
             gloo.set_state(depth_test=True)
             gloo.set_viewport(0, 0, rend_colortex.shape[1], rend_colortex.shape[0])
             for renderable in self.scene.renderables:
@@ -213,7 +178,8 @@ class SceneRenderer(BaseRenderer):
         with rend_fb:
             self.draw_scene(camera, (rend_fb, rend_colortex, rend_depthtex))
 
-        self.pp_pipeline.draw(rend_colortex, rend_depthtex, out_size)
+        self.pp_pipeline.draw(rend_colortex, rend_depthtex, out_size,
+                              clear_color=camera.clear_color)
 
     def __enter__(self):
         super().__enter__()

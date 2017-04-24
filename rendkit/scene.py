@@ -4,11 +4,11 @@ import numpy as np
 from scipy import misc
 from typing import List, Dict
 
-import rendkit.envmap
 from meshkit import Mesh
 from rendkit import vector_utils, util
 from rendkit.camera import OrthographicCamera
 from rendkit.core import logger, DepthRenderer, mesh_to_renderables
+from rendkit.envmap.prefilter import find_shadow_sources
 from rendkit.glsl import GLSLProgram
 from rendkit.lights import Light
 from rendkit.materials import PLACEHOLDER_MATERIAL
@@ -49,6 +49,13 @@ class Scene:
             logger.warning("Material {} is already defined, overwriting."
                            .format(name))
         self.materials[name] = material
+        self.mark_updated()
+
+    def remove_material(self, name):
+        material = self.materials[name]
+        material.clear()
+        del self.materials[name]
+        self.mark_updated()
 
     def add_light(self, light: Light):
         self.lights.append(light)
@@ -60,7 +67,7 @@ class Scene:
         self.radiance_map = radiance_map
 
         if add_shadows:
-            shadow_dirs = rendkit.envmap.prefilter.find_shadow_sources(
+            shadow_dirs = find_shadow_sources(
                 self.radiance_map.radiance_faces)
             logger.info("Rendering {} shadow maps.".format(len(shadow_dirs)))
 
@@ -90,6 +97,12 @@ class Scene:
         model_mat = transforms.translate(position).T
         self.meshes.append(mesh)
         self.renderables_by_mesh[mesh] = mesh_to_renderables(mesh, model_mat)
+        self.mark_updated()
+
+    def remove_mesh(self, mesh: Mesh):
+        self.meshes.remove(mesh)
+        del self.renderables_by_mesh[mesh]
+        self.mark_updated()
 
     def set_mesh_transform(self, mesh: Mesh, transform_mat: np.ndarray,
                            apply_to_existing=False):

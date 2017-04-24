@@ -1,7 +1,5 @@
 import logging
 import numpy as np
-from numpy import linalg
-from scipy.special import gammaincinv, gamma
 from skimage.color import rgb2lab
 
 from svbrdf import SVBRDF

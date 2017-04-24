@@ -22,6 +22,20 @@ class IdentityProgram(GLSLProgram, RendtexInputMixin):
         return program
 
 
+class ClearProgram(GLSLProgram, RendtexInputMixin):
+    def __init__(self, clear_color=(0, 0, 0, 0)):
+        super().__init__(
+            GLSLTemplate.fromfile('postprocessing/quad.vert.glsl'),
+            GLSLTemplate.fromfile('postprocessing/clear.frag.glsl'))
+        self.clear_color = clear_color
+
+    def upload_uniforms(self, program):
+        program['a_uv'] = [(0, 0), (0, 1), (1, 0), (1, 1)]
+        program['a_position'] = [(-1, -1), (-1, +1), (+1, -1), (+1, +1)]
+        program['u_clear_color'] = self.clear_color
+        return program
+
+
 class DownsampleProgram(GLSLProgram, RendtexInputMixin):
     MAX_SCALE = 3
     LANCZOS_KERNELS = [
@@ -107,7 +121,8 @@ class PostprocessPipeline:
         self.rend_fb_list.append(fb)
         self.rend_colortex_list.append(colortex)
 
-    def draw(self, input_colortex, input_depthtex, output_size):
+    def draw(self, input_colortex, input_depthtex, output_size,
+             clear_color=(0, 0, 0, 0)):
         current_tex = input_colortex
         for i, program in enumerate(self.programs):
             is_last = i == (len(self.programs) - 1)
@@ -115,6 +130,8 @@ class PostprocessPipeline:
             program.upload_input(compiled, current_tex)
             gloo.clear(color=True)
             gloo.set_state(depth_test=False)
+            if isinstance(program, ClearProgram):
+                compiled['u_clear_color'] = clear_color
             if is_last:
                 gloo.set_viewport(0, 0, *output_size)
                 compiled.draw(gl.GL_TRIANGLE_STRIP)

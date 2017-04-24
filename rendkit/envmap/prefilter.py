@@ -5,7 +5,7 @@ from skimage.measure import regionprops
 from rendkit import vector_utils
 from rendkit.envmap.io import stack_cross, unstack_cross
 from rendkit.glsl import GLSLProgram, GLSLTemplate
-from rendkit.renderers import ContextProvider
+from rendkit.core import ContextProvider
 from toolbox.images import rgb2gray
 from vispy import gloo
 from vispy.gloo import gl

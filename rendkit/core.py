@@ -111,3 +111,36 @@ def mesh_to_renderables(mesh: Mesh, model_mat):
         renderables.append(Renderable(material_name, attributes, model_mat,
                                       uv_scale=mesh.uv_scale))
     return renderables
+
+
+class DummyRenderer(app.Canvas):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        gloo.set_viewport(0, 0, *self.size)
+
+    def __enter__(self):
+        self._backend._vispy_warmup()
+        return self
+
+
+class ContextProvider:
+    def __init__(self, size):
+        self.size = size
+        canvas = gloo.get_current_canvas()
+        self.context_exists = canvas is not None and not canvas._closed
+        if self.context_exists:
+            logger.debug("Using existing OpenGL context.")
+            self.provider = gloo.get_current_canvas()
+            self.previous_size = self.provider.size
+        else:
+            logger.debug("Providing temporary context with DummyRenderer.")
+            self.provider = DummyRenderer(size=size)
+
+    def __enter__(self):
+        gloo.set_viewport(0, 0, *self.size)
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if not self.context_exists:
+            self.provider.close()
+        else:
+            gloo.set_viewport(0, 0, *self.previous_size)

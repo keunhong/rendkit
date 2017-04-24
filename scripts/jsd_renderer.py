@@ -106,7 +106,8 @@ if __name__ == '__main__':
         size=(1600, 900), fov=75, near=1, far=1000.0,
         position=[0, 100, 100],
         lookat=(0.0, 0.0, -0.0),
-        up=(0.0, 1.0, 0.0))
+        up=(0.0, 1.0, 0.0),
+        clear_color=(1, 1, 1))
     renderer= MyJSDRenderer(jsd, camera, dpi=500,
                             gamma=args.gamma,
                             ssaa=args.ssaa,

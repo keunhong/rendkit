@@ -10,7 +10,7 @@ out vec4 out_color;
 
 void main() {
     vec2 pos = v_uv.xy;
-    vec3 color = vec3(0.0);
+    vec4 color = vec4(0.0);
 
     float dx = 1.0 / u_texture_shape.y;
     float dy = 1.0 / u_texture_shape.x;
@@ -22,10 +22,10 @@ void main() {
             float k = u_aa_kernel[int(abs(float(x)))]
             			* u_aa_kernel[int(abs(float(y)))];
             vec2 dpos = vec2(float(x) * dx, float(y) * dy);
-            color += texture2D(u_rendtex, pos + dpos).rgb * k;
+            color += texture2D(u_rendtex, pos + dpos) * k;
         }
     }
 
     // Determine final color
-    out_color = vec4(color, 1.0);
+    out_color = color;
 }
