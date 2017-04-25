@@ -167,7 +167,6 @@ class SceneRenderer(BaseRenderer):
         if out_size is None:
             out_size = (self.physical_size
                         if camera == self.camera else camera.size)
-            # out_size = tuple(int(s * self.render_scale) for s in out_size)
 
         if camera not in self.rend_target_by_cam:
             rend_fb, rend_colortex, rend_depthtex = rendkit.util.create_rend_target(
@@ -183,5 +182,9 @@ class SceneRenderer(BaseRenderer):
 
     def __enter__(self):
         super().__enter__()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
         self.scene.reset()
+        super().__exit__(exc_type, exc_val, exc_tb)
         return self
