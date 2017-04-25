@@ -104,6 +104,21 @@ class Scene:
         del self.renderables_by_mesh[mesh]
         self.mark_updated()
 
+    def clear_meshes(self):
+        self.meshes.clear()
+        self.renderables_by_mesh.clear()
+        self.mark_updated()
+
+    def clear_materials(self):
+        for material in self.materials.values():
+            material.clear()
+        self.materials.clear()
+        self.mark_updated()
+
+    def clear(self):
+        self.clear_meshes()
+        self.clear_materials()
+
     def set_mesh_transform(self, mesh: Mesh, transform_mat: np.ndarray,
                            apply_to_existing=False):
         if transform_mat.shape != (4, 4):
