@@ -1,5 +1,6 @@
 from OpenGL.GLES2.NV.conservative_raster import \
     GL_CONSERVATIVE_RASTERIZATION_NV
+
 from vispy.gloo import gl
 
 

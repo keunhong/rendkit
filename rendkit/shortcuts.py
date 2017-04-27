@@ -7,7 +7,6 @@ from meshkit import Mesh
 from meshkit.wavefront import WavefrontMaterial
 from rendkit import jsd
 from toolbox import images
-from rendkit import graphics_utils as gfx_utils
 from .camera import ArcballCamera
 from .jsd import JSDRenderer
 

@@ -103,8 +103,12 @@ class SceneRenderer(BaseRenderer):
                  reinhard_thres=3.0,
                  conservative_raster=False,
                  *args, **kwargs):
+        if camera is None and size is None:
+            size = (1024, 1024)
+            logger.warning("Neither camera nor size is set. Creating default "
+                           "camera with size {}".format(size))
         if camera is None:
-            camera = BaseCamera((1024, 1024), 0.1, 100)
+            camera = BaseCamera(size, 0.1, 100)
         if size is None:
             size = camera.size
         super().__init__(size, camera, scene, *args, **kwargs)

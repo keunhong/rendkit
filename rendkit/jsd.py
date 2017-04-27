@@ -4,23 +4,23 @@ from typing import Dict, List, Union
 
 import numpy as np
 
-from rendkit.envmap.io import load_envmap
 import rendkit.materials
 from meshkit import Mesh
 from meshkit import wavefront
-from rendkit.lights import Light, PointLight, DirectionalLight
+from rendkit import shapes
 from rendkit.envmap import EnvironmentMap
+from rendkit.envmap.io import load_envmap
+from rendkit.lights import Light, PointLight, DirectionalLight
 from rendkit.materials import (GLSLProgram, SVBRDFMaterial, PhongMaterial,
-                               BasicMaterial, NormalMaterial, WorldCoordMaterial,
+                               BasicMaterial, NormalMaterial,
+                               WorldCoordMaterial,
                                DepthMaterial, UVMaterial, UnwrapToUVMaterial,
                                TangentMaterial, BitangentMaterial,
                                BasicTextureMaterial)
-from rendkit import shapes
+from rendkit.renderers import SceneRenderer
+from rendkit.scene import Scene
 from svbrdf import SVBRDF
 from .camera import CalibratedCamera, PerspectiveCamera, ArcballCamera
-from rendkit.scene import Scene
-from rendkit.renderers import SceneRenderer
-
 
 logger = logging.getLogger(__name__)
 

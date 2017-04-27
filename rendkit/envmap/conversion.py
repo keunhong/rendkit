@@ -1,7 +1,7 @@
 import numpy as np
 
-from rendkit.glsl import GLSLProgram, GLSLTemplate
 from rendkit.core import ContextProvider
+from rendkit.glsl import GLSLProgram, GLSLTemplate
 from vispy import gloo
 from vispy.gloo import gl
 

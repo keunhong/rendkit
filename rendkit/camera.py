@@ -1,8 +1,8 @@
 import numpy as np
 from numpy import linalg
+
 from vispy import util
 from vispy.util.quaternion import Quaternion
-
 from . import graphics_utils
 from . import vector_utils
 

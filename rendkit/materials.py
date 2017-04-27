@@ -1,11 +1,11 @@
 import logging
+
 import numpy as np
 from skimage.color import rgb2lab
 
+from rendkit.glsl import GLSLProgram, GLSLTemplate, glsl_bool
 from svbrdf import SVBRDF
 from vispy.gloo import Texture2D
-
-from rendkit.glsl import GLSLProgram, GLSLTemplate, glsl_bool
 
 logger = logging.getLogger(__name__)
 

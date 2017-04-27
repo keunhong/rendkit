@@ -5,8 +5,8 @@ import numpy as np
 from numpy import linalg
 
 from rendkit.lights import PointLight, DirectionalLight
-from vispy.util import config as vispy_config
 from vispy import gloo
+from vispy.util import config as vispy_config
 
 _package_dir = os.path.dirname(os.path.realpath(__file__))
 _shader_dir = os.path.join(_package_dir, 'shaders')

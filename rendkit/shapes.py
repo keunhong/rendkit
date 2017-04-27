@@ -1,7 +1,9 @@
 import random
+
 import numpy as np
 from numpy import linalg
 from scipy.spatial import Delaunay
+
 from rendkit import jsd
 from rendkit.vector_utils import normalized
 

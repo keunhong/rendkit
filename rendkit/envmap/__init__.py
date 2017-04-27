@@ -1,8 +1,9 @@
-import numpy as np
 import time
 
-from rendkit.envmap.prefilter import prefilter_irradiance
+import numpy as np
+
 from rendkit.envmap.conversion import cubemap_to_dual_paraboloid
+from rendkit.envmap.prefilter import prefilter_irradiance
 from rendkit.lights import logger
 from vispy import gloo
 

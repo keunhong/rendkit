@@ -1,8 +1,8 @@
 from collections import OrderedDict
+from typing import List, Dict
 
 import numpy as np
 from scipy import misc
-from typing import List, Dict
 
 from meshkit import Mesh
 from rendkit import vector_utils, util

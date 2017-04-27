@@ -1,5 +1,5 @@
-import os
 import logging
+import os
 from functools import partial
 from time import time
 
@@ -9,7 +9,6 @@ from scipy.misc import imread
 
 from rendkit import pfm
 from toolbox.images import resize
-
 
 logger = logging.getLogger(__name__)
 

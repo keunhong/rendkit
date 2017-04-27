@@ -1,7 +1,7 @@
 import logging
+from typing import Dict
 
 import numpy as np
-from typing import Dict
 
 from meshkit import Mesh
 from rendkit.materials import DepthMaterial
