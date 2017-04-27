@@ -121,6 +121,12 @@ class PostprocessPipeline:
         self.rend_fb_list.append(fb)
         self.rend_colortex_list.append(colortex)
 
+    def resize(self, size):
+        print('pp resize')
+        self.size = size
+        for fb in self.rend_fb_list:
+            fb.resize(self.size)
+
     def draw(self, input_colortex, input_depthtex, output_size,
              clear_color=(0, 0, 0, 0)):
         current_tex = input_colortex

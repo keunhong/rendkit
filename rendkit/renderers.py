@@ -71,6 +71,7 @@ class BaseRenderer(app.Canvas):
         vp = (0, 0, self.physical_size[0], self.physical_size[1])
         self.context.set_viewport(*vp)
         self.camera.size = self.size
+        self._fbo.resize(self.size)
         self.update()
 
     def on_draw(self, event):
@@ -102,10 +103,10 @@ class SceneRenderer(BaseRenderer):
                  reinhard_thres=3.0,
                  conservative_raster=False,
                  *args, **kwargs):
+        if camera is None:
+            camera = BaseCamera((1024, 1024), 0.1, 100)
         if size is None:
             size = camera.size
-        if camera is None:
-            camera = BaseCamera((100, 100), 0.1, 100)
         super().__init__(size, camera, scene, *args, **kwargs)
         gloo.set_state(depth_test=True)
         if conservative_raster:
@@ -117,8 +118,7 @@ class SceneRenderer(BaseRenderer):
         self.ssaa_scale = min(max(1, ssaa),pp.DownsampleProgram.MAX_SCALE)
 
         # Initialize main camera.
-        self.render_size = (self.size[0] * self.ssaa_scale,
-                            self.size[1] * self.ssaa_scale)
+        self.render_size = self.get_render_size(self.size)
         self.rend_target_by_cam = {
             self.camera: rendkit.util.create_rend_target(self.render_size)
         }
@@ -148,6 +148,9 @@ class SceneRenderer(BaseRenderer):
 
         self.pp_pipeline.add_program(pp.ClearProgram())
 
+    def get_render_size(self, size):
+        return size[0] * self.ssaa_scale, size[1] * self.ssaa_scale
+
     def draw_scene(self, camera, rend_target):
         rend_fb, rend_colortex, _ = rend_target
 
@@ -160,19 +163,31 @@ class SceneRenderer(BaseRenderer):
                 with self.conservative_raster:
                     program.draw(gl.GL_TRIANGLES)
 
+    def on_resize(self, event):
+        super().on_resize(event)
+        for camera, (fb, ct, dt) in self.rend_target_by_cam.items():
+            fb.resize(self.get_render_size(camera.size))
+        # TODO: Fix resizing pipeline framebuffers.
+        # self.pp_pipeline.resize(self.get_render_size(self.size))
+
     def draw(self, camera=None, out_size=None):
         if camera is None:
             camera = self.camera
 
         if out_size is None:
-            out_size = (self.physical_size
-                        if camera == self.camera else camera.size)
+            # out_size = (self.physical_size
+            #             if camera == self.camera else camera.size)
+            out_size = camera.size
 
         if camera not in self.rend_target_by_cam:
             rend_fb, rend_colortex, rend_depthtex = rendkit.util.create_rend_target(
                 tuple(s * self.ssaa_scale for s in out_size))
         else:
             rend_fb, rend_colortex, rend_depthtex = self.rend_target_by_cam[camera]
+            # width, height = camera.size
+            # rend_colortex.resize((height, width))
+            # rend_fb.resize((height, width))
+            # rend_depthtex.resize((height, width))
 
         with rend_fb:
             self.draw_scene(camera, (rend_fb, rend_colortex, rend_depthtex))

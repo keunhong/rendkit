@@ -114,9 +114,17 @@ class PerspectiveCamera(BaseCamera):
         super().__init__(size, near, far, *args, **kwargs)
 
         self.fov = fov
-        self.position = np.array(position, dtype=np.float32)
+        self._position = np.array(position, dtype=np.float32)
         self.lookat = np.array(lookat, dtype=np.float32)
         self.up = vector_utils.normalized(np.array(up))
+
+    @property
+    def position(self):
+        return self._position
+
+    @position.setter
+    def position(self, position):
+        self._position = np.array(position)
 
     def projection_mat(self):
         mat = util.transforms.perspective(
@@ -140,6 +148,19 @@ class PerspectiveCamera(BaseCamera):
         view_mat[:3, 3] = -position
 
         return view_mat
+
+    def tojsd(self):
+        return {
+            'type': 'perspective',
+            'size': self.size,
+            'near': float(self.near),
+            'far': float(self.far),
+            'fov': self.fov,
+            'position': self.position.tolist(),
+            'lookat': self.lookat.tolist(),
+            'up': self.up.tolist(),
+            'clear_color': self.clear_color,
+        }
 
 
 class OrthographicCamera(BaseCamera):

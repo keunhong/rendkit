@@ -1,8 +1,13 @@
 import copy
+from typing import List
 
 import numpy as np
 
+from meshkit import Mesh
+from meshkit.wavefront import WavefrontMaterial
 from rendkit import jsd
+from toolbox import images
+from rendkit import graphics_utils as gfx_utils
 from .camera import ArcballCamera
 from .jsd import JSDRenderer
 
@@ -191,3 +196,122 @@ def render_spec_component(jsd_dict):
     with jsd.JSDRenderer(jsd_dict, ssaa=3, gamma=None) as r:
         r.camera.clear_color = (0.0, 0.0, 0.0)
         return r.render_to_image()
+
+
+def render_jsd(jsd_dict):
+    with jsd.JSDRenderer(jsd_dict) as renderer:
+        image = renderer.render_to_image()
+    return image
+
+
+def make_jsd(mesh, camera, clear_color=(1.0, 1.0, 1.0)):
+    camera = copy.deepcopy(camera)
+    camera.clear_color = clear_color
+    jsd_dict = {
+        "camera": camera.tojsd(),
+        "lights": [],
+        "mesh": jsd.export_mesh_to_jsd(mesh),
+        "materials": {key: {'type': 'depth'} for key in mesh.materials}
+    }
+    return jsd_dict
+
+
+def render_depth(mesh, camera):
+    jsd_dict = make_jsd(mesh, camera, clear_color=(0.0, 0.0, 0.0))
+    jsd_dict["materials"] = {key: {'type': 'depth'} for key in mesh.materials}
+    image = render_jsd(jsd_dict)[:, :, 0]
+    return image
+
+
+def render_mesh_normals(mesh, camera):
+    jsd_dict = make_jsd(mesh, camera, clear_color=(0.0, 0.0, 0.0))
+    jsd_dict["materials"] = {key: {'type': 'normal'} for key in mesh.materials}
+    image = render_jsd(jsd_dict)
+    return image
+
+
+def render_tangents(mesh, camera):
+    jsd_dict = make_jsd(mesh, camera, clear_color=(0.0, 0.0, 0.0))
+    jsd_dict["materials"] = {key: {'type': 'tangent'} for key in mesh.materials}
+    image = render_jsd(jsd_dict)
+    return image
+
+
+def render_bitangents(mesh, camera):
+    jsd_dict = make_jsd(mesh, camera, clear_color=(0.0, 0.0, 0.0))
+    jsd_dict["materials"] = {key: {'type': 'bitangent'} for key in mesh.materials}
+    image = render_jsd(jsd_dict)
+    return image
+
+
+def render_segments(mesh: Mesh, camera,
+                     segment_type='material'):
+    if segment_type == 'material':
+        segments = mesh.materials
+    elif segment_type == 'group':
+        segments = mesh.group_names
+    elif segment_type == 'object':
+        segments = mesh.object_names
+    else:
+        raise RuntimeError("Unknown segment type")
+
+    mesh_jsd = jsd.export_mesh_to_jsd(mesh)
+    mesh_jsd["materials"] = segments
+    for face in mesh_jsd["faces"]:
+        face["material"] = face[segment_type]
+
+    camera = copy.deepcopy(camera)
+    camera.clear_color = (-1, -1, -1)
+    jsd_dict = {
+        "camera": camera.tojsd(),
+        "mesh": mesh_jsd,
+        "lights": [],
+        "materials": {
+            key: {
+                'type': 'basic',
+                'color': np.full((3,), i+1, dtype=np.float32).tolist()
+            } for i, key in enumerate(segments)}
+    }
+    image = render_jsd(jsd_dict)
+    segment_image = (image - 1).astype(int)[:, :, 0]
+    return segment_image
+
+
+def render_wavefront_mtl(mesh: Mesh, camera,
+                         materials: List[WavefrontMaterial]):
+    jsd_dict = make_jsd(mesh, camera)
+    jsd_dict["materials"] = {
+        mtl.name: {
+            'type': 'phong',
+            'diffuse': mtl.diffuse_color,
+            'specular': mtl.specular_color,
+            'shininess': mtl.specular_exponent,
+        } for mtl in materials
+    }
+    return render_jsd(jsd_dict)
+
+
+def render_world_coords(mesh, camera):
+    jsd_dict = make_jsd(mesh, camera)
+    jsd_dict["materials"] = {key: {'type': 'world'} for key in mesh.materials}
+    return render_jsd(jsd_dict)
+
+
+def render_median_colors(mesh, image, camera):
+    pixel_segment_ids = render_segments(mesh, camera)
+    median_colors = images.compute_segment_median_colors(
+        image, pixel_segment_ids)
+    median_image = np.ones(image.shape)
+    for segment_id in range(len(median_colors)):
+        mask = pixel_segment_ids == segment_id
+        median_image[mask, :] = median_colors[segment_id, :]
+
+    return median_image
+
+
+def render_uvs(mesh, camera):
+    if len(mesh.uvs) == 0:
+        raise RuntimeError('Mesh does not have UVs')
+    jsd_dict = make_jsd(mesh, camera)
+    jsd_dict["materials"] = {key: {'type': 'uv'} for key in mesh.materials}
+    return render_jsd(jsd_dict)[:, :, :2]
