@@ -129,6 +129,10 @@ class PostprocessPipeline:
 
     def draw(self, input_colortex, input_depthtex, output_size,
              clear_color=(0, 0, 0, 0)):
+        # Make sure clear color has alpha channel.
+        if len(clear_color) == 3:
+            clear_color = (*clear_color, 1)
+
         current_tex = input_colortex
         for i, program in enumerate(self.programs):
             is_last = i == (len(self.programs) - 1)
