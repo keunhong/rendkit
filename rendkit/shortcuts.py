@@ -110,7 +110,9 @@ def svbrdf_plane_renderer(svbrdf, size=None, lights=list(), radmap=None,
 def render_full(jsd_dict, **kwargs):
     with jsd.JSDRenderer(jsd_dict, **kwargs) as r:
         r.camera.clear_color = (0.0, 0.0, 0.0)
-        return r.render_to_image()
+        im = r.render_to_image()
+        print(im)
+    return im
 
 
 def render_diffuse_lightmap(jsd_dict, **kwargs):
@@ -260,7 +262,7 @@ def render_segments(mesh: Mesh, camera,
         face["material"] = face[segment_type]
 
     camera = copy.deepcopy(camera)
-    camera.clear_color = (-1, -1, -1)
+    camera.clear_color = (0, 0, 0)
     jsd_dict = {
         "camera": camera.tojsd(),
         "mesh": mesh_jsd,
