@@ -24,7 +24,6 @@ class _nop():
 class BaseRenderer(app.Canvas):
     def __init__(self, size: Tuple[int, int],
                  camera: BaseCamera,
-                 scene: Scene,
                  render_scale=1.0,
                  *args, **kwargs):
         if size is None:
@@ -33,7 +32,6 @@ class BaseRenderer(app.Canvas):
         self.render_scale = render_scale
         size = tuple(int(s * render_scale) for s in size)
         self.camera = camera
-        self.scene = scene
         super().__init__(size=size, *args, **kwargs)
         gloo.set_state(depth_test=True)
         gloo.set_viewport(0, 0, *self.size)
@@ -63,8 +61,8 @@ class BaseRenderer(app.Canvas):
         """
         with self._fbo:
             self.draw(camera, out_size)
-            pixels: np.ndarray = gloo.util.read_pixels(
-                out_type=np.float32, format='rgb')
+            pixels: np.ndarray = np.copy(gloo.util.read_pixels(
+                out_type=np.float32, format='rgb'))
         return pixels
 
     def on_resize(self, event):
@@ -95,7 +93,7 @@ class BaseRenderer(app.Canvas):
 
 
 class SceneRenderer(BaseRenderer):
-    def __init__(self, scene, camera=None, size=None,
+    def __init__(self, scene: Scene, camera=None, size=None,
                  gamma=None,
                  ssaa=0,
                  tonemap=None,
@@ -103,6 +101,7 @@ class SceneRenderer(BaseRenderer):
                  reinhard_thres=3.0,
                  conservative_raster=False,
                  *args, **kwargs):
+        self.scene = scene
         if camera is None and size is None:
             size = (1024, 1024)
             logger.warning("Neither camera nor size is set. Creating default "
@@ -111,7 +110,7 @@ class SceneRenderer(BaseRenderer):
             camera = BaseCamera(size, 0.1, 100)
         if size is None:
             size = camera.size
-        super().__init__(size, camera, scene, *args, **kwargs)
+        super().__init__(size, camera, *args, **kwargs)
         gloo.set_state(depth_test=True)
         if conservative_raster:
             from . import nvidia
@@ -198,10 +197,6 @@ class SceneRenderer(BaseRenderer):
 
         self.pp_pipeline.draw(rend_colortex, rend_depthtex, out_size,
                               clear_color=camera.clear_color)
-
-    def __enter__(self):
-        super().__enter__()
-        return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.scene.reset()

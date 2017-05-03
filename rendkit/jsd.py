@@ -26,29 +26,27 @@ logger = logging.getLogger(__name__)
 
 
 class JSDRenderer(SceneRenderer):
-    def __init__(self, jsd_dict_or_scene, camera=None, show_floor=False,
+    def __init__(self, jsd_dict, camera=None, show_floor=False,
                  shadows=False, *args, **kwargs):
         if camera is None:
-            camera = import_jsd_camera(jsd_dict_or_scene)
-        scene = jsd_dict_or_scene
-        if isinstance(scene, dict):
-            jsd_dict = jsd_dict_or_scene
-            scene = Scene(lights=import_jsd_lights(jsd_dict),
-                          materials=import_jsd_materials(jsd_dict))
-            scene.add_mesh(import_jsd_mesh(jsd_dict["mesh"]))
+            camera = import_jsd_camera(jsd_dict)
 
-            if show_floor:
-                floor_pos = scene.meshes[0].vertices[:, 1].min()
-                floor_mesh = shapes.make_plane(10000, 10000, 'floor')
-                scene.add_mesh(floor_mesh, (0, floor_pos, 0))
-                scene.put_material(
-                    'floor', PhongMaterial((1.0, 1.0, 1.0),
-                                           (0.00, 0.00, 0.00), 500.0))
+        scene = Scene(lights=import_jsd_lights(jsd_dict),
+                      materials=import_jsd_materials(jsd_dict))
+        scene.add_mesh(import_jsd_mesh(jsd_dict["mesh"]))
 
-            if 'radiance_map' in jsd_dict:
-                scene.set_radiance_map(import_radiance_map(
-                    jsd_dict['radiance_map']),
-                    add_shadows=shadows)
+        if show_floor:
+            floor_pos = scene.meshes[0].vertices[:, 1].min()
+            floor_mesh = shapes.make_plane(10000, 10000, 'floor')
+            scene.add_mesh(floor_mesh, (0, floor_pos, 0))
+            scene.put_material(
+                'floor', PhongMaterial((1.0, 1.0, 1.0),
+                                       (0.00, 0.00, 0.00), 500.0))
+
+        if 'radiance_map' in jsd_dict:
+            scene.set_radiance_map(import_radiance_map(
+                jsd_dict['radiance_map']),
+                add_shadows=shadows)
 
         super().__init__(scene=scene, camera=camera, *args, **kwargs)
 

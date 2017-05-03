@@ -1,5 +1,5 @@
 import copy
-from typing import List
+from typing import List, Dict
 
 import numpy as np
 
@@ -199,8 +199,8 @@ def render_spec_component(jsd_dict):
         return r.render_to_image()
 
 
-def render_jsd(jsd_dict):
-    with jsd.JSDRenderer(jsd_dict) as renderer:
+def render_jsd(jsd_dict, **rend_opts):
+    with jsd.JSDRenderer(jsd_dict, **rend_opts) as renderer:
         image = renderer.render_to_image()
     return image
 
@@ -279,7 +279,9 @@ def render_segments(mesh: Mesh, camera,
 
 
 def render_wavefront_mtl(mesh: Mesh, camera,
-                         materials: List[WavefrontMaterial]):
+                         materials: Dict[str, WavefrontMaterial],
+                         radmap_path=None,
+                         **rend_opts):
     jsd_dict = make_jsd(mesh, camera)
     jsd_dict["materials"] = {
         mtl.name: {
@@ -287,9 +289,13 @@ def render_wavefront_mtl(mesh: Mesh, camera,
             'diffuse': mtl.diffuse_color,
             'specular': mtl.specular_color,
             'shininess': mtl.specular_exponent,
-        } for mtl in materials
+        } for mtl_name, mtl in materials.items()
     }
-    return render_jsd(jsd_dict)
+    if radmap_path is not None:
+        jsd_dict['radiance_map'] = {
+            'path': radmap_path
+        }
+    return render_jsd(jsd_dict, **rend_opts)
 
 
 def render_world_coords(mesh, camera):
@@ -313,6 +319,6 @@ def render_median_colors(mesh, image, camera):
 def render_uvs(mesh, camera):
     if len(mesh.uvs) == 0:
         raise RuntimeError('Mesh does not have UVs')
-    jsd_dict = make_jsd(mesh, camera)
+    jsd_dict = make_jsd(mesh, camera, clear_color=(0, 0, 0, 0))
     jsd_dict["materials"] = {key: {'type': 'uv'} for key in mesh.materials}
     return render_jsd(jsd_dict)[:, :, :2]

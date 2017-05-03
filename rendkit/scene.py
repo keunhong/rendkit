@@ -8,6 +8,7 @@ from meshkit import Mesh
 from rendkit import vector_utils, util
 from rendkit.camera import OrthographicCamera
 from rendkit.core import logger, DepthRenderer, mesh_to_renderables
+from rendkit.envmap import EnvironmentMap
 from rendkit.envmap.prefilter import find_shadow_sources
 from rendkit.glsl import GLSLProgram
 from rendkit.lights import Light
@@ -21,7 +22,7 @@ class Scene:
                  lights: List[Light]=None,
                  materials: Dict[str, GLSLProgram]=None):
         self.lights = [] if lights is None else lights
-        self.radiance_map = None
+        self.radiance_map: EnvironmentMap = None
         self.materials = {} if materials is None else materials
         self.meshes = []
         self.renderables_by_mesh = OrderedDict()

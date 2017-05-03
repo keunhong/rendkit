@@ -141,6 +141,6 @@ class ContextProvider:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         if not self.context_exists:
-            self.provider.close()
+            self.provider.__exit__(exc_type, exc_val, exc_tb)
         else:
             gloo.set_viewport(0, 0, *self.previous_size)
