@@ -54,7 +54,7 @@ class BaseRenderer(app.Canvas):
         """
         raise NotImplementedError
 
-    def render_to_image(self, camera=None, out_size=None) -> np.ndarray:
+    def render_to_image(self, camera=None, out_size=None, format='rgb') -> np.ndarray:
         """
         Renders to an image.
         :return: image of rendered scene.
@@ -62,7 +62,7 @@ class BaseRenderer(app.Canvas):
         with self._fbo:
             self.draw(camera, out_size)
             pixels: np.ndarray = np.copy(gloo.util.read_pixels(
-                out_type=np.float32, format='rgb'))
+                out_type=np.float32, format=format))
         return pixels
 
     def on_resize(self, event):
