@@ -28,7 +28,7 @@ class BaseRenderer(app.Canvas):
                  *args, **kwargs):
         if size is None:
             size = camera.size
-        logger.info("Render scale is {:.02f}".format(render_scale))
+        logger.debug("Render scale is {:.02f}".format(render_scale))
         self.render_scale = render_scale
         size = tuple(int(s * render_scale) for s in size)
         self.camera = camera
