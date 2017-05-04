@@ -1,21 +1,20 @@
+import os
 import argparse
 import json
 import logging
 
 import numpy as np
+
+from toolbox.logging import init_logger
 from vispy import app
 
 from rendkit import jsd
 from rendkit.camera import ArcballCamera
 from rendkit.materials import SVBRDFMaterial
 
-LOG_FORMAT= "[%(asctime)s] [%(levelname)8s] %(message)s (%(name)s:%(lineno)s)"
-LOG_TIME_FORMAT = "%Y-%m-%d %H:%M:%S"
-LOG_LEVEL = logging.INFO
-LOG_FORMATTER = logging.Formatter(LOG_FORMAT, LOG_TIME_FORMAT)
-
-
 app.use_app('pyglet')
+
+logger = init_logger(__name__)
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--ssaa', dest='ssaa', type=int, default=2)
@@ -24,6 +23,7 @@ parser.add_argument('--tonemap', dest='tonemap', type=str, default=None)
 parser.add_argument(
     '--reinhard-thres', dest='reinhard_thres', type=float, default=3.0)
 parser.add_argument('--exposure', dest='exposure', type=float, default=1.0)
+parser.add_argument('--radmap', dest='radmap', type=str, default=None)
 parser.add_argument(dest='jsd_path', type=str)
 
 args = parser.parse_args()
@@ -92,15 +92,20 @@ class MyJSDRenderer(jsd.JSDRenderer):
         self.update()
 
 
-if __name__ == '__main__':
-    console = logging.StreamHandler()
-    console.setFormatter(LOG_FORMATTER)
-    root_logger = logging.getLogger()
-    root_logger.addHandler(console)
-    root_logger.addHandler(console)
-    root_logger.setLevel(logging.INFO)
+def main():
     with open(args.jsd_path, 'r') as f:
         jsd = json.load(f)
+
+    if args.radmap is not None:
+        radmap_dir = '/home/kpar/data/envmaps/'
+        radmap_path = os.path.join(radmap_dir, args.radmap)
+        logger.info("Overriding radmap {}".format(radmap_path))
+        if not os.path.exists(radmap_path):
+            logger.error("Given radiance map does not exist.")
+            return
+        jsd['radiance_map'] = {
+            'path': os.path.join(radmap_dir, args.radmap)
+        }
 
     camera = ArcballCamera(
         size=(1600, 900), fov=75, near=1, far=1000.0,
@@ -116,3 +121,6 @@ if __name__ == '__main__':
                             reinhard_thres=args.reinhard_thres,
                             show_floor=True)
     app.run()
+
+if __name__ == '__main__':
+    main()
