@@ -111,7 +111,6 @@ def render_full(jsd_dict, **kwargs):
     with jsd.JSDRenderer(jsd_dict, **kwargs) as r:
         r.camera.clear_color = (0.0, 0.0, 0.0)
         im = r.render_to_image()
-        print(im)
     return im
 
 
