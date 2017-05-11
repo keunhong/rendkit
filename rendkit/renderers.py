@@ -100,8 +100,10 @@ class SceneRenderer(BaseRenderer):
                  exposure=1.0,
                  reinhard_thres=3.0,
                  conservative_raster=False,
+                 resizable=True,
                  *args, **kwargs):
         self.scene = scene
+        self.resizable = resizable
         if camera is None and size is None:
             size = (1024, 1024)
             logger.warning("Neither camera nor size is set. Creating default "
@@ -167,11 +169,12 @@ class SceneRenderer(BaseRenderer):
                     program.draw(gl.GL_TRIANGLES)
 
     def on_resize(self, event):
-        super().on_resize(event)
-        for camera, (fb, ct, dt) in self.rend_target_by_cam.items():
-            fb.resize(self.get_render_size(camera.size))
-        # TODO: Fix resizing pipeline framebuffers.
-        # self.pp_pipeline.resize(self.get_render_size(self.size))
+        if self.resizable:
+            super().on_resize(event)
+            for camera, (fb, ct, dt) in self.rend_target_by_cam.items():
+                fb.resize(self.get_render_size(camera.size))
+            # TODO: Fix resizing pipeline framebuffers.
+            # self.pp_pipeline.resize(self.get_render_size(self.size))
 
     def draw(self, camera=None, out_size=None):
         if camera is None:

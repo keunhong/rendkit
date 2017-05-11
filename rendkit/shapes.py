@@ -16,7 +16,6 @@ def make_plane(height, width, material_name='plane',
     dx, dy = width / nx, height / ny
     for i in range(nx):
         for j in range(ny):
-            print(i, j)
             base_idx = (nx * j + i) * 4
             offset_x = dx * i
             offset_y = dy * j
