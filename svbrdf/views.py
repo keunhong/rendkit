@@ -33,26 +33,3 @@ def rendering_feature_patches(rendering_id):
         .filter_by(rendering_id=rendering.id)\
         .first()
     return image_to_png_response(imread(feature_dao.patch_vis_path))
-
-
-@blueprint.route('/')
-def list_svbrdfs():
-    svbrdfs = models.SVBRDF.query.order_by(models.SVBRDF.id).all()
-    return render_template('svbrdf_list.html', svbrdfs=svbrdfs)
-
-
-@blueprint.route('/<svbrdf_id>/renderings')
-def list_svbrdf_renderings(svbrdf_id):
-    svbrdf = models.SVBRDF.query.get(svbrdf_id)
-    if svbrdf is None:
-        return make_404()
-
-    renderings = models.SVBRDFRendering.query \
-        .filter_by(svbrdf_id=svbrdf.id) \
-        .all()
-    if renderings is None:
-        return make_response(404, 'no_renderings',
-                             'SVBRDF exists but there are no renderings')
-    return render_template('rendering_list.html',
-                           svbrdf=svbrdf,
-                           renderings=renderings)

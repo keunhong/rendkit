@@ -37,10 +37,11 @@ class SVBRDF:
                  suppress_outliers=True,
                  transposed=False):
         if path is not None:
-            if not os.path.exists(path):
-                raise FileNotFoundError('The path {} does not exist'.format(path))
+            if not os.path.exists(str(path)):
+                raise FileNotFoundError('The path {} does not exist'
+                                        .format(path))
 
-            self.path = path
+            self.path = str(path)
 
             data_path = os.path.join(self.path, 'out/reverse')
 
@@ -157,19 +158,25 @@ class SVBRDF:
         with open(os.path.join(reverse_path, MAP_PARAMS_FNAME), 'w') as f:
             f.write("{} {}".format(self.alpha, 0.0))
 
-    def to_jsd(self):
-        return dict(
-            type='svbrdf_inline',
-            diffuse_map=self.diffuse_map,
-            specular_map=self.specular_map,
-            spec_shape_map=self.spec_shape_map,
-            normal_map=self.normal_map,
-            alpha=self.alpha,
-            pdf_sampler=self.pdf_sampler,
-            cdf_sampler=self.cdf_sampler,
-            sigma_min=self.sigma_min,
-            sigma_max=self.sigma_max)
-
+    def to_jsd(self, inline=True):
+        if inline:
+            return dict(
+                type='svbrdf_inline',
+                diffuse_map=self.diffuse_map,
+                specular_map=self.specular_map,
+                spec_shape_map=self.spec_shape_map,
+                normal_map=self.normal_map,
+                alpha=self.alpha,
+                pdf_sampler=self.pdf_sampler,
+                cdf_sampler=self.cdf_sampler,
+                sigma_min=self.sigma_min,
+                sigma_max=self.sigma_max)
+        return {
+            'type': 'svbrdf',
+            'path': self.path,
+            'id': self.name,
+            'name': self.name,
+        }
 
 def compute_cdf(sigma, gamma_inv_xi_theta: np.ndarray):
     return np.arctan(sigma * gamma_inv_xi_theta)
