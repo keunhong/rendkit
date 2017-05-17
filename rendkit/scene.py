@@ -41,14 +41,11 @@ class Scene:
     def get_material(self, name):
         if name in self.materials:
             return self.materials[name]
-        logger.warning('Material {} is not defined! Rendering with'
+        logger.info('Material {} is not defined! Rendering with'
                        ' placeholder'.format(name))
         return PLACEHOLDER_MATERIAL
 
     def put_material(self, name: str, material: GLSLProgram):
-        if name in self.materials:
-            logger.warning("Material {} is already defined, overwriting."
-                           .format(name))
         self.materials[name] = material
         self.mark_updated()
 

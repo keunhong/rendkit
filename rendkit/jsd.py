@@ -40,8 +40,8 @@ class JSDRenderer(SceneRenderer):
             floor_mesh = shapes.make_plane(10000, 10000, 'floor')
             scene.add_mesh(floor_mesh, (0, floor_pos, 0))
             scene.put_material(
-                'floor', PhongMaterial((3.0, 3.0, 3.0),
-                                       (0.00, 0.00, 0.00), 500.0))
+                'floor', PhongMaterial((1.0, 1.0, 1.0),
+                                       (0.0, 0.0, 0.0), 0.0))
 
         if 'radiance_map' in jsd_dict:
             scene.set_radiance_map(import_radiance_map(

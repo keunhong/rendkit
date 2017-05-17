@@ -192,15 +192,15 @@ class SVBRDFMaterial(GLSLProgram):
             internalformat='rgb32f')
         self.uniforms['u_spec_shape_map'] = Texture2D(
             self.spec_shape_map,
-            interpolation=('linear', 'linear'),
+            interpolation=('nearest_mipmap_nearest', 'linear'),
             wrapping='repeat',
-            mipmap_levels=10,
+            mipmap_levels=4,
             internalformat='rgb32f')
         self.uniforms['u_normal_map'] = Texture2D(
             self.normal_map,
-            interpolation=('linear', 'linear'),
+            interpolation=('nearest_mipmap_nearest', 'linear'),
             wrapping='repeat',
-            mipmap_levels=10,
+            mipmap_levels=4,
             internalformat='rgb32f')
         self.uniforms['u_cdf_sampler'] = Texture2D(
             self.cdf_sampler.astype(np.float32),

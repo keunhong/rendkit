@@ -97,7 +97,7 @@ def main():
         jsd = json.load(f)
 
     if args.radmap is not None:
-        radmap_dir = '/home/kpar/data/envmaps/'
+        radmap_dir = '/projects/grail/kpar/envmaps/'
         radmap_path = os.path.join(radmap_dir, args.radmap)
         logger.info("Overriding radmap {}".format(radmap_path))
         if not os.path.exists(radmap_path):
@@ -108,8 +108,8 @@ def main():
         }
 
     camera = ArcballCamera(
-        size=(1600, 900), fov=75, near=1, far=1000.0,
-        position=[0, 20, -50],
+        size=(1600, 900), fov=90, near=1, far=1000.0,
+        position=[0, 50, -50],
         lookat=(0.0, 0.0, -0.0),
         up=(0.0, 1.0, 0.0),
         clear_color=(1, 1, 1))
