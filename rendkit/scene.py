@@ -22,7 +22,7 @@ class Scene:
                  lights: List[Light]=None,
                  materials: Dict[str, GLSLProgram]=None):
         self.lights = [] if lights is None else lights
-        self.radiance_map: EnvironmentMap = None
+        self.radiance_map = None
         self.materials = {} if materials is None else materials
         self.meshes = []
         self.renderables_by_mesh = OrderedDict()

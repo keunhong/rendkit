@@ -30,25 +30,28 @@ class JSDRenderer(SceneRenderer):
                  shadows=False, *args, **kwargs):
         if camera is None:
             camera = import_jsd_camera(jsd_dict)
-
-        scene = Scene(lights=import_jsd_lights(jsd_dict),
-                      materials=import_jsd_materials(jsd_dict))
-        scene.add_mesh(import_jsd_mesh(jsd_dict["mesh"]))
-
-        if show_floor:
-            floor_pos = scene.meshes[0].vertices[:, 1].min()
-            floor_mesh = shapes.make_plane(10000, 10000, 'floor')
-            scene.add_mesh(floor_mesh, (0, floor_pos, 0))
-            scene.put_material(
-                'floor', PhongMaterial((1.0, 1.0, 1.0),
-                                       (0.0, 0.0, 0.0), 0.0))
-
-        if 'radiance_map' in jsd_dict:
-            scene.set_radiance_map(import_radiance_map(
-                jsd_dict['radiance_map']),
-                add_shadows=shadows)
-
+        scene = import_jsd_scene(jsd_dict, show_floor, shadows)
         super().__init__(scene=scene, camera=camera, *args, **kwargs)
+
+
+def import_jsd_scene(jsd_dict, show_floor=False, shadows=False):
+    scene = Scene(lights=import_jsd_lights(jsd_dict),
+                         materials=import_jsd_materials(jsd_dict))
+    scene.add_mesh(import_jsd_mesh(jsd_dict["mesh"]))
+
+    if show_floor:
+        floor_pos = scene.meshes[0].vertices[:, 1].min()
+        floor_mesh = shapes.make_plane(10000, 10000, 'floor')
+        scene.add_mesh(floor_mesh, (0, floor_pos, 0))
+        scene.put_material(
+            'floor', PhongMaterial((1.0, 1.0, 1.0),
+                                   (0.0, 0.0, 0.0), 0.0))
+
+    if 'radiance_map' in jsd_dict:
+        scene.set_radiance_map(import_radiance_map(
+            jsd_dict['radiance_map']),
+            add_shadows=shadows)
+    return scene
 
 
 def import_jsd_camera(jsd_dict):
