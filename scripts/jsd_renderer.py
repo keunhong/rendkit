@@ -109,7 +109,7 @@ def main():
 
     camera = ArcballCamera(
         size=(1600, 900), fov=75, near=1, far=1000.0,
-        position=[0, 100, 100],
+        position=[0, 20, -50],
         lookat=(0.0, 0.0, -0.0),
         up=(0.0, 1.0, 0.0),
         clear_color=(1, 1, 1))
