@@ -182,25 +182,27 @@ class SVBRDFMaterial(GLSLProgram):
             self.diff_map,
             interpolation=('linear_mipmap_linear', 'linear'),
             wrapping='repeat',
-            mipmap_levels=10,
+            mipmap_levels=12,
             internalformat='rgb32f')
         self.uniforms['u_spec_map'] = Texture2D(
             self.spec_map,
             interpolation=('linear_mipmap_linear', 'linear'),
             wrapping='repeat',
-            mipmap_levels=10,
+            mipmap_levels=12,
             internalformat='rgb32f')
+        # Don't use mipmapping for spec shape map. It causes artifacts at the
+        # mip boundaries.
         self.uniforms['u_spec_shape_map'] = Texture2D(
             self.spec_shape_map,
-            interpolation=('linear_mipmap_linear', 'linear'),
+            interpolation=('linear', 'linear'),
             wrapping='repeat',
-            mipmap_levels=10,
+            mipmap_levels=12,
             internalformat='rgb32f')
         self.uniforms['u_normal_map'] = Texture2D(
             self.normal_map,
             interpolation=('linear_mipmap_linear', 'linear'),
             wrapping='repeat',
-            mipmap_levels=10,
+            mipmap_levels=12,
             internalformat='rgb32f')
         self.uniforms['u_cdf_sampler'] = Texture2D(
             self.cdf_sampler.astype(np.float32),
