@@ -97,6 +97,8 @@ def unstack_cross(cross):
 
 
 def load_envmap(path, size=(512, 512)):
+    if not os.path.exists(path):
+        raise FileNotFoundError("{} does not exist.".format(path))
     tic = time()
     ext = os.path.splitext(path)[1]
     shape = (*size, 3)
@@ -109,6 +111,12 @@ def load_envmap(path, size=(512, 512)):
             cube_faces[_FACE_NAMES[name]] = image
     elif ext == '.pfm':
         array = pfm.pfm_read(path)
+        for i, face in enumerate(unstack_cross(array)):
+            cube_faces[i] = resize(face, size)[:, :, :3]
+    elif ext == '.exr' or ext == '.hdr':
+        import cv2
+        array = cv2.imread(path, -1)
+        array = array[:, :, [2, 1, 0]]
         for i, face in enumerate(unstack_cross(array)):
             cube_faces[i] = resize(face, size)[:, :, :3]
     elif ext == '.jpg' or ext == '.png' or ext == '.tiff':
