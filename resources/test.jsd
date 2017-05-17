@@ -1,0 +1,24 @@
+{
+  "mesh": {
+    "type": "wavefront",
+    "path": "/projects/grail/kparnb/gravel/resources/uploads/33/model.obj",
+    "size": 100,
+    "uv_scale": 8.0
+  },
+  "materials": {
+    "_8R15_Twist_Shale.001": {
+      "type": "svbrdf",
+      "path": "/projects/grail/kparnb/data/svbrdf/fabric/grail_chair_fabric3"
+    },
+    "_91_White.001": {
+      "type": "svbrdf",
+      "path": "/projects/grail/kparnb/data/svbrdf/metal/cse_pod"
+    }
+  },
+  "lights": [],
+  "radiance_map": {
+    "_path": "/home/kpar/Projects/gravel/rendkit/resources/cubemaps/yokohama/",
+    "path": "/projects/grail/kpar/envmaps/k_studio_cross.exr",
+    "scale": 1.0
+  }
+}

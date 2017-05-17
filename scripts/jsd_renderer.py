@@ -25,7 +25,6 @@ parser.add_argument(
 parser.add_argument('--exposure', dest='exposure', type=float, default=1.0)
 parser.add_argument('--radmap', dest='radmap', type=str, default=None)
 parser.add_argument(dest='jsd_path', type=str)
-
 args = parser.parse_args()
 
 np.set_printoptions(suppress=True)
@@ -108,12 +107,12 @@ def main():
         }
 
     camera = ArcballCamera(
-        size=(1600, 900), fov=90, near=1, far=1000.0,
-        position=[0, 50, -50],
+        size=(900, 900), fov=90, near=1, far=1000.0,
+        position=[0, 40, -60],
         lookat=(0.0, 0.0, -0.0),
         up=(0.0, 1.0, 0.0),
-        clear_color=(1, 1, 1))
-    renderer= MyJSDRenderer(jsd, camera, dpi=500,
+        clear_color=(1, 1, 1, 0))
+    renderer = MyJSDRenderer(jsd, camera, dpi=500,
                             gamma=args.gamma,
                             ssaa=args.ssaa,
                             tonemap=args.tonemap,
