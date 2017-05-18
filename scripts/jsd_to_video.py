@@ -27,8 +27,12 @@ def main():
         jsd_dict = json.load(f)
 
     logger.info("Loading scene.")
+    size = (720, 720)
     scene = import_jsd_scene(jsd_dict, show_floor=True, shadows=True)
-    video.save_mp4(args.out_path, video.frame_generator(scene, n_frames=100))
+    logger.info("Rendering frames.")
+    frames = video.render_frames(scene, n_frames=240, size=size)
+    logger.info("Saving video.")
+    video.save_mp4(args.out_path, frames, size=size)
 
 
 if __name__ == '__main__':

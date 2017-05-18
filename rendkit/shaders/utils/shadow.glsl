@@ -9,7 +9,7 @@ float compute_shadow(vec3 world_pos, vec4 shadow_pos, sampler2DShadow depth) {
   }
 
   float current_depth = shadow_proj.z;
-  float bias = 0.007;
+  float bias = 0.07;
   vec2 texel_size = 1.0 / textureSize(depth, 0);
 
   float shadow = 0.0;

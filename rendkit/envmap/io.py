@@ -115,7 +115,7 @@ def load_envmap(path, size=(512, 512)):
             cube_faces[i] = resize(face, size)[:, :, :3]
     elif ext == '.exr' or ext == '.hdr':
         import cv2
-        array = cv2.imread(path, -1)
+        array = cv2.imread(str(path), -1)
         array = array[:, :, [2, 1, 0]]
         for i, face in enumerate(unstack_cross(array)):
             cube_faces[i] = resize(face, size)[:, :, :3]

@@ -190,11 +190,11 @@ class SVBRDFMaterial(GLSLProgram):
             wrapping='repeat',
             mipmap_levels=12,
             internalformat='rgb32f')
-        # Don't use mipmapping for spec shape map. It causes artifacts at the
-        # mip boundaries.
+        # TODO: Mipmapping here causes artifacts, but not doing it makes the
+        # opject too specular. How can we fix this?
         self.uniforms['u_spec_shape_map'] = Texture2D(
             self.spec_shape_map,
-            interpolation=('linear', 'linear'),
+            interpolation=('linear_mipmap_linear', 'linear'),
             wrapping='repeat',
             mipmap_levels=12,
             internalformat='rgb32f')
