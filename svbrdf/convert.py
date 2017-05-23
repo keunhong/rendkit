@@ -1,6 +1,8 @@
 import math
 import argparse
 import itertools
+from pathlib import Path
+
 import torch
 import numpy as np
 from scipy.interpolate import griddata
@@ -11,6 +13,11 @@ from toolbox.logging import init_logger
 from svbrdf.aittala import AittalaSVBRDF
 
 logger = init_logger(__name__)
+
+
+CROP_SIZE = (200, 200)
+N_PHI = 500
+N_THETA_MAX = 800
 
 
 def aittala_ndf(H, S, alpha=2):
@@ -87,20 +94,21 @@ def main():
                         required=True)
     args = parser.parse_args()
 
-    svbrdf = AittalaSVBRDF(args.aittala_path)
-    crop_size = (200, 200)
+    if Path(args.out_path).exists():
+        logger.error("{} already exists.".format(args.out_path))
+        return
 
-    crop_spec_shape = svbrdf.spec_shape_map[:crop_size[0], :crop_size[1]].reshape((-1, 3))
+    svbrdf = AittalaSVBRDF(args.aittala_path)
+
+    crop_spec_shape = svbrdf.spec_shape_map[:CROP_SIZE[0], :CROP_SIZE[1]].reshape((-1, 3))
     crop_spec_shape = crop_spec_shape[:, [0, 1, 1, 2]].reshape((-1, 2, 2))
     crop_spec_shape = torch.from_numpy(crop_spec_shape).cuda()
 
-    n_phi = 500
-    n_theta_max = 800
     logger.info("Generating sample angles..")
-    phis = np.linspace(0.0, math.pi / 2, n_phi)
+    phis = np.linspace(0.0, math.pi / 2, N_PHI)
     angles = []
     for phi in phis:
-        n_theta = int(round(n_theta_max * math.sin(phi) + 1))
+        n_theta = int(round(N_THETA_MAX * math.sin(phi) + 1))
         thetas = np.linspace(0, math.pi * 2, n_theta)
         for theta in thetas:
             angles.append((phi, theta))
@@ -110,10 +118,10 @@ def main():
 
     logger.info("Fitting Beckmann BRDF...")
     ones = torch.ones(H.size(1)).cuda()
-    crop_rough_map = np.zeros(crop_size)
-    crop_aniso_map = np.zeros(crop_size)
+    crop_rough_map = np.zeros(CROP_SIZE)
+    crop_aniso_map = np.zeros(CROP_SIZE)
     for i in trange(crop_spec_shape.size(0)):
-        row, col = i // crop_size[0], i % crop_size[1]
+        row, col = i // CROP_SIZE[0], i % CROP_SIZE[1]
         D_aittala = aittala_ndf(H_tan, crop_spec_shape[i], alpha=svbrdf.alpha)
         ax, ay, err = fit_beckmann(D_aittala, H, ones)
         if ay > ax:
@@ -126,8 +134,8 @@ def main():
         crop_rough_map[row, col] = roughness
 
     logger.info("Interpolating sample fit to full texture...")
-    crop_spec_shape = svbrdf.spec_shape_map[:crop_size[0],
-                                            :crop_size[1]].reshape((-1, 3))
+    crop_spec_shape = svbrdf.spec_shape_map[:CROP_SIZE[0],
+                                            :CROP_SIZE[1]].reshape((-1, 3))
     rough_map = griddata(crop_spec_shape, crop_rough_map.flatten(),
                          svbrdf.spec_shape_map.reshape((-1, 3)),
                          method='nearest')

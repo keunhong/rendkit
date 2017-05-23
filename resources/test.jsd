@@ -8,7 +8,7 @@
   "materials": {
     "_8R15_Twist_Shale.001": {
       "type": "svbrdf",
-      "path": "/projects/grail/kparnb/data/svbrdf/leather/leather_black"
+      "path": "/projects/grail/kparnb/data/svbrdf/wood/kostas_desk"
     },
     "_91_White.001": {
       "type": "svbrdf",

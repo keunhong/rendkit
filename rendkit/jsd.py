@@ -11,7 +11,7 @@ from rendkit import shapes
 from rendkit.envmap import EnvironmentMap
 from rendkit.envmap.io import load_envmap
 from rendkit.lights import Light, PointLight, DirectionalLight
-from rendkit.materials import (GLSLProgram, SVBRDFMaterial, PhongMaterial,
+from rendkit.materials import (GLSLProgram, AittalaMaterial, PhongMaterial,
                                BasicMaterial, NormalMaterial,
                                WorldCoordMaterial,
                                DepthMaterial, UVMaterial, UnwrapToUVMaterial,
@@ -161,11 +161,11 @@ def import_jsd_material(jsd_material) -> rendkit.materials.GLSLProgram:
         transposed = False
         if 'transposed' in jsd_material:
             transposed = bool(jsd_material['transposed'])
-        return SVBRDFMaterial(AittalaSVBRDF(jsd_material['path'], transposed=transposed))
+        return AittalaMaterial(AittalaSVBRDF(jsd_material['path'], transposed=transposed))
     elif jsd_material['type'] == 'basic':
         return BasicMaterial(jsd_material['color'])
     elif jsd_material['type'] == 'svbrdf_inline':
-        return SVBRDFMaterial(AittalaSVBRDF(
+        return AittalaMaterial(AittalaSVBRDF(
             diffuse_map=jsd_material['diffuse_map'],
             specular_map=jsd_material['specular_map'],
             spec_shape_map=jsd_material['spec_shape_map'],

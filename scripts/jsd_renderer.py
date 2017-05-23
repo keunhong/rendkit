@@ -10,7 +10,7 @@ from vispy import app
 
 from rendkit import jsd
 from rendkit.camera import ArcballCamera
-from rendkit.materials import SVBRDFMaterial
+from rendkit.materials import AittalaMaterial
 
 app.use_app('pyglet')
 
@@ -56,25 +56,25 @@ class MyJSDRenderer(jsd.JSDRenderer):
                 mat_names[self.current_mat_idx]))
         elif event.key == 'a':
             if self.current_mat is not None:
-                if isinstance(self.current_mat, SVBRDFMaterial):
+                if isinstance(self.current_mat, AittalaMaterial):
                     self.current_mat.alpha -= 0.1
                     print('Setting alpha to {}'.format(self.current_mat.alpha))
                     self.recompile_renderables()
         elif event.key == 's':
             if self.current_mat is not None:
-                if isinstance(self.current_mat, SVBRDFMaterial):
+                if isinstance(self.current_mat, AittalaMaterial):
                     self.current_mat.alpha += 0.1
                     print('Setting alpha to {}'.format(self.current_mat.alpha))
                     self.recompile_renderables()
         elif event.key == 'z':
             if self.current_mat is not None:
-                if isinstance(self.current_mat, SVBRDFMaterial):
+                if isinstance(self.current_mat, AittalaMaterial):
                     self.current_mat.spec_shape_map[:, :, :] /= 1.1
                     print(np.mean(self.current_mat.spec_shape_map, axis=(0,1)))
                     self.recompile_renderables()
         elif event.key == 'x':
             if self.current_mat is not None:
-                if isinstance(self.current_mat, SVBRDFMaterial):
+                if isinstance(self.current_mat, AittalaMaterial):
                     self.current_mat.spec_shape_map[:, :, :] *= 1.1
                     print(np.mean(self.current_mat.spec_shape_map, axis=(0,1)))
                     self.recompile_renderables()

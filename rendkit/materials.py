@@ -127,7 +127,7 @@ class BitangentMaterial(GLSLProgram):
                          use_tangents=True)
 
 
-class SVBRDFMaterial(GLSLProgram):
+class AittalaMaterial(GLSLProgram):
 
     def __init__(self, svbrdf: AittalaSVBRDF):
         super().__init__(GLSLTemplate.fromfile('default.vert.glsl'),

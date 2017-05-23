@@ -8,7 +8,7 @@ from rendkit import jsd
 from rendkit.shapes import make_plane
 from rendkit.camera import ArcballCamera
 from rendkit.scene import Scene
-from rendkit.materials import SVBRDFMaterial
+from rendkit.materials import AittalaMaterial
 from rendkit.renderers import SceneRenderer
 from svbrdf.aittala import AittalaSVBRDF
 
@@ -84,7 +84,7 @@ if __name__ == '__main__':
     plane_mesh.uv_scale = plane_size
 
     radmap = jsd.import_radiance_map(dict(path=args.radmap))
-    material = SVBRDFMaterial(AittalaSVBRDF(args.brdf))
+    material = AittalaMaterial(AittalaSVBRDF(args.brdf))
     scene = Scene()
     scene.set_radiance_map(radmap)
     scene.add_mesh(plane_mesh)
