@@ -108,9 +108,13 @@ def svbrdf_plane_renderer(svbrdf, size=None, lights=list(), radmap=None,
 
 
 def render_full(jsd_dict, **kwargs):
+    print('a')
     with jsd.JSDRenderer(jsd_dict, **kwargs) as r:
+        print('b')
         r.camera.clear_color = (0.0, 0.0, 0.0)
+        print('c')
         im = r.render_to_image()
+        print('d')
     return im
 
 

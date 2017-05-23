@@ -115,9 +115,12 @@ class Mesh:
         return np.array(out_normals)
 
     def bounding_size(self):
-        max = self.vertices.max(axis=0)
-        min = self.vertices.min(axis=0)
-        return np.max(max - min)
+        return max(self.max_dims())
+
+    def max_dims(self):
+        max_dim = self.vertices.max(axis=0)
+        min_dim = self.vertices.min(axis=0)
+        return max_dim - min_dim
 
     def resize(self, size):
         self.vertices *= size / self.bounding_size()
