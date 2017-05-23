@@ -10,8 +10,7 @@ from rendkit.camera import ArcballCamera
 from rendkit.scene import Scene
 from rendkit.materials import SVBRDFMaterial
 from rendkit.renderers import SceneRenderer
-from svbrdf import SVBRDF
-
+from svbrdf.aittala import AittalaSVBRDF
 
 LOG_FORMAT= "[%(asctime)s] [%(levelname)8s] %(message)s (%(name)s:%(lineno)s)"
 LOG_TIME_FORMAT = "%Y-%m-%d %H:%M:%S"
@@ -85,7 +84,7 @@ if __name__ == '__main__':
     plane_mesh.uv_scale = plane_size
 
     radmap = jsd.import_radiance_map(dict(path=args.radmap))
-    material = SVBRDFMaterial(SVBRDF(args.brdf))
+    material = SVBRDFMaterial(AittalaSVBRDF(args.brdf))
     scene = Scene()
     scene.set_radiance_map(radmap)
     scene.add_mesh(plane_mesh)

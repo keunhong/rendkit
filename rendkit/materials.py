@@ -4,7 +4,7 @@ import numpy as np
 from skimage.color import rgb2lab
 
 from rendkit.glsl import GLSLProgram, GLSLTemplate, glsl_bool
-from svbrdf import SVBRDF
+from svbrdf.aittala import AittalaSVBRDF
 from vispy.gloo import Texture2D
 
 logger = logging.getLogger(__name__)
@@ -129,7 +129,7 @@ class BitangentMaterial(GLSLProgram):
 
 class SVBRDFMaterial(GLSLProgram):
 
-    def __init__(self, svbrdf: SVBRDF):
+    def __init__(self, svbrdf: AittalaSVBRDF):
         super().__init__(GLSLTemplate.fromfile('default.vert.glsl'),
                          GLSLTemplate.fromfile('svbrdf.frag.glsl'),
                          use_uvs=True,

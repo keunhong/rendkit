@@ -35,7 +35,7 @@ def pfm_read(filename: str, transposed=False):
     return tex
 
 
-def pfm_write(filename: str, tex: np.ndarray):
+def pfm_write(filename, tex: np.ndarray):
     if tex.dtype != np.float32:
         logger.debug('Input is not 32 bit precision: converting to 32 bits.')
         tex = tex.astype(np.float32)
