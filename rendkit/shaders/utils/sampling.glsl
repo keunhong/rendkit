@@ -55,6 +55,15 @@ vec3 sample_to_world(vec3 H, vec3 N) {
 }
 
 
+vec3 world_to_local(vec3 v, vec3 N) {
+  vec3 Z = N;
+  vec3 up_vec = abs(N.z) < 0.999 ? vec3(0,0,1) : vec3(1,0,0);
+  vec3 X = normalize(cross(up_vec, N));
+  vec3 Y = cross(N, X);
+  return vec3(dot(v, X), dot(v, Y), dot(v, Z));
+}
+
+
 // From http://holger.dammertz.org/stuff/notes_HammersleyOnHemisphere.html.
 float radical_inverse_vdc(uint bits) {
   bits = (bits << 16u) | (bits >> 16u);

@@ -5,6 +5,7 @@ from skimage.color import rgb2lab
 
 from rendkit.glsl import GLSLProgram, GLSLTemplate, glsl_bool
 from svbrdf.aittala import AittalaSVBRDF
+from svbrdf.beckmann import BeckmannSVBRDF
 from vispy.gloo import Texture2D
 
 logger = logging.getLogger(__name__)
@@ -127,11 +128,64 @@ class BitangentMaterial(GLSLProgram):
                          use_tangents=True)
 
 
-class AittalaMaterial(GLSLProgram):
+class BeckmannMaterial(GLSLProgram):
+    def __init__(self, svbrdf: BeckmannSVBRDF):
+        super().__init__(GLSLTemplate.fromfile('default.vert.glsl'),
+                         GLSLTemplate.fromfile('beckmann.frag.glsl'),
+                         use_uvs=True,
+                         use_cam_pos=True,
+                         use_lights=True,
+                         use_normals=True,
+                         use_tangents=True,
+                         use_radiance_map=True)
+        self.diff_map = svbrdf.diff_map.astype(np.float32)
+        self.spec_map = svbrdf.spec_map.astype(np.float32)
+        self.normal_map = svbrdf.normal_map.astype(np.float32)
+        self.rough_map = svbrdf.rough_map.astype(np.float32)
+        self.aniso_map = svbrdf.aniso_map.astype(np.float32)
 
+        self.uniforms = {}
+        self.init_uniforms()
+
+    def init_uniforms(self):
+        self.uniforms['u_diff_map'] = Texture2D(
+            self.diff_map,
+            interpolation=('linear_mipmap_linear', 'linear'),
+            wrapping='repeat',
+            mipmap_levels=10,
+            internalformat='rgb32f')
+        self.uniforms['u_spec_map'] = Texture2D(
+            self.spec_map,
+            interpolation=('linear_mipmap_linear', 'linear'),
+            wrapping='repeat',
+            mipmap_levels=10,
+            internalformat='rgb32f')
+        # TODO: Mipmapping here causes artifacts, but not doing it makes the
+        # opject too specular. How can we fix this?
+        self.uniforms['u_rough_map'] = Texture2D(
+            self.rough_map,
+            interpolation=('linear_mipmap_linear', 'linear'),
+            wrapping='repeat',
+            mipmap_levels=10,
+            internalformat='r32f')
+        self.uniforms['u_aniso_map'] = Texture2D(
+            self.aniso_map,
+            interpolation=('linear_mipmap_linear', 'linear'),
+            wrapping='repeat',
+            mipmap_levels=10,
+            internalformat='r32f')
+        self.uniforms['u_normal_map'] = Texture2D(
+            self.normal_map,
+            interpolation=('linear_mipmap_linear', 'linear'),
+            wrapping='repeat',
+            mipmap_levels=10,
+            internalformat='rgb32f')
+
+
+class AittalaMaterial(GLSLProgram):
     def __init__(self, svbrdf: AittalaSVBRDF):
         super().__init__(GLSLTemplate.fromfile('default.vert.glsl'),
-                         GLSLTemplate.fromfile('svbrdf.frag.glsl'),
+                         GLSLTemplate.fromfile('aittala.frag.glsl'),
                          use_uvs=True,
                          use_cam_pos=True,
                          use_lights=True,

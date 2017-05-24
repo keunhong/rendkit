@@ -7,11 +7,11 @@
   },
   "materials": {
     "_8R15_Twist_Shale.001": {
-      "type": "svbrdf",
-      "path": "/projects/grail/kparnb/data/svbrdf/wood/kostas_desk"
+      "type": "aittala",
+      "path": "/projects/grail/kparnb/data/svbrdf/wood/windmere_table"
     },
     "_91_White.001": {
-      "type": "svbrdf",
+      "type": "aittala",
       "path": "/projects/grail/kparnb/data/svbrdf/metal/cse_pod"
     }
   },

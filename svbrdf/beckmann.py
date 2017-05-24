@@ -12,6 +12,7 @@ ANISO_MAP_NAME = 'aniso_map.exr'
 class BeckmannSVBRDF:
     @classmethod
     def from_path(cls, path):
+        path = Path(path)
         return BeckmannSVBRDF(
             diff_map=load_hdr(path / DIFF_MAP_NAME),
             spec_map=load_hdr(path / SPEC_MAP_NAME),

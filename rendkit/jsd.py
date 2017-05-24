@@ -16,10 +16,11 @@ from rendkit.materials import (GLSLProgram, AittalaMaterial, PhongMaterial,
                                WorldCoordMaterial,
                                DepthMaterial, UVMaterial, UnwrapToUVMaterial,
                                TangentMaterial, BitangentMaterial,
-                               BasicTextureMaterial)
+                               BasicTextureMaterial, BeckmannMaterial)
 from rendkit.renderers import SceneRenderer
 from rendkit.scene import Scene
 from svbrdf.aittala import AittalaSVBRDF
+from svbrdf.beckmann import BeckmannSVBRDF
 from .camera import CalibratedCamera, PerspectiveCamera, ArcballCamera
 
 logger = logging.getLogger(__name__)
@@ -157,11 +158,13 @@ def import_jsd_materials(jsd_dict) -> Dict[str, GLSLProgram]:
 
 
 def import_jsd_material(jsd_material) -> rendkit.materials.GLSLProgram:
-    if jsd_material['type'] == 'svbrdf':
+    if jsd_material['type'] == 'svbrdf' or jsd_material['type'] == 'aittala':
         transposed = False
         if 'transposed' in jsd_material:
             transposed = bool(jsd_material['transposed'])
         return AittalaMaterial(AittalaSVBRDF(jsd_material['path'], transposed=transposed))
+    elif jsd_material['type'] == 'beckmann':
+        return BeckmannMaterial(BeckmannSVBRDF.from_path(jsd_material['path']))
     elif jsd_material['type'] == 'basic':
         return BasicMaterial(jsd_material['color'])
     elif jsd_material['type'] == 'svbrdf_inline':
