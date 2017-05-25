@@ -38,7 +38,7 @@ vec4 samp(vec2 pos, int cube_face) {
   for (uint i = 0u; i < N_SAMPLES; i++) {
     vec2 xi = hammersley(i, N_SAMPLES); // Use psuedo-random point set.
     vec3 L = importance_sample(xi);
-    L = sample_to_world(L, normal);
+    L = local_to_world(L, normal);
     float pdf = L.z;
 		float lod = compute_lod(pdf, N_SAMPLES, u_cubemap_size.x, u_cubemap_size.y);
     vec3 light_color;

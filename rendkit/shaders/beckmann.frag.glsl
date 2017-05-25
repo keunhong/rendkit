@@ -144,9 +144,9 @@ vec3 microfacet_beckmann_sample_slopes(
 }
 
 
-vec4 microfacet_sample_stretched(float alpha_x, float alpha_y, vec3 omega_i, float randu, float randv) {
+vec4 microfacet_sample_stretched(float alpha_x, float alpha_y, vec3 V_local, float randu, float randv) {
   /* 1. stretch omega_i */
-	vec3 omega_i_ = vec3(alpha_x * omega_i.x, alpha_y * omega_i.y, omega_i.z);
+	vec3 omega_i_ = vec3(alpha_x * V_local.x, alpha_y * V_local.y, V_local.z);
 	omega_i_ = normalize(omega_i_);
 
 	/* get polar coordinates of omega_i_ */
@@ -191,7 +191,7 @@ float get_pdf_value(float alpha_x, float alpha_y, vec3 H) {
 
 
 void main() {
-  vec3 V = normalize(u_cam_pos - v_position);
+  vec3 eye = normalize(u_cam_pos - v_position);
 
   vec3 rho_d = texture(u_diff_map, v_uv).rgb;
   vec3 rho_s = texture(u_spec_map, v_uv).rgb / (M_PI * 4.0);
@@ -226,20 +226,16 @@ void main() {
   vec3 specular = vec3(0);
   uint N_SAMPLES = 200u;
 
-  float NdotV = dot(N, V);
-  vec3 Z = N;
-  vec3 up_vec = abs(N.z) < 0.999 ? vec3(0,0,1) : vec3(1,0,0);
-  vec3 X = normalize(cross(up_vec, N));
-  vec3 Y = cross(N, X);
-  vec3 local_V = world_to_local(V, N);
+  float NdotV = dot(N, eye);
+  vec3 V_local = world_to_local(eye, N);
 
   for (uint i = 0u; i < N_SAMPLES; i++) {
     vec2 xi = hammersley(i, N_SAMPLES); // Use psuedo-random point set.
-    vec4 sample_result = microfacet_sample_stretched(alpha_x, alpha_y, local_V, xi.x, xi.y);
+    vec4 sample_result = microfacet_sample_stretched(alpha_x, alpha_y, V_local, xi.x, xi.y);
     vec3 H_local = sample_result.xyz;
     float G1o = sample_result.w;
-    vec3 H_world = X*H_local.x + Y * H_local.y + Z * H_local.z;
-    vec3 L = reflect(-V, H_world);
+    vec3 H_world = local_to_world(H_local, N);
+    vec3 L = reflect(-eye, H_world);
     vec3 L_local = world_to_local(L, N);
 
     float slope_x = -H_local.x/(H_local.z*alpha_x);
@@ -254,7 +250,7 @@ void main() {
     float G1i = bsdf_beckmann_aniso_G1(alpha_x, alpha_y, L_local);
     float G = G1i * G1o;
 
-    float spec_common = D * 0.25f / dot(N, V);
+    float spec_common = D * 0.25f / dot(N, eye);
     float spec_out = G * spec_common;
     float pdf = G1o * spec_common;
 
@@ -267,10 +263,10 @@ void main() {
       light_color = textureLod(u_radiance_lower, dp_uv, lod).rgb;
     }
 
-//    float F = fresnel_schlick(F0, V, H_world) / F0;
-    float VdotH = abs(dot(V, H_world));
+    float F = fresnel_schlick(F0, eye, H_world) / F0;
+    float VdotH = abs(dot(eye, H_world));
     float NdotH = abs(dot(N, H_world));
-    specular += rho_s * compute_irradiance(N, L, light_color);
+    specular += rho_s * compute_irradiance(N, L, light_color) * G1i * F;
   }
   total_radiance += specular / float(N_SAMPLES);
   total_radiance *= u_radiance_scale;
@@ -296,7 +292,7 @@ void main() {
       bool is_light_visible = dot(L, N) >= 0;
       if (is_light_visible) {
         irradiance = compute_irradiance(N, L, u_light_intensity[i] * u_light_color[i]);
-        total_radiance += aittala_spec(N, V, L, rho_s, S, u_alpha) * irradiance;
+        total_radiance += aittala_spec(N, eye, L, rho_s, S, u_alpha) * irradiance;
       }
     }
     total_radiance += rho_d * irradiance;

@@ -125,7 +125,7 @@ void main() {
     float phi = sample_angle.x;
     float theta = sample_angle.y;
     vec3 H = angle_to_vec(phi, theta);
-    H = sample_to_world(H, N);
+    H = local_to_world(H, N);
     vec3 L = reflect(-V, H);
     float pdf = get_pdf_value(sigma, xi);
 		float lod = compute_lod(pdf, N_SAMPLES, u_cubemap_size.x, u_cubemap_size.y);

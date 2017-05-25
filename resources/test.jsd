@@ -7,18 +7,18 @@
   },
   "materials": {
     "_8R15_Twist_Shale.001": {
-      "type": "aittala",
-      "path": "/projects/grail/kparnb/data/svbrdf/wood/windmere_table"
+      "type": "beckmann",
+      "path": "/projects/grail/kparnb/data/svbrdf-beckmann/wood/ming_desk"
     },
     "_91_White.001": {
-      "type": "aittala",
-      "path": "/projects/grail/kparnb/data/svbrdf/metal/cse_pod"
+      "type": "beckmann",
+      "path": "/projects/grail/kparnb/data/svbrdf-beckmann/metal/cse_pod"
     }
   },
   "lights": [],
   "radiance_map": {
     "_path": "/home/kpar/Projects/gravel/rendkit/resources/cubemaps/yokohama/",
-    "path": "/projects/grail/kpar/envmaps/k_studio_cross.exr",
+    "path": "/projects/grail/kpar/envmaps/studio027_cross.pfm",
     "scale": 1.0
   }
 }

@@ -80,7 +80,7 @@ void main() {
   for (uint i = 0u; i < N_SAMPLES; i++) {
     vec2 xi = hammersley(i, N_SAMPLES); // Use psuedo-random point set.
     vec3 H = importance_sample(xi, u_shininess);
-    H = sample_to_world(H, v_normal);
+    H = local_to_world(H, v_normal);
     float pdf = compute_pdf(H, u_shininess);
 		float lod = compute_lod(pdf, N_SAMPLES, u_cubemap_size.x, u_cubemap_size.y);
 

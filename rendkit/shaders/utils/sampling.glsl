@@ -47,7 +47,7 @@ vec3 angle_to_vec(float phi, float theta) {
 
 
 // From https://github.com/thefranke/dirtchamber/blob/master/shader/importance.hlsl.
-vec3 sample_to_world(vec3 H, vec3 N) {
+vec3 local_to_world(vec3 H, vec3 N) {
   vec3 up_vec = abs(N.z) < 0.999 ? vec3(0,0,1) : vec3(1,0,0);
   vec3 tangent_x = normalize(cross(up_vec, N));
   vec3 tangent_y = cross(N, tangent_x);
