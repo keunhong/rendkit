@@ -61,11 +61,14 @@ class BeckmannSVBRDF:
         logger.info("Saving Beckmann SVBRDF to {}".format(path))
         normal_map_blender = self.normal_map.copy()
         # Normalize X and Y to [0, 1] to follow blender conventions.
-        normal_map_blender[:, :, :2] += 1
-        normal_map_blender[:, :, :2] /= 2
+        normal_map_blender[:, :, :2] = 1.0
+        normal_map_blender[:, :, :2] /= 2.0
+        normal_map_blender = np.round(255.0 * normal_map_blender)\
+            .astype(np.uint8)
+
         save_hdr(path / DIFF_MAP_NAME, self.diff_map)
         save_hdr(path / SPEC_MAP_NAME, self.spec_map)
         save_hdr(path / NORMAL_MAP_NAME, self.normal_map)
-        save_image(path / BLEND_NORMAL_MAP_NAME, self.normal_map)
+        save_image(path / BLEND_NORMAL_MAP_NAME, normal_map_blender)
         save_hdr(path / ROUGH_MAP_NAME, self.rough_map)
         save_hdr(path / ANISO_MAP_NAME, self.aniso_map)

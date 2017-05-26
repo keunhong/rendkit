@@ -178,11 +178,13 @@ def main():
         logger.warning("Anisotropy map has NaNs. Fixing!")
         aniso_map = fix_nan(aniso_map)
     alpha_x_map, alpha_y_map = rough_aniso_to_alpha(rough_map, aniso_map)
+
+    # Correct for energy conservation since Aittala and Beckmann use different
+    # constants.
     spec_scale = (4.0 * math.pi * (alpha_x_map * alpha_y_map).mean())
     logger.info("Scaling specular albedo by {}".format(spec_scale))
 
     logger.info("Saving...")
-    # Aittala BRDF has PI baked in.
     bsvbrdf = BeckmannSVBRDF(svbrdf.diffuse_map * math.pi,
                              svbrdf.specular_map * spec_scale,
                              svbrdf.normal_map,
