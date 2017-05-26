@@ -8,11 +8,11 @@
   "materials": {
     "_8R15_Twist_Shale.001": {
       "type": "beckmann",
-      "path": "/projects/grail/kparnb/data/svbrdf-beckmann/wood/ming_desk"
+      "path": "/projects/grail/kparnb/data/beckmann-svbrdfs/wood/ming_desk"
     },
     "_91_White.001": {
       "type": "beckmann",
-      "path": "/projects/grail/kparnb/data/svbrdf-beckmann/metal/cse_pod"
+      "path": "/projects/grail/kparnb/data/beckmann-svbrdfs/metal/cse_pod"
     }
   },
   "lights": [],

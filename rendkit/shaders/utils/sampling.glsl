@@ -60,7 +60,7 @@ vec3 world_to_local(vec3 v, vec3 N) {
   vec3 up_vec = abs(N.z) < 0.999 ? vec3(0,0,1) : vec3(1,0,0);
   vec3 X = normalize(cross(up_vec, N));
   vec3 Y = cross(N, X);
-  return vec3(dot(v, X), dot(v, Y), dot(v, Z));
+  return normalize(vec3(dot(v, X), dot(v, Y), dot(v, Z)));
 }
 
 

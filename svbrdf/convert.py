@@ -9,15 +9,15 @@ from scipy.interpolate import griddata
 from tqdm import trange
 
 from svbrdf.beckmann import BeckmannSVBRDF
-from toolbox.logging import init_logger
 from svbrdf.aittala import AittalaSVBRDF
+from toolbox.logging import init_logger
 
 logger = init_logger(__name__)
 
 
 CROP_SIZE = (200, 200)
 N_PHI = 500
-N_THETA_MAX = 800
+N_THETA_MAX = 1000
 
 
 def aittala_ndf(H, S, alpha=2):
@@ -29,22 +29,14 @@ def aittala_ndf(H, S, alpha=2):
     return torch.exp(-e)
 
 
-def angles_to_half(angles, tangent=False):
-    H = torch.zeros(3, len(angles)).cuda()
-    phi = angles[:, 0]
-    theta = angles[:, 1]
-    H[0] = torch.cos(theta) * torch.sin(phi)
-    H[1] = torch.sin(theta) * torch.sin(phi)
-    H[2] = torch.cos(phi)
-    return H
-
-
 def beckmann_aniso_ndf(H, alpha_x, alpha_y):
     hx = H[0].view(-1, 1)
     hy = H[1].view(-1, 1)
     hz = H[2].view(-1, 1)
 
     if alpha_x == 0 or alpha_y == 0:
+        # Avoid divide by zero by returning None. The actual NDF value should
+        # be 1.0.
         return None
 
     slope_x = (-hx / (hz * alpha_x))
@@ -57,6 +49,19 @@ def beckmann_aniso_ndf(H, alpha_x, alpha_y):
     return D
 
 
+def angles_to_half_vec(angles):
+    """
+    Converts spherical coordinates to half vectors.
+    """
+    H = torch.zeros(3, len(angles)).cuda()
+    phi = angles[:, 0]
+    theta = angles[:, 1]
+    H[0] = torch.cos(theta) * torch.sin(phi)
+    H[1] = torch.sin(theta) * torch.sin(phi)
+    H[2] = torch.cos(phi)
+    return H
+
+
 def fit_beckmann(D_aittala, H, ones):
     ax_best = 0.5
     ay_best = 0.5
@@ -65,14 +70,15 @@ def fit_beckmann(D_aittala, H, ones):
     best_err = float('inf')
 
     win_size = 3
-    for branch in range(7):
+    for branch in range(9):
         ax_cand = np.linspace(ax_lo, ax_hi, win_size)
         ay_cand = np.linspace(ay_lo, ay_hi, win_size)
         param_cand = itertools.product(ax_cand, ay_cand)
         for ax, ay in param_cand:
-            D = beckmann_aniso_ndf(H, ax, ay)
-            if D is None:
+            if ax == 0 or ay == 0:
                 D = ones
+            else:
+                D = beckmann_aniso_ndf(H, ax, ay)
             err = (D - D_aittala).abs()
             err = err.sum()
             if err < best_err:
@@ -112,7 +118,7 @@ def main():
         thetas = np.linspace(0, math.pi * 2, n_theta)
         for theta in thetas:
             angles.append((phi, theta))
-    H = angles_to_half(torch.FloatTensor(angles))
+    H = angles_to_half_vec(torch.FloatTensor(angles))
     H_tan = H[:2, :] / H[2].contiguous().view(1, -1).expand(*H[:2, :].size())
     H_tan = H_tan.t().contiguous()
 
@@ -146,8 +152,9 @@ def main():
     aniso_map = aniso_map.reshape(svbrdf.spec_shape_map.shape[:2])
 
     logger.info("Saving...")
-    bsvbrdf = BeckmannSVBRDF(svbrdf.diffuse_map,
-                             svbrdf.specular_map,
+    # Aittala BRDF has PI baked in.
+    bsvbrdf = BeckmannSVBRDF(svbrdf.diffuse_map * math.pi,
+                             svbrdf.specular_map / (4.0 * math.pi),
                              svbrdf.normal_map,
                              rough_map,
                              aniso_map)
