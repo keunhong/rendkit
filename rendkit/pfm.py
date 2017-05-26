@@ -20,7 +20,7 @@ def _print_debug(header_magic, width, height, tex):
     )
 
 
-def pfm_read(filename: str, transposed=False):
+def pfm_read(filename, transposed=False):
     with open(filename, 'rb') as f:
         header_magic = f.readline().decode().strip()
         header_dims = f.readline().decode().strip()

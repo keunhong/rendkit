@@ -92,6 +92,27 @@ def fit_beckmann(D_aittala, H, ones):
     return ax_best, ay_best, best_err
 
 
+def fix_nan(array):
+    mask = np.isnan(array)
+    yy, xx = np.where(mask)
+    for y, x in zip(yy, xx):
+        neigh = array[y-1:y+2, x-1:x+2]
+        array[y, x] = neigh[~np.isnan(neigh)].mean()
+    return array
+
+
+def rough_aniso_to_alpha(rough_map, aniso_map):
+    aniso_neg = aniso_map < 0
+    aniso_pos = ~aniso_neg
+    alpha_x_map = np.zeros(rough_map.shape)
+    alpha_y_map = np.zeros(rough_map.shape)
+    alpha_x_map[aniso_neg] = rough_map[aniso_neg] / (1.0 + aniso_map[aniso_neg])
+    alpha_y_map[aniso_neg] = rough_map[aniso_neg] * (1.0 + aniso_map[aniso_neg])
+    alpha_x_map[aniso_pos] = rough_map[aniso_pos] * (1.0 - aniso_map[aniso_pos])
+    alpha_y_map[aniso_pos] = rough_map[aniso_pos] / (1.0 - aniso_map[aniso_pos])
+    return alpha_x_map, alpha_y_map
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-a', '--aittala', dest='aittala_path', type=str,
@@ -150,11 +171,20 @@ def main():
                          svbrdf.spec_shape_map.reshape((-1, 3)),
                          method='nearest')
     aniso_map = aniso_map.reshape(svbrdf.spec_shape_map.shape[:2])
+    if np.isnan(aniso_map).sum() > 0:
+        logger.warning("Roughness map has NaNs. Fixing!")
+        rough_map = fix_nan(rough_map)
+    if np.isnan(rough_map).sum() > 0:
+        logger.warning("Anisotropy map has NaNs. Fixing!")
+        aniso_map = fix_nan(aniso_map)
+    alpha_x_map, alpha_y_map = rough_aniso_to_alpha(rough_map, aniso_map)
+    spec_scale = (4.0 * math.pi * (alpha_x_map * alpha_y_map).mean())
+    logger.info("Scaling specular albedo by {}".format(spec_scale))
 
     logger.info("Saving...")
     # Aittala BRDF has PI baked in.
     bsvbrdf = BeckmannSVBRDF(svbrdf.diffuse_map * math.pi,
-                             svbrdf.specular_map / (4.0 * math.pi),
+                             svbrdf.specular_map * spec_scale,
                              svbrdf.normal_map,
                              rough_map,
                              aniso_map)
