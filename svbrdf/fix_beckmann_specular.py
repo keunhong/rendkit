@@ -56,16 +56,16 @@ def main():
     alpha_x_map[aniso_pos] = rough_map[aniso_pos] * (1.0 - aniso_map[aniso_pos])
     alpha_y_map[aniso_pos] = rough_map[aniso_pos] / (1.0 - aniso_map[aniso_pos])
 
-    scale = (4.0 * math.pi * (alpha_x_map * alpha_y_map).mean())
+    scale = (4.0 * math.pi * np.median(alpha_x_map * alpha_y_map))
     logger.info("Scaling by {:03f} (reciprocal {:03f})".format(scale, 1/scale))
     spec_map = orig_spec * scale
 
     logger.info("Saving specular")
     save_hdr(path / 'map_specular.exr', spec_map)
-    logger.info("Saving alpha x")
-    save_hdr(path / 'map_alpha_x.exr', alpha_x_map)
-    logger.info("Saving alpha y")
-    save_hdr(path / 'map_alpha_y.exr', alpha_y_map)
+    # logger.info("Saving alpha x")
+    # save_hdr(path / 'map_alpha_x.exr', alpha_x_map)
+    # logger.info("Saving alpha y")
+    # save_hdr(path / 'map_alpha_y.exr', alpha_y_map)
 
 
 if __name__ == '__main__':

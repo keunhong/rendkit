@@ -159,17 +159,20 @@ class AittalaSVBRDF:
 
     def to_jsd(self, inline=True):
         if inline:
-            return dict(
-                type='svbrdf_inline',
-                diffuse_map=self.diffuse_map,
-                specular_map=self.specular_map,
-                spec_shape_map=self.spec_shape_map,
-                normal_map=self.normal_map,
-                alpha=self.alpha,
-                pdf_sampler=self.pdf_sampler,
-                cdf_sampler=self.cdf_sampler,
-                sigma_min=self.sigma_min,
-                sigma_max=self.sigma_max)
+            return {
+                'type': 'svbrdf_inline',
+                'params': {
+                    'diffuse_map': self.diffuse_map,
+                    'specular_map': self.specular_map,
+                    'spec_shape_map': self.spec_shape_map,
+                    'normal_map': self.normal_map,
+                    'alpha': self.alpha,
+                    'pdf_sampler': self.pdf_sampler,
+                    'cdf_sampler': self.cdf_sampler,
+                    'sigma_min': self.sigma_min,
+                    'sigma_max': self.sigma_max,
+                }
+            }
         return {
             'type': 'svbrdf',
             'path': self.path,

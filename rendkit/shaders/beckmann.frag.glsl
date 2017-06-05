@@ -18,6 +18,14 @@ uniform sampler2D u_cdf_sampler;
 uniform sampler2D u_pdf_sampler; // Normalization factor for PDF.
 uniform vec3 u_cam_pos;
 
+#if TPL.change_color
+#include "utils/colors.glsl"
+uniform vec3 u_mean_old;
+uniform vec3 u_mean_new;
+uniform vec3 u_std_old;
+uniform vec3 u_std_new;
+#endif
+
 #if TPL.num_lights > 0
 uniform float u_light_intensity[TPL.num_lights];
 uniform vec3 u_light_position[TPL.num_lights];
@@ -201,6 +209,13 @@ void main() {
 
   vec3 rho_d = texture(u_diff_map, v_uv).rgb;
   vec3 rho_s = texture(u_spec_map, v_uv).rgb;
+
+  #if TPL.change_color
+  rho_d = rgb2lab(rho_d/M_PI) - u_mean_old;
+  rho_d = rho_d / u_std_old * u_std_new + u_mean_new;
+  rho_d = lab2rgb(rho_d)*M_PI;
+  #endif
+
   float roughness = texture(u_rough_map, v_uv).r;
   float aniso = texture(u_aniso_map, v_uv).r;
   float alpha_x, alpha_y;

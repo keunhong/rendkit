@@ -42,18 +42,22 @@ class BeckmannSVBRDF:
         path = Path(path)
         logger.info("[Beckmann] Loading from {}".format(path))
         return BeckmannSVBRDF(
-            diff_map=load_hdr(path / DIFF_MAP_NAME),
-            spec_map=load_hdr(path / SPEC_MAP_NAME),
+            diffuse_map=load_hdr(path / DIFF_MAP_NAME),
+            specular_map=load_hdr(path / SPEC_MAP_NAME),
             normal_map=load_hdr(path / NORMAL_MAP_NAME),
-            rough_map=load_hdr(path / ROUGH_MAP_NAME),
-            aniso_map=load_hdr(path / ANISO_MAP_NAME))
+            roughness_map=load_hdr(path / ROUGH_MAP_NAME),
+            anisotropy_map=load_hdr(path / ANISO_MAP_NAME),
+            path=path, name=path.name)
 
-    def __init__(self, diff_map, spec_map, normal_map, rough_map, aniso_map):
-        self.diff_map = diff_map.astype(np.float32)
-        self.spec_map = spec_map.astype(np.float32)
+    def __init__(self, diffuse_map, specular_map, normal_map, roughness_map,
+                 anisotropy_map, path=None, name='unnamed'):
+        self.diffuse_map = diffuse_map.astype(np.float32)
+        self.specular_map = specular_map.astype(np.float32)
         self.normal_map = normal_map.astype(np.float32)
-        self.rough_map = rough_map.astype(np.float32)
-        self.aniso_map = aniso_map.astype(np.float32)
+        self.roughness_map = roughness_map.astype(np.float32)
+        self.anisotropy_map = anisotropy_map.astype(np.float32)
+        self.path = path
+        self.name = name
 
     def save(self, path):
         path = Path(path)
@@ -66,9 +70,26 @@ class BeckmannSVBRDF:
         normal_map_blender = np.round(255.0 * normal_map_blender)\
             .astype(np.uint8)
 
-        save_hdr(path / DIFF_MAP_NAME, self.diff_map)
-        save_hdr(path / SPEC_MAP_NAME, self.spec_map)
+        save_hdr(path / DIFF_MAP_NAME, self.diffuse_map)
+        save_hdr(path / SPEC_MAP_NAME, self.specular_map)
         save_hdr(path / NORMAL_MAP_NAME, self.normal_map)
         save_image(path / BLEND_NORMAL_MAP_NAME, normal_map_blender)
-        save_hdr(path / ROUGH_MAP_NAME, self.rough_map)
-        save_hdr(path / ANISO_MAP_NAME, self.aniso_map)
+        save_hdr(path / ROUGH_MAP_NAME, self.roughness_map)
+        save_hdr(path / ANISO_MAP_NAME, self.anisotropy_map)
+
+    def to_jsd(self, inline=False):
+        if inline:
+            return {
+                'type': 'beckmann_inline',
+                'params': {
+                    'diffuse_map': self.diffuse_map,
+                    'specular_map': self.specular_map,
+                    'normal_map': self.normal_map,
+                    'roughness_map': self.roughness_map,
+                    'anisotropy_map': self.anisotropy_map,
+                }
+            }
+        return {
+            'type': 'beckmann',
+            'path': str(self.path),
+        }

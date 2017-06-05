@@ -7,8 +7,11 @@ from meshkit import Mesh
 from meshkit.wavefront import WavefrontMaterial
 from rendkit import jsd
 from toolbox import images
+from toolbox.logging import init_logger
 from .camera import ArcballCamera
 from .jsd import JSDRenderer
+
+logger = init_logger(__name__)
 
 
 def svbrdf_plane_renderer(svbrdf, size=None, lights=list(), radmap=None,
@@ -125,6 +128,11 @@ def render_diffuse_lightmap(jsd_dict, **kwargs):
         if mat_jsd['type'] == 'svbrdf_inline':
             mat_jsd['diffuse_map'][:] = 1.0
             mat_jsd['specular_map'][:] = 0.0
+        elif mat_jsd['type'] == 'beckmann_inline':
+            mat_jsd['params']['diffuse_map'][:] = 1.0
+            mat_jsd['params']['specular_map'][:] = 0.0
+        else:
+            raise RuntimeError('Unknown mat type.')
     with jsd.JSDRenderer(jsd_dict, **kwargs) as r:
         r.camera.clear_color = (0.0, 0.0, 0.0)
         return r.render_to_image()
@@ -137,6 +145,11 @@ def render_specular_lightmap(jsd_dict, **kwargs):
         if mat_jsd['type'] == 'svbrdf_inline':
             mat_jsd['diffuse_map'][:] = 0.0
             mat_jsd['specular_map'][:] = 1.0
+        elif mat_jsd['type'] == 'beckmann_inline':
+            mat_jsd['params']['diffuse_map'][:] = 0.0
+            mat_jsd['params']['specular_map'][:] = 1.0
+        else:
+            raise RuntimeError('Unknown mat type.')
     with jsd.JSDRenderer(jsd_dict, **kwargs) as r:
         r.camera.clear_color = (0.0, 0.0, 0.0)
         return r.render_to_image()
@@ -149,12 +162,17 @@ def render_diffuse_albedo(jsd_dict, **kwargs):
         if mat_jsd['type'] == 'svbrdf_inline':
             new_mat_jsd[mat_name] = dict(type='basic_texture',
                                          texture=mat_jsd['diffuse_map'])
+        elif mat_jsd['type'] == 'beckmann_inline':
+            print(mat_jsd)
+            new_mat_jsd[mat_name] = dict(
+                type='basic_texture', texture=mat_jsd['params']['diffuse_map'])
         elif mat_jsd['type'] == 'phong':
             new_mat_jsd[mat_name] = dict(type='basic',
                                          color=mat_jsd['diffuse'])
         else:
+            logger.error("Diffuse albedo does not exist!")
             new_mat_jsd[mat_name] = dict(type='basic',
-                                         color=(0.0, 0.0, 0.0))
+                                         color=(1.0, 0.0, 1.0))
     jsd_dict['materials'] = new_mat_jsd
     with jsd.JSDRenderer(jsd_dict, **kwargs) as r:
         r.camera.clear_color = (0.0, 0.0, 0.0)
@@ -168,6 +186,9 @@ def render_specular_albedo(jsd_dict, **kwargs):
         if mat_jsd['type'] == 'svbrdf_inline':
             new_mat_jsd[mat_name] = dict(type='basic_texture',
                                          texture=mat_jsd['specular_map'])
+        if mat_jsd['type'] == 'beckmann_inline':
+            new_mat_jsd[mat_name] = dict(
+                type='basic_texture', texture=mat_jsd['params']['specular_map'])
         elif mat_jsd['type'] == 'phong':
             new_mat_jsd[mat_name] = dict(type='basic',
                                          color=mat_jsd['specular'])

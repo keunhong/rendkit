@@ -1,5 +1,6 @@
 import logging
 
+import math
 import numpy as np
 from skimage.color import rgb2lab
 
@@ -138,24 +139,48 @@ class BeckmannMaterial(GLSLProgram):
                          use_normals=True,
                          use_tangents=True,
                          use_radiance_map=True)
-        self.diff_map = svbrdf.diff_map.astype(np.float32)
-        self.spec_map = svbrdf.spec_map.astype(np.float32)
+        self.diffuse_map = svbrdf.diffuse_map.astype(np.float32)
+        self.specular_map = svbrdf.specular_map.astype(np.float32)
         self.normal_map = svbrdf.normal_map.astype(np.float32)
-        self.rough_map = svbrdf.rough_map.astype(np.float32)
-        self.aniso_map = svbrdf.aniso_map.astype(np.float32)
+        self.roughness_map = svbrdf.roughness_map.astype(np.float32)
+        self.anisotropy_map = svbrdf.anisotropy_map.astype(np.float32)
+
+        self.frag_tpl_vars['change_color'] = glsl_bool(False)
+        self.diff_map_lab = None
+        self.diff_old_mean = None
+        self.diff_old_std = None
+        self.diff_new_mean = None
+        self.diff_new_std = None
 
         self.uniforms = {}
         self.init_uniforms()
 
+    def change_color(self, new_mean, new_std=None):
+        self.frag_tpl_vars['change_color'] = glsl_bool(True)
+        if self.diff_map_lab is None:
+            self.diff_map_lab = rgb2lab(np.clip(self.diffuse_map / math.pi, 0, 1))
+            self.diff_old_mean = self.diff_map_lab.mean(axis=(0, 1))
+            self.diff_old_std = self.diff_map_lab.std(axis=(0, 1))
+        self.diff_new_mean = new_mean
+        self.diff_new_std = new_std
+        self.uniforms['u_mean_old'] = self.diff_old_mean
+        self.uniforms['u_std_old'] = self.diff_old_std
+        self.uniforms['u_mean_new'] = self.diff_new_mean
+        if new_std:
+            self.uniforms['u_std_new'] = self.diff_new_std
+        else:
+            self.uniforms['u_std_new'] = self.diff_old_std
+        self.update_instances()
+
     def init_uniforms(self):
         self.uniforms['u_diff_map'] = Texture2D(
-            self.diff_map,
+            self.diffuse_map,
             interpolation=('linear_mipmap_linear', 'linear'),
             wrapping='repeat',
             mipmap_levels=10,
             internalformat='rgb32f')
         self.uniforms['u_spec_map'] = Texture2D(
-            self.spec_map,
+            self.specular_map,
             interpolation=('linear_mipmap_linear', 'linear'),
             wrapping='repeat',
             mipmap_levels=10,
@@ -163,13 +188,13 @@ class BeckmannMaterial(GLSLProgram):
         # TODO: Mipmapping here causes artifacts, but not doing it makes the
         # opject too specular. How can we fix this?
         self.uniforms['u_rough_map'] = Texture2D(
-            self.rough_map,
+            self.roughness_map,
             interpolation=('linear_mipmap_linear', 'linear'),
             wrapping='repeat',
             mipmap_levels=10,
             internalformat='r32f')
         self.uniforms['u_aniso_map'] = Texture2D(
-            self.aniso_map,
+            self.anisotropy_map,
             interpolation=('linear_mipmap_linear', 'linear'),
             wrapping='repeat',
             mipmap_levels=10,

@@ -8,17 +8,17 @@
   "materials": {
     "_8R15_Twist_Shale.001": {
       "type": "beckmann",
-      "path": "/projects/grail/kparnb/data/beckmann-svbrdfs/wood/windmere_table"
+      "path": "/projects/grail/kpar/data/svbrdf-beckmann/fabric/grail_chair_fabric3"
     },
     "_91_White.001": {
       "type": "beckmann",
-      "path": "/projects/grail/kparnb/data/beckmann-svbrdfs/metal/cse_pod"
+      "path": "/projects/grail/kpar/data/svbrdf-beckmann/metal/cse_pod"
     }
   },
   "lights": [],
   "radiance_map": {
     "_path": "/home/kpar/Projects/gravel/rendkit/resources/cubemaps/yokohama/",
-    "path": "/projects/grail/kpar/envmaps/studio027_cross.pfm",
+    "path": "/projects/grail/kpar/data/envmaps/kitchen_cross.pfm",
     "scale": 1.0
   }
 }

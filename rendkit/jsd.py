@@ -158,46 +158,40 @@ def import_jsd_materials(jsd_dict) -> Dict[str, GLSLProgram]:
 
 
 def import_jsd_material(jsd_material) -> rendkit.materials.GLSLProgram:
-    if jsd_material['type'] == 'svbrdf' or jsd_material['type'] == 'aittala':
+    mat_type = jsd_material['type']
+    if mat_type == 'svbrdf' or mat_type == 'aittala':
         transposed = False
         if 'transposed' in jsd_material:
             transposed = bool(jsd_material['transposed'])
         return AittalaMaterial(AittalaSVBRDF(jsd_material['path'], transposed=transposed))
-    elif jsd_material['type'] == 'beckmann':
+    elif mat_type == 'beckmann':
         return BeckmannMaterial(BeckmannSVBRDF.from_path(jsd_material['path']))
-    elif jsd_material['type'] == 'basic':
+    elif mat_type == 'beckmann_inline':
+        return BeckmannMaterial(BeckmannSVBRDF(**jsd_material['params']))
+    elif mat_type == 'basic':
         return BasicMaterial(jsd_material['color'])
-    elif jsd_material['type'] == 'svbrdf_inline':
-        return AittalaMaterial(AittalaSVBRDF(
-            diffuse_map=jsd_material['diffuse_map'],
-            specular_map=jsd_material['specular_map'],
-            spec_shape_map=jsd_material['spec_shape_map'],
-            normal_map=jsd_material['normal_map'],
-            alpha=jsd_material['alpha'],
-            cdf_sampler=jsd_material.get('cdf_sampler', None),
-            pdf_sampler=jsd_material.get('pdf_sampler', None),
-            sigma_min=jsd_material.get('sigma_min', None),
-            sigma_max=jsd_material.get('sigma_max', None)))
-    elif jsd_material['type'] == 'basic_texture':
+    elif mat_type == 'svbrdf_inline':
+        return AittalaMaterial(AittalaSVBRDF(**jsd_material['params']))
+    elif mat_type == 'basic_texture':
         return BasicTextureMaterial(jsd_material['texture'])
-    elif jsd_material['type'] == 'phong':
+    elif mat_type == 'phong':
         return PhongMaterial(
             jsd_material['diffuse'],
             jsd_material['specular'],
             jsd_material['shininess'])
-    elif jsd_material['type'] == 'uv':
+    elif mat_type == 'uv':
         return UVMaterial()
-    elif jsd_material['type'] == 'depth':
+    elif mat_type == 'depth':
         return DepthMaterial()
-    elif jsd_material['type'] == 'normal':
+    elif mat_type == 'normal':
         return NormalMaterial()
-    elif jsd_material['type'] == 'tangent':
+    elif mat_type == 'tangent':
         return TangentMaterial()
-    elif jsd_material['type'] == 'bitangent':
+    elif mat_type == 'bitangent':
         return BitangentMaterial()
-    elif jsd_material['type'] == 'world':
+    elif mat_type == 'world':
         return WorldCoordMaterial()
-    elif jsd_material['type'] == 'unwrap_to_uv':
+    elif mat_type == 'unwrap_to_uv':
         return UnwrapToUVMaterial(
             jsd_material['image'],
             jsd_material['depth'])
