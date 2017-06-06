@@ -1,5 +1,8 @@
+import time
 from pathlib import Path
 import numpy as np
+
+from toolbox import images
 from toolbox.images import save_hdr, load_hdr, save_image
 from toolbox.logging import init_logger
 
@@ -50,7 +53,8 @@ class BeckmannSVBRDF:
             path=path, name=path.name)
 
     def __init__(self, diffuse_map, specular_map, normal_map, roughness_map,
-                 anisotropy_map, path=None, name='unnamed'):
+                 anisotropy_map, path=None, name='unnamed',
+                 suppress_outliers=True):
         self.diffuse_map = diffuse_map.astype(np.float32)
         self.specular_map = specular_map.astype(np.float32)
         self.normal_map = normal_map.astype(np.float32)
@@ -58,6 +62,15 @@ class BeckmannSVBRDF:
         self.anisotropy_map = anisotropy_map.astype(np.float32)
         self.path = path
         self.name = name
+
+        if suppress_outliers:
+            tic = time.time()
+            self.diffuse_map = images.suppress_outliers(self.diffuse_map,
+                                                        thres=4.5)
+            self.specular_map = images.suppress_outliers(self.specular_map,
+                                                         thres=4.5)
+            logger.info("Suppressing outliers in diffuse and specular maps. "
+                        "({:.04f}s)".format(time.time() - tic))
 
     def save(self, path):
         path = Path(path)
