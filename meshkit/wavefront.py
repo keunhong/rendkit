@@ -56,6 +56,42 @@ def __parse_face(parts, material_id, group_id, object_id):
     }
 
 
+def save_obj_file(f, mesh: Mesh):
+    close_file = False
+    if isinstance(f, str):
+        f = open(f, 'w')
+        close_file = True
+    for vertex in mesh.vertices:
+        vert_str = ' '.join([str(p) for p in vertex])
+        f.write('{} {}\n'.format(OBJ_VERTEX_MARKER, vert_str))
+    for normal in mesh.normals:
+        normal_str = ' '.join([str(p) for p in normal])
+        f.write('{} {}\n'.format(OBJ_NORMAL_MARKER, normal_str))
+    for uv in mesh.uvs:
+        uv_str = ' '.join([str(p) for p in uv])
+        f.write('{} {}\n'.format(OBJ_UV_MARKER, uv_str))
+
+    cur_mat_id = None
+    for face in mesh.faces:
+        mat_id = face['material']
+        if mat_id >= len(mesh.materials):
+            logger.warning("Material {} is out of range.".format(mat_id))
+            mat_id = None
+        mat_name = mesh.materials[mat_id]
+        if cur_mat_id != mat_id and mat_id != None:
+            cur_mat_id = mat_id
+            f.write("{} {}\n".format(OBJ_MTL_USE_MARKER, mat_name))
+        face_str = ''
+        for i in range(3):
+            face_str += ' {}/{}/{}'.format(face['vertices'][i] + 1,
+                                           face['uvs'][i] + 1,
+                                           face['normals'][i] + 1)
+        f.write("{}{}\n".format(OBJ_FACE_MARKER, face_str))
+
+    if close_file:
+        f.close()
+
+
 def read_obj_file(path):
     vertices = []
     faces = []
