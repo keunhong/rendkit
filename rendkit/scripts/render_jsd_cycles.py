@@ -1,15 +1,9 @@
-import os
-import sys
-import tempfile
 from pathlib import Path
 
 import bpy
 import json
 
-import math
-
 from meshkit import wavefront
-from rendkit import jsd
 import argparse
 
 from svbrdf import beckmann
@@ -67,9 +61,9 @@ def assign_material(jsd_mat, bpy_mat):
     tex_coord_node = nodes.new(type="ShaderNodeTexCoord")
     mapping_node = nodes.new(type="ShaderNodeMapping")
     mapping_node.vector_type = 'TEXTURE'
-    mapping_node.scale[0] = 0.2
-    mapping_node.scale[1] = 0.2
-    mapping_node.scale[2] = 0.2
+    mapping_node.scale[0] = 0.1
+    mapping_node.scale[1] = 0.1
+    mapping_node.scale[2] = 0.1
     links.new(mapping_node.inputs[0], tex_coord_node.outputs[2])
 
     normal_tex_node = nodes.new(type="ShaderNodeTexImage")
@@ -135,7 +129,10 @@ def set_envmap(path):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(dest='jsd_path', type=str)
-    parser.add_argument(dest='out_path', type=str)
+    parser.add_argument('--rend-path', dest='rend_path', type=str,
+                        required=False)
+    parser.add_argument('--blend-path', dest='blend_path', type=str,
+                        required=False)
     args = parser.parse_args()
 
     with open(args.jsd_path, 'r') as f:
@@ -144,12 +141,12 @@ def main():
     reset_blender()
 
     logger.info("Importing mesh {}".format(jsd_dict['mesh']['path']))
-    mesh = wavefront.read_obj_file(jsd_dict['mesh']['path'])
-    mesh.resize(1)
-    mesh_tmp_path = '/tmp/_jsd_to_cycles.tmp.obj'
-    wavefront.save_obj_file(mesh_tmp_path, mesh)
+    # mesh = wavefront.read_obj_file(jsd_dict['mesh']['path'])
+    # mesh.resize(1)
+    # mesh_tmp_path = '/tmp/_jsd_to_cycles.tmp.obj'
+    # wavefront.save_obj_file(mesh_tmp_path, mesh)
 
-    bpy.ops.import_scene.obj(filepath=mesh_tmp_path,
+    bpy.ops.import_scene.obj(filepath=jsd_dict['mesh']['path'],
                              use_edges=False, use_smooth_groups=False,
                              use_split_objects=False, use_split_groups=False,
                              use_groups_as_vgroups=False,
@@ -159,10 +156,10 @@ def main():
     scene = bpy.context.scene
     set_envmap(jsd_dict['radiance_map']['path'])
 
-    scene.render.resolution_x = 1000
-    scene.render.resolution_y = 1000
+    scene.render.resolution_x = 4000
+    scene.render.resolution_y = 4000
     scene.camera = bpy.context.object
-    scene.camera.location = (0.877, 1.556, 0.874)
+    scene.camera.location = (0.55, 0.92, 0.55)
     scene.camera.rotation_euler = (1.109, 0, 2.617)
     if scene.render.engine != 'CYCLES':
         logger.info("Setting renderer engine {} -> CYCLES"
@@ -175,17 +172,23 @@ def main():
             logger.info("Processing material {}".format(mat_name))
             assign_material(jsd_dict['materials'][mat_name], bpy_mat)
 
-    z_min = mesh.vertices[:, 1].min()
-    logger.info("Making floor plane at {}".format(z_min))
-    bpy.ops.mesh.primitive_plane_add(radius=100, location=(0, 0, z_min))
+    floor_pos = 0
+    for bpy_mesh in bpy.data.meshes:
+        floor_pos = min(floor_pos, min(p.co.y for p in bpy_mesh.vertices))
+    logger.info("Making floor plane at {}".format(floor_pos))
+    bpy.ops.mesh.primitive_plane_add(radius=100, location=(0, 0, floor_pos))
 
-    bpy.context.scene.cycles.device = 'GPU'
-    bpy.context.user_preferences.addons['cycles'].preferences\
-        .compute_device_type = 'CUDA'
-    bpy.context.user_preferences.addons['cycles'].preferences\
-        .devices[0].use = True
-    bpy.data.scenes['Scene'].render.filepath = '/home/kpar/test.png'
-    bpy.ops.render.render(write_still=True)
+    if args.rend_path:
+        scene.cycles.device = 'GPU'
+        scene.cycles.samples = 128
+        prefs = bpy.context.user_preferences.addons['cycles'].preferences
+        prefs.compute_device_type = 'CUDA'
+        prefs.devices[0].use = True
+        bpy.data.scenes['Scene'].render.filepath = args.rend_path
+        bpy.ops.render.render(write_still=True)
+
+    if args.blend_path:
+        bpy.ops.wm.save_as_mainfile(filepath=args.blend_path)
 
 
 if __name__ == '__main__':
