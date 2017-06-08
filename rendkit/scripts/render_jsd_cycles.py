@@ -175,6 +175,10 @@ def main():
             logger.info("Processing material {}".format(mat_name))
             assign_material(jsd_dict['materials'][mat_name], bpy_mat)
 
+    z_min = mesh.vertices[:, 1].min()
+    logger.info("Making floor plane at {}".format(z_min))
+    bpy.ops.mesh.primitive_plane_add(radius=100, location=(0, 0, z_min))
+
     bpy.context.scene.cycles.device = 'GPU'
     bpy.context.user_preferences.addons['cycles'].preferences\
         .compute_device_type = 'CUDA'
