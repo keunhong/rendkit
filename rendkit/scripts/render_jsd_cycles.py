@@ -112,6 +112,7 @@ def assign_material(jsd_mat, bpy_mat):
 
 
 def set_envmap(path):
+    path = path.replace('cross', 'pano')
     logger.info("Setting envmap to {}".format(str(path)))
     scene = bpy.context.scene
     scene.world.use_nodes = True
@@ -159,7 +160,7 @@ def main():
     scene.render.resolution_x = 4000
     scene.render.resolution_y = 4000
     scene.camera = bpy.context.object
-    scene.camera.location = (0.55, 0.92, 0.45)
+    scene.camera.location = (0.60, 1.0, 0.50)
     scene.camera.rotation_euler = (1.109, 0, 2.617)
     if scene.render.engine != 'CYCLES':
         logger.info("Setting renderer engine {} -> CYCLES"

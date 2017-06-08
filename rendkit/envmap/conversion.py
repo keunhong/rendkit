@@ -82,3 +82,40 @@ def panorama_to_cubemap(panorama, cube_size=256):
                 program.draw(gl.GL_TRIANGLE_STRIP)
                 results[i] = gloo.read_pixels(out_type=np.float32, format='rgb')
     return results
+
+
+class CubemapToPanoramaProgram(GLSLProgram):
+    def __init__(self):
+        super().__init__(
+            GLSLTemplate.fromfile('postprocessing/quad.vert.glsl'),
+            GLSLTemplate.fromfile('envmap/cubemap_to_panorama.frag.glsl'))
+
+    def upload_uniforms(self, program):
+        program['a_position'] = [(-1, -1), (-1, +1), (+1, -1), (+1, +1)]
+        program['a_uv'] = [(0, 0), (0, 1), (1, 0), (1, 1)]
+        return program
+
+
+def cubemap_to_panorama(cube_faces):
+    _, height, width, n_channels = cube_faces.shape
+    height, width = height, width * 2
+    internal_format = 'rgba32f' if n_channels == 4 else 'rgb32f'
+
+    with ContextProvider((height, width)):
+        rendtex = gloo.Texture2D(
+            (height, width, n_channels), interpolation='linear',
+            wrapping='repeat', internalformat=internal_format)
+
+        framebuffer = gloo.FrameBuffer(
+            rendtex, gloo.RenderBuffer((height, width, n_channels)))
+
+        program = CubemapToPanoramaProgram().compile()
+        program['u_cubemap'] = gloo.TextureCubeMap(
+            cube_faces, internalformat=internal_format, mipmap_levels=8)
+
+        with framebuffer:
+            gloo.set_viewport(0, 0, width, height)
+            program.draw(gl.GL_TRIANGLE_STRIP)
+            result = np.flipud(gloo.read_pixels(out_type=np.float32, format='rgb'))
+
+    return result
