@@ -1,6 +1,7 @@
 import os
 import sys
 import tempfile
+from pathlib import Path
 
 import bpy
 import json
@@ -11,6 +12,7 @@ from meshkit import wavefront
 from rendkit import jsd
 import argparse
 
+from svbrdf import beckmann
 from toolbox.logging import init_logger
 
 logger = init_logger(__name__)
@@ -46,10 +48,88 @@ def look_at(obj_camera, point):
 
 
 def assign_material(jsd_mat, bpy_mat):
+    if jsd_mat['type'] != 'beckmann':
+        logger.error("Only beckmann is supported.")
+        return
+
+    brdf_path = Path(jsd_mat['path'])
+    logger.info("Assigning {}".format(jsd_mat['path']))
+    diff_tex_path = brdf_path / beckmann.DIFF_MAP_NAME
+    spec_tex_path = brdf_path / beckmann.SPEC_MAP_NAME
+    normal_tex_path = brdf_path / beckmann.BLEND_NORMAL_MAP_NAME
+    rough_tex_path = brdf_path / beckmann.ROUGH_MAP_NAME
+    aniso_tex_path = brdf_path / beckmann.ANISO_MAP_NAME
+
     bpy_mat.use_nodes = True
     nodes = bpy_mat.node_tree.nodes
-    diff_brdf_node = nodes.new(type='ShaderNodeBsdfDiffuse')
-    diff_brdf_node.color = (1.0, 0.0, 1.0)
+    links = bpy_mat.node_tree.links
+
+    tex_coord_node = nodes.new(type="ShaderNodeTexCoord")
+    mapping_node = nodes.new(type="ShaderNodeMapping")
+    mapping_node.vector_type = 'TEXTURE'
+    mapping_node.scale[0] = 0.2
+    mapping_node.scale[1] = 0.2
+    mapping_node.scale[2] = 0.2
+    links.new(mapping_node.inputs[0], tex_coord_node.outputs[2])
+
+    normal_tex_node = nodes.new(type="ShaderNodeTexImage")
+    normal_tex_node.color_space = 'NONE'
+    normal_tex_node.image = bpy.data.images.load(filepath=str(normal_tex_path))
+    normal_map_node = nodes.new(type="ShaderNodeNormalMap")
+    normal_map_node.space = 'TANGENT'
+    links.new(normal_tex_node.inputs[0], mapping_node.outputs[0])
+    links.new(normal_map_node.inputs[1], normal_tex_node.outputs[0])
+
+    diff_tex_node = nodes.new(type="ShaderNodeTexImage")
+    diff_tex_node.image = bpy.data.images.load(filepath=str(diff_tex_path))
+    links.new(diff_tex_node.inputs[0], mapping_node.outputs[0])
+
+    spec_tex_node = nodes.new(type="ShaderNodeTexImage")
+    spec_tex_node.image = bpy.data.images.load(filepath=str(spec_tex_path))
+    links.new(spec_tex_node.inputs[0], mapping_node.outputs[0])
+
+    aniso_tex_node = nodes.new(type="ShaderNodeTexImage")
+    aniso_tex_node.color_space = 'NONE'
+    aniso_tex_node.image = bpy.data.images.load(filepath=str(aniso_tex_path))
+    links.new(aniso_tex_node.inputs[0], mapping_node.outputs[0])
+
+    rough_tex_node = nodes.new(type="ShaderNodeTexImage")
+    rough_tex_node.color_space = 'NONE'
+    rough_tex_node.image = bpy.data.images.load(filepath=str(rough_tex_path))
+    links.new(rough_tex_node.inputs[0], mapping_node.outputs[0])
+
+    diff_bsdf_node = nodes.new(type="ShaderNodeBsdfDiffuse")
+    links.new(diff_bsdf_node.inputs[0], diff_tex_node.outputs[0])
+    links.new(diff_bsdf_node.inputs[2], normal_map_node.outputs[0])
+
+    spec_bsdf_node = nodes.new(type="ShaderNodeBsdfAnisotropic")
+    spec_bsdf_node.distribution = 'BECKMANN'
+    links.new(spec_bsdf_node.inputs[0], spec_tex_node.outputs[0])
+    links.new(spec_bsdf_node.inputs[1], rough_tex_node.outputs[0])
+    links.new(spec_bsdf_node.inputs[2], aniso_tex_node.outputs[0])
+    links.new(spec_bsdf_node.inputs[4], normal_map_node.outputs[0])
+
+    mix_node = nodes.new(type="ShaderNodeMixShader")
+    links.new(mix_node.inputs[1], spec_bsdf_node.outputs[0])
+    links.new(mix_node.inputs[2], diff_bsdf_node.outputs[0])
+
+    output_node = nodes["Material Output"]
+    links.new(output_node.inputs[0], mix_node.outputs[0])
+
+
+def set_envmap(path):
+    logger.info("Setting envmap to {}".format(str(path)))
+    scene = bpy.context.scene
+    scene.world.use_nodes = True
+    nodes = scene.world.node_tree.nodes
+    links = scene.world.node_tree.links
+    env_image = bpy.data.images.load(filepath=path)
+    env_tex_node = nodes.new(type="ShaderNodeTexEnvironment")
+    env_tex_node.image = env_image
+    background_node = nodes.new(type="ShaderNodeBackground")
+    links.new(background_node.inputs[0], env_tex_node.outputs[0])
+    output_node = nodes['World Output']
+    links.new(output_node.inputs[0], background_node.outputs[0])
 
 
 def main():
@@ -74,10 +154,11 @@ def main():
                              use_split_objects=False, use_split_groups=False,
                              use_groups_as_vgroups=False,
                              use_image_search=True)
-    # bpy.context.object.location = (0, 0, 0)
 
     bpy.ops.object.camera_add()
     scene = bpy.context.scene
+    set_envmap(jsd_dict['radiance_map']['path'])
+
     scene.render.resolution_x = 1000
     scene.render.resolution_y = 1000
     scene.camera = bpy.context.object
