@@ -157,8 +157,8 @@ def main():
     scene = bpy.context.scene
     set_envmap(jsd_dict['radiance_map']['path'])
 
-    scene.render.resolution_x = 4000
-    scene.render.resolution_y = 4000
+    scene.render.resolution_x = 2000
+    scene.render.resolution_y = 2000
     scene.camera = bpy.context.object
     scene.camera.location = (0.60, 1.0, 0.50)
     scene.camera.rotation_euler = (1.109, 0, 2.617)

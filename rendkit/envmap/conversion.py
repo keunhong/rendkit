@@ -116,6 +116,6 @@ def cubemap_to_panorama(cube_faces):
         with framebuffer:
             gloo.set_viewport(0, 0, width, height)
             program.draw(gl.GL_TRIANGLE_STRIP)
-            result = np.flipud(gloo.read_pixels(out_type=np.float32, format='rgb'))
+            result = gloo.read_pixels(out_type=np.float32, format='rgb')
 
     return result

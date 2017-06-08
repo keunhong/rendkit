@@ -44,7 +44,7 @@ def main():
         plt.imshow(np.clip(panorama, 0, 1))
         plt.show()
     print("Saving to {}".format(args.out_path))
-    save_hdr(args.out_path, cross)
+    save_hdr(args.out_path, panorama)
 
 
 if __name__ == '__main__':
