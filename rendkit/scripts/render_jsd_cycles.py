@@ -159,7 +159,7 @@ def main():
     scene.render.resolution_x = 4000
     scene.render.resolution_y = 4000
     scene.camera = bpy.context.object
-    scene.camera.location = (0.55, 0.92, 0.55)
+    scene.camera.location = (0.55, 0.92, 0.45)
     scene.camera.rotation_euler = (1.109, 0, 2.617)
     if scene.render.engine != 'CYCLES':
         logger.info("Setting renderer engine {} -> CYCLES"
