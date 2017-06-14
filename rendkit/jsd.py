@@ -11,7 +11,7 @@ from rendkit import shapes
 from rendkit.envmap import EnvironmentMap
 from rendkit.envmap.io import load_envmap
 from rendkit.lights import Light, PointLight, DirectionalLight
-from rendkit.materials import (GLSLProgram, AittalaMaterial, PhongMaterial,
+from rendkit.materials import (GLSLProgram, AittalaMaterial, BlinnPhongMaterial,
                                BasicMaterial, NormalMaterial,
                                WorldCoordMaterial,
                                DepthMaterial, UVMaterial, UnwrapToUVMaterial,
@@ -46,8 +46,8 @@ def import_jsd_scene(jsd_dict, show_floor=False, shadows=False):
         floor_mesh.name = 'floor'
         scene.add_mesh(floor_mesh, (0, floor_pos, 0))
         scene.put_material(
-            'floor', PhongMaterial((1.0, 1.0, 1.0),
-                                   (0.0, 0.0, 0.0), 0.0))
+            'floor', BlinnPhongMaterial((1.0, 1.0, 1.0),
+                                        (0.0, 0.0, 0.0), 0.0))
 
     if 'radiance_map' in jsd_dict:
         scene.set_radiance_map(import_radiance_map(
@@ -174,11 +174,11 @@ def import_jsd_material(jsd_material) -> rendkit.materials.GLSLProgram:
         return AittalaMaterial(AittalaSVBRDF(**jsd_material['params']))
     elif mat_type == 'basic_texture':
         return BasicTextureMaterial(jsd_material['texture'])
-    elif mat_type == 'phong':
-        return PhongMaterial(
+    elif mat_type == 'blinn_phong':
+        return BlinnPhongMaterial(
             jsd_material['diffuse'],
             jsd_material['specular'],
-            jsd_material['shininess'])
+            jsd_material['roughness'])
     elif mat_type == 'uv':
         return UVMaterial()
     elif mat_type == 'depth':

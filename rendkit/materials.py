@@ -49,10 +49,10 @@ class BasicTextureMaterial(GLSLProgram):
             internalformat='rgb32f')
 
 
-class PhongMaterial(GLSLProgram):
-    def __init__(self, diff_color, spec_color, shininess):
+class BlinnPhongMaterial(GLSLProgram):
+    def __init__(self, diff_color, spec_color, roughness):
         super().__init__(GLSLTemplate.fromfile('default.vert.glsl'),
-                         GLSLTemplate.fromfile('phong.frag.glsl'),
+                         GLSLTemplate.fromfile('blinn_phong.frag.glsl'),
                          use_uvs=False,
                          use_lights=True,
                          use_cam_pos=True,
@@ -60,11 +60,11 @@ class PhongMaterial(GLSLProgram):
                          use_radiance_map=True)
         self.diff_color = diff_color
         self.spec_color = spec_color
-        self.shininess = shininess
+        self.roughness = roughness
         self.uniforms = {
             'u_diff': self.diff_color,
             'u_spec': self.spec_color,
-            'u_shininess': self.shininess,
+            'u_roughness': self.roughness,
         }
 
 
@@ -327,4 +327,4 @@ class DummyMaterial(GLSLProgram):
                          use_radiance_map=False)
 
 
-PLACEHOLDER_MATERIAL = PhongMaterial([1.0, 0.0, 1.0], [0.1, 0.1, 0.1], 1.0)
+PLACEHOLDER_MATERIAL = BlinnPhongMaterial([1.0, 0.0, 1.0], [0.1, 0.1, 0.1], 1.0)

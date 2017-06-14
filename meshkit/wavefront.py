@@ -175,9 +175,8 @@ def read_mtl_file(path, model):
             if parts[0] == MTL_NEWMTL_MARKER:
                 material_name = parts[1]
                 if material_name not in model.materials:
-                    raise ValueError(
-                        'Material name {} not present in model'.format(
-                            material_name))
+                    logger.warning('Material name {} not present in model'
+                                   .format(material_name))
                 materials[material_name] = WavefrontMaterial(material_name,
                                                              len(materials))
                 current_material = materials[material_name]

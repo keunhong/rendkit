@@ -7,17 +7,27 @@
   },
   "materials": {
     "_8R15_Twist_Shale.001": {
-      "type": "beckmann",
-      "path": "/projects/grail/kpar/data/svbrdf-beckmann/leather/leather_black"
+      "type": "blinn_phong",
+      "diffuse": [0, 0, 1],
+      "specular": [1, 1, 1],
+      "roughness": 0.1
     },
     "_91_White.001": {
-      "type": "beckmann",
-      "path": "/projects/grail/kpar/data/svbrdf-beckmann/metal/cse_pod"
+      "type": "blinn_phong",
+      "diffuse": [1, 0, 0],
+      "specular": [1, 1, 1],
+      "roughness": 0.1
     }
   },
-  "lights": [],
+  "lights": [
+  {
+    "type": "point",
+    "intensity": 1000,
+    "position": [0, 70, 70]
+  }
+  ],
   "radiance_map": {
     "path": "/projects/grail/kpar/data/envmaps2/studio027.cross.exr",
-    "scale": 1.0
+    "scale": 0.0
   }
 }
