@@ -327,4 +327,4 @@ class DummyMaterial(GLSLProgram):
                          use_radiance_map=False)
 
 
-PLACEHOLDER_MATERIAL = BlinnPhongMaterial([1.0, 0.0, 1.0], [0.1, 0.1, 0.1], 1.0)
+PLACEHOLDER_MATERIAL = BlinnPhongMaterial([1.0, 0.0, 1.0], [1, 0, 1], 0.01)

@@ -22,7 +22,7 @@
   "lights": [
   {
     "type": "point",
-    "intensity": 1000,
+    "intensity": 3000,
     "position": [0, 70, 70]
   }
   ],
