@@ -7,7 +7,7 @@ from scipy import misc
 from meshkit import Mesh
 from rendkit import vector_utils, util
 from rendkit.camera import OrthographicCamera
-from rendkit.core import logger, DepthRenderer, mesh_to_renderables
+from rendkit.core import logger, mesh_to_renderables, ContextProvider, draw_depth
 from rendkit.envmap import EnvironmentMap
 from rendkit.envmap.prefilter import find_shadow_sources
 from rendkit.glsl import GLSLProgram
@@ -75,7 +75,7 @@ class Scene:
             self.radiance_map.radiance_faces)
         logger.info("[shadows ON] Rendering {} shadow maps."
                     .format(len(shadow_dirs)))
-        with DepthRenderer() as r:
+        with ContextProvider((1024, 1024)):
             for i, shadow_dir in enumerate(shadow_dirs):
                 position = vector_utils.normalized(shadow_dir)
                 up = np.roll(position, 1) * (1, 1, -1)
@@ -83,7 +83,7 @@ class Scene:
                     (200, 200), -150, 150, position=position,
                     lookat=(0, 0, 0), up=up)
                 rend_target = util.create_rend_target((1024, 1024))
-                r.draw(camera, self.renderables, rend_target)
+                draw_depth(camera, self.renderables, rend_target)
                 with rend_target[0]:
                     # gloo.read_pixels flips the output.
                     depth = np.flipud(np.copy(gloo.read_pixels(

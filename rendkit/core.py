@@ -61,33 +61,6 @@ class Renderable:
         return self._program
 
 
-class DepthRenderer(app.Canvas):
-    def __init__(self):
-        super().__init__()
-        self.material = DepthMaterial()
-        self.program = DepthMaterial().compile()
-
-    def draw(self, camera, renderables, rend_target):
-        rendfb, rendtex, _ = rend_target
-
-        with rendfb:
-            gloo.clear(color=camera.clear_color)
-            gloo.set_state(depth_test=True)
-            gloo.set_viewport(0, 0, rendtex.shape[1], rendtex.shape[0])
-            gl.glEnable(gl.GL_CULL_FACE)
-            gl.glCullFace(gl.GL_FRONT)
-            for renderable in renderables:
-                self.material.upload_camera(self.program, camera)
-                self.material.upload_attributes(self.program, renderable._attributes)
-                self.program['u_model'] = renderable.model_mat.T
-                self.program.draw(gl.GL_TRIANGLES)
-            gl.glCullFace(gl.GL_BACK)
-
-    def __enter__(self):
-        self._backend._vispy_warmup()
-        return self
-
-
 def mesh_to_renderables(mesh: Mesh, model_mat):
     renderables = []
     # For now each renderable represents a submesh with the same materials.
@@ -144,3 +117,23 @@ class ContextProvider:
             self.provider.__exit__(exc_type, exc_val, exc_tb)
         else:
             gloo.set_viewport(0, 0, *self.previous_size)
+
+
+def draw_depth(camera, renderables, rend_target):
+    rendfb, rendtex, _ = rend_target
+
+    material = DepthMaterial()
+    program = DepthMaterial().compile()
+
+    with rendfb:
+        gloo.clear(color=camera.clear_color)
+        gloo.set_state(depth_test=True)
+        gl.glEnable(gl.GL_CULL_FACE)
+        gl.glCullFace(gl.GL_FRONT)
+        for renderable in renderables:
+            material.upload_camera(program, camera)
+            material.upload_attributes(program, renderable._attributes)
+            program['u_model'] = renderable.model_mat.T
+            program.draw(gl.GL_TRIANGLES)
+        gl.glCullFace(gl.GL_BACK)
+        gl.glDisable(gl.GL_CULL_FACE)

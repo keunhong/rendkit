@@ -1,3 +1,4 @@
+import math
 import copy
 from typing import List, Dict
 
@@ -161,7 +162,7 @@ def render_diffuse_albedo(jsd_dict, **kwargs):
         elif mat_jsd['type'] == 'beckmann_inline':
             new_mat_jsd[mat_name] = dict(
                 type='basic_texture', texture=mat_jsd['params']['diffuse_map'])
-        elif mat_jsd['type'] == 'phong':
+        elif mat_jsd['type'] == 'blinn_phong':
             new_mat_jsd[mat_name] = dict(type='basic',
                                          color=mat_jsd['diffuse'])
         else:
@@ -184,7 +185,7 @@ def render_specular_albedo(jsd_dict, **kwargs):
         if mat_jsd['type'] == 'beckmann_inline':
             new_mat_jsd[mat_name] = dict(
                 type='basic_texture', texture=mat_jsd['params']['specular_map'])
-        elif mat_jsd['type'] == 'phong':
+        elif mat_jsd['type'] == 'blinn_phong':
             new_mat_jsd[mat_name] = dict(type='basic',
                                          color=mat_jsd['specular'])
         else:
@@ -304,10 +305,10 @@ def render_wavefront_mtl(mesh: Mesh, camera,
     jsd_dict = make_jsd(mesh, camera)
     jsd_dict["materials"] = {
         mtl.name: {
-            'type': 'phong',
+            'type': 'blinn_phong',
             'diffuse': mtl.diffuse_color,
             'specular': mtl.specular_color,
-            'shininess': mtl.specular_exponent,
+            'roughness': 1.0 / math.sqrt((mtl.specular_exponent + 2) / 2.0),
         } for mtl_name, mtl in materials.items()
     }
     if radmap_path is not None:

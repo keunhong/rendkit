@@ -24,7 +24,7 @@ def cubemap_uv_to_xyz(index, u, v):
     }[index])
 
 
-def find_shadow_sources(cubemap, num_shadows=10):
+def find_shadow_sources(cubemap, num_shadows=8):
     thres = np.percentile(cubemap, 90)
     shadow_source_mask = rgb2gray(stack_cross(cubemap)) >= thres
     shadow_source_mask = morph.remove_small_objects(shadow_source_mask, min_size=128)
