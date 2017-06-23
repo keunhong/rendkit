@@ -8,13 +8,13 @@ from rendkit.camera import PerspectiveCamera
 from rendkit.vector_utils import normalized
 
 
-def random_camera(size, cam_x_range, cam_z_range,
-                  cam_dist,
-                  up=(0, 0, -1), right=(1, 0, 0), position=(0, 1, 0)):
+def random_camera(size, cam_x_range, cam_z_range, cam_dist,
+                  fov=None, up=(0, 0, -1), right=(1, 0, 0), position=(0, 1, 0)):
     up = normalized(np.array(up))
     right = normalized(np.array(right))
     position = normalized(np.array(position))
-    fov = random.randrange(50, 60)
+    if fov is None:
+        fov = random.randrange(50, 60)
     lookat = np.zeros((3,))
     lookat += random.uniform(0, 1) * cam_z_range * up
     lookat += random.uniform(-1, 1) * cam_x_range * right
