@@ -4,6 +4,7 @@ from time import time
 import numpy as np
 from numpy import linalg
 from scipy.special._ufuncs import gammaincinv, gamma
+from toolbox.images import resize
 
 from rendkit.pfm import pfm_read, pfm_write
 from toolbox import images
@@ -23,6 +24,11 @@ IS_PDF_FNAME = 'is_pdf_sampler.pfm'
 
 
 class AittalaSVBRDF:
+
+    @classmethod
+    def from_path(cls, path):
+        return cls(path)
+
     def __init__(self, path=None,
                  diffuse_map=None,
                  specular_map=None,
@@ -179,6 +185,14 @@ class AittalaSVBRDF:
             'id': self.name,
             'name': self.name,
         }
+
+    def resize(self, shape):
+        self.diffuse_map = resize(self.diffuse_map, shape)
+        self.specular_map = resize(self.specular_map, shape)
+        self.spec_shape_map = resize(self.spec_shape_map, shape)
+        self.normal_map = resize(self.normal_map, shape)
+
+        return self
 
 
 def compute_cdf(sigma, gamma_inv_xi_theta: np.ndarray):
