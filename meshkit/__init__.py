@@ -26,6 +26,7 @@ class Mesh:
         self.group_names = group_names
         self.object_names = object_names
         self.uv_scale = 1.0
+        self.size = 100
 
         max = self.vertices.max(axis=0)
         min = self.vertices.min(axis=0)
@@ -123,6 +124,7 @@ class Mesh:
         return max_dim - min_dim
 
     def resize(self, size):
+        self.size = size
         self.vertices *= size / self.bounding_size()
 
     def rescale(self, scale):

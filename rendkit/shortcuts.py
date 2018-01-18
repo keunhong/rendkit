@@ -266,7 +266,7 @@ def render_bitangents(mesh, camera):
 
 
 def render_segments(mesh: Mesh, camera,
-                     segment_type='material') -> np.ndarray:
+                    segment_type='material') -> np.ndarray:
     if segment_type == 'material':
         segments = mesh.materials
     elif segment_type == 'group':

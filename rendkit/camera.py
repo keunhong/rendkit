@@ -42,7 +42,7 @@ class BaseCamera:
     def projection_mat(self):
         raise NotImplementedError
 
-    def view_mat(self):
+    def rotation_mat(self):
         rotation_mat = np.eye(3)
         rotation_mat[0, :] = vector_utils.normalized(
             np.cross(self.forward, self.up))
@@ -51,7 +51,14 @@ class BaseCamera:
         # product of the forward and sideways vector so that we have an ortho-
         # normal basis.
         rotation_mat[1, :] = np.cross(rotation_mat[2, :], rotation_mat[0, :])
+        return rotation_mat
 
+    def translation_vec(self):
+        rotation_mat = self.rotation_mat()
+        return -rotation_mat.T @ self.position
+
+    def view_mat(self):
+        rotation_mat = self.rotation_mat()
         position = rotation_mat.dot(self.position)
 
         view_mat = np.eye(4)
@@ -59,6 +66,12 @@ class BaseCamera:
         view_mat[:3, 3] = -position
 
         return view_mat
+
+    def cam_to_world(self):
+        cam_to_world = np.eye(4)
+        cam_to_world[:3, :3] = self.rotation_mat().T
+        cam_to_world[:3, 3] = self.position
+        return cam_to_world
 
     def handle_mouse(self, last_pos, cur_pos):
         pass

@@ -226,9 +226,9 @@ def import_jsd_mesh(jsd_mesh):
     return mesh
 
 
-def export_mesh_to_jsd(mesh: Mesh, size=100):
+def export_mesh_to_jsd(mesh: Mesh):
     return {
-        "size": size,
+        "size": mesh.size,
         "type": "inline",
         "vertices": mesh.vertices.tolist(),
         "uvs": mesh.uvs.tolist() if len(mesh.uvs) > 0 else [],
