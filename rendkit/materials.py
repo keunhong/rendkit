@@ -113,20 +113,22 @@ class TangentMaterial(GLSLProgram):
     def __init__(self):
         super().__init__(GLSLTemplate.fromfile('default.vert.glsl'),
                          GLSLTemplate.fromfile('tangent.frag.glsl'),
-                         use_uvs=True,
+                         use_uvs=False,
                          use_cam_pos=False,
                          use_lights=False,
-                         use_tangents=True)
+                         use_tangents=True,
+                         use_bitangents=False)
 
 
 class BitangentMaterial(GLSLProgram):
     def __init__(self):
         super().__init__(GLSLTemplate.fromfile('default.vert.glsl'),
                          GLSLTemplate.fromfile('bitangent.frag.glsl'),
-                         use_uvs=True,
+                         use_uvs=False,
                          use_cam_pos=False,
                          use_lights=False,
-                         use_tangents=True)
+                         use_tangents=False,
+                         use_bitangents=True)
 
 
 class BeckmannMaterial(GLSLProgram):
@@ -138,6 +140,7 @@ class BeckmannMaterial(GLSLProgram):
                          use_lights=True,
                          use_normals=True,
                          use_tangents=True,
+                         use_bitangents=True,
                          use_radiance_map=True)
         self.diffuse_map = svbrdf.diffuse_map.astype(np.float32)
         self.specular_map = svbrdf.specular_map.astype(np.float32)
@@ -216,6 +219,7 @@ class AittalaMaterial(GLSLProgram):
                          use_lights=True,
                          use_normals=True,
                          use_tangents=True,
+                         use_bitangents=True,
                          use_radiance_map=True)
         self.alpha = svbrdf.alpha
         self.diff_map = svbrdf.diffuse_map.astype(np.float32)

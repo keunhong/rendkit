@@ -39,7 +39,8 @@ class GLSLProgram:
                  use_lights=True,
                  use_near_far=False,
                  use_radiance_map=False,
-                 use_tangents=False):
+                 use_tangents=False,
+                 use_bitangents=False):
         self.use_uvs = use_uvs
         self.use_cam_pos = use_cam_pos
         self.use_lights = use_lights
@@ -47,6 +48,7 @@ class GLSLProgram:
         self.use_near_far = use_near_far
         self.use_radiance_map = use_radiance_map
         self.use_tangents = use_tangents
+        self.use_bitangents = use_bitangents
 
         self._vert_shader = vert_shader
         self._frag_shader = frag_shader
@@ -62,6 +64,7 @@ class GLSLProgram:
         vs = self._vert_shader.substitute(
             use_normals=glsl_bool(self.use_normals),
             use_tangents=glsl_bool(self.use_tangents),
+            use_bitangents=glsl_bool(self.use_bitangents),
             num_shadow_sources=num_shadow_sources,
             use_radiance_map=glsl_bool(use_radiance_map),
             use_uvs=glsl_bool(self.use_uvs),
@@ -99,6 +102,7 @@ class GLSLProgram:
             used_attributes.add('a_normal')
         if self.use_tangents:
             used_attributes.add('a_tangent')
+        if self.use_bitangents:
             used_attributes.add('a_bitangent')
         if self.use_uvs:
             used_attributes.add('a_uv')

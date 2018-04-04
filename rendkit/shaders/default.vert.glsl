@@ -17,8 +17,11 @@ out vec3 v_normal;
 
 #if TPL.use_tangents
 in vec3 a_tangent;
-in vec3 a_bitangent;
 out vec3 v_tangent;
+#endif
+
+#if TPL.use_bitangents
+in vec3 a_bitangent;
 out vec3 v_bitangent;
 #endif
 
@@ -43,6 +46,9 @@ void main() {
 
     #if TPL.use_tangents
     v_tangent = a_tangent;
+    #endif
+
+    #if TPL.use_bitangents
     v_bitangent = a_bitangent;
     #endif
 
