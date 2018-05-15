@@ -123,9 +123,14 @@ class Mesh:
         min_dim = self.vertices.min(axis=0)
         return max_dim - min_dim
 
-    def resize(self, size):
+    def resize(self, size, axis=None):
         self.size = size
-        self.vertices *= size / self.bounding_size()
+        if axis is None:
+            bounding_size = self.bounding_size()
+        else:
+            bounding_size = self.max_dims()[axis]
+
+        self.vertices *= size / bounding_size
 
     def rescale(self, scale):
         self.vertices *= scale
