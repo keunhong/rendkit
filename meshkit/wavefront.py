@@ -88,6 +88,7 @@ def save_obj_file(f, mesh: Mesh):
                                            face['normals'][i] + 1)
         f.write("{}{}\n".format(OBJ_FACE_MARKER, face_str))
 
+    f.flush()
     if close_file:
         f.close()
 
