@@ -15,6 +15,54 @@ from .jsd import JSDRenderer
 logger = init_logger(__name__)
 
 
+QUAL_COLORS = [
+    (230, 25, 75),
+    (60, 180, 75),
+    (255, 225, 25),
+    (0, 130, 200),
+    (245, 130, 48),
+    (145, 30, 180),
+    (70, 240, 240),
+    (240, 50, 230),
+    (210, 245, 60),
+    (250, 190, 190),
+    (0, 128, 128),
+    (230, 190, 255),
+    (170, 110, 40),
+    (255, 250, 200),
+    (128, 0, 0),
+    (170, 255, 195),
+    (128, 128, 0),
+    (255, 215, 180),
+    (0, 0, 128),
+    (128, 128, 128),
+    (166, 206, 227),
+    (31, 120, 180),
+    (178, 223, 138),
+    (51, 160, 44),
+    (251, 154, 153),
+    (227, 26, 28),
+    (253, 191, 111),
+    (255, 127, 0),
+    (202, 178, 214),
+    (106, 61, 154),
+    (255, 255, 153),
+    (177, 89, 40),
+    (141, 211, 199),
+    (255, 255, 179),
+    (190, 186, 218),
+    (251, 128, 114),
+    (128, 177, 211),
+    (253, 180, 98),
+    (179, 222, 105),
+    (252, 205, 229),
+    (217, 217, 217),
+    (188, 128, 189),
+    (204, 235, 197),
+    (255, 237, 111),
+]
+
+
 def svbrdf_plane_renderer(svbrdf, size=None, lights=list(), radmap=None,
                           mode='all', gamma=2.2, uv_scale=1.0, shape=None,
                           transpose=False, camera=None,
@@ -310,6 +358,26 @@ def render_wavefront_mtl(mesh: Mesh, camera,
             'specular': mtl.specular_color,
             'roughness': 1.0 / math.sqrt((mtl.specular_exponent + 2) / 2.0),
         } for mtl_name, mtl in materials.items()
+    }
+    if radmap_path is not None:
+        jsd_dict['radiance_map'] = {
+            'path': radmap_path
+        }
+    return render_jsd(jsd_dict, **rend_opts)
+
+
+def render_preview(mesh: Mesh, camera,
+                   radmap_path=None,
+                   **rend_opts):
+    jsd_dict = make_jsd(mesh, camera)
+    jsd_dict["materials"] = {
+        mtl_name: {
+            'type': 'blinn_phong',
+            'diffuse': tuple(c/255/1.2
+                             for c in QUAL_COLORS[mtl_id % len(QUAL_COLORS)]),
+            'specular': (0.044, 0.044, 0.044),
+            'roughness': 0.1,
+        } for mtl_id, mtl_name in enumerate(mesh.materials)
     }
     if radmap_path is not None:
         jsd_dict['radiance_map'] = {
