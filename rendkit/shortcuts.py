@@ -267,9 +267,9 @@ def render_spec_component(jsd_dict):
         return r.render_to_image()
 
 
-def render_jsd(jsd_dict, **rend_opts):
+def render_jsd(jsd_dict, format='rgb', **rend_opts):
     with jsd.JSDRenderer(jsd_dict, **rend_opts) as renderer:
-        image = renderer.render_to_image()
+        image = renderer.render_to_image(format=format)
     return image
 
 
@@ -364,6 +364,22 @@ def render_wavefront_mtl(mesh: Mesh, camera,
             'path': radmap_path
         }
     return render_jsd(jsd_dict, **rend_opts)
+
+
+def render_material_dicts(mesh: Mesh, camera,
+                     materials: Dict[str, dict],
+                     radmap_path=None,
+                     format='rgb',
+                     **rend_opts):
+    jsd_dict = make_jsd(mesh, camera)
+    jsd_dict["materials"] = {
+        mtl_name: mtl for mtl_name, mtl in materials.items()
+    }
+    if radmap_path is not None:
+        jsd_dict['radiance_map'] = {
+            'path': radmap_path
+        }
+    return render_jsd(jsd_dict, format=format, **rend_opts)
 
 
 def render_preview(mesh: Mesh, camera,
