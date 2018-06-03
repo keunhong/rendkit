@@ -13,6 +13,7 @@ uniform float u_uv_scale;
 #if TPL.use_normals
 in vec3 a_normal;
 out vec3 v_normal;
+out mat4 v_modelview;
 #endif
 
 #if TPL.use_tangents
@@ -42,6 +43,7 @@ void main() {
 
     #if TPL.use_normals
     v_normal = a_normal;
+    v_modelview = u_view * u_model;
     #endif
 
     #if TPL.use_tangents
