@@ -5,7 +5,7 @@ from matplotlib import pyplot as plt
 
 from rendkit.envmap.conversion import panorama_to_cubemap, cubemap_to_panorama
 from rendkit.envmap.io import stack_cross, load_envmap
-from toolbox.images import save_hdr
+from toolbox.io.images import save_hdr
 from vispy import app
 from rendkit.pfm import pfm_read, pfm_write
 

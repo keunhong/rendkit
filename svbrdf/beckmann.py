@@ -3,7 +3,7 @@ from pathlib import Path
 import numpy as np
 
 from toolbox import images
-from toolbox.images import save_hdr, load_hdr, save_image
+from toolbox.io.images import save_image, save_hdr, load_hdr
 from toolbox.logging import init_logger
 
 logger = init_logger(__name__)
@@ -20,11 +20,11 @@ ANISO_MAP_NAME = 'map_anisotropy.exr'
 class BeckmannSVBRDF:
     """
     The Anisotropic Beckmann SVBRDF class.
-    
+
     This uses the Blender formulation for the anisotropic Beckmann BRDF.
     The roughness and anisotropy values map to the conventional alpha_x and
     alpha_y as:
-    
+
       if(aniso < 0.0f) {
         alpha_x = roughness/(1.0f + aniso);
         alpha_y = roughness*(1.0f + aniso);
@@ -33,7 +33,7 @@ class BeckmannSVBRDF:
         alpha_x = roughness*(1.0f - aniso);
         alpha_y = roughness/(1.0f - aniso);
       }
-    
+
     The Aittala BRDF has many constant factors baked into the albedos. When
     converting from the Aittala BRDF you must
         1. Multiply the diffuse albedo by PI

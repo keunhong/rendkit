@@ -8,7 +8,7 @@ from scipy.misc import imsave
 
 from rendkit.pfm import pfm_read
 from svbrdf import beckmann
-from toolbox.images import load_hdr, save_hdr, save_image
+from toolbox.io.images import save_image, save_hdr, load_hdr
 from toolbox.logging import init_logger
 
 logger = init_logger(__name__)
